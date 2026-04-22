@@ -1,0 +1,32 @@
+version: 2
+# Dependabot keeps SHA-pinned third-party Actions and language deps current.
+# Required by docs/agents/AGENT_HARNESS.md §5 + foundation backlog (security).
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      cargo-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # NPM, pip, gomod, gradle ecosystems are added in the PR that introduces each
+  # SDK (plans 0005-0009) so Dependabot does not error on missing manifests.
