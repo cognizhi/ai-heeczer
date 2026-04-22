@@ -90,3 +90,63 @@ fn extensions_passthrough_is_valid() {
     }"#;
     v.validate_str(body, Mode::Strict).unwrap();
 }
+
+// ---- ProfileValidator (foundation backlog) ---------------------------------
+
+#[test]
+fn embedded_default_profile_validates() {
+    let v = heeczer_core::schema::ProfileValidator::new_v1();
+    let body = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../schema/profiles/default.v1.json"),
+    )
+    .unwrap();
+    v.validate_str(&body, Mode::Strict)
+        .expect("embedded default profile must validate against its own schema");
+}
+
+#[test]
+fn profile_validator_rejects_missing_required_section() {
+    let v = heeczer_core::schema::ProfileValidator::new_v1();
+    // Missing required `components`, `category_multipliers`, etc.
+    let body = r#"{
+        "profile_id": "x",
+        "version": "1.0.0",
+        "effective_at": "2026-04-22T00:00:00Z"
+    }"#;
+    assert!(v.validate_str(body, Mode::Strict).is_err());
+}
+
+#[test]
+fn profile_validator_rejects_unknown_top_level_field() {
+    let v = heeczer_core::schema::ProfileValidator::new_v1();
+    let body = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../schema/profiles/default.v1.json"),
+    )
+    .unwrap();
+    let mut value: serde_json::Value = serde_json::from_str(&body).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .insert("rogue".to_string(), serde_json::json!(true));
+    assert!(v.validate(&value, Mode::Strict).is_err());
+}
+
+#[test]
+fn scoring_profile_struct_rejects_unknown_field_via_serde() {
+    // deny_unknown_fields on the top-level ScoringProfile struct (foundation
+    // backlog: only sub-structs were guarded before).
+    let body = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../schema/profiles/default.v1.json"),
+    )
+    .unwrap();
+    let mut value: serde_json::Value = serde_json::from_str(&body).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .insert("rogue_top".to_string(), serde_json::json!("x"));
+    let res: Result<heeczer_core::ScoringProfile, _> = serde_json::from_value(value);
+    assert!(
+        res.is_err(),
+        "ScoringProfile must reject unknown top-level fields"
+    );
+}

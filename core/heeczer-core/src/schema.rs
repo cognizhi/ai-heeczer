@@ -71,3 +71,51 @@ impl Default for EventValidator {
         Self::new_v1()
     }
 }
+
+/// Compile-once scoring-profile-schema validator. Mirrors [`EventValidator`].
+///
+/// Foundation backlog item (security): profiles loaded via `--profile` or any
+/// future control-plane API previously bypassed JSON Schema validation, so
+/// malformed profiles only failed at serde-deserialize time with cryptic
+/// errors. `ProfileValidator` runs the strict, embedded `scoring_profile.v1`
+/// schema before any deserialization.
+pub struct ProfileValidator {
+    validator: jsonschema::Validator,
+}
+
+impl ProfileValidator {
+    /// Build a validator against the embedded `scoring_profile.v1.json`.
+    pub fn new_v1() -> Self {
+        let schema: serde_json::Value = serde_json::from_str(SCORING_PROFILE_SCHEMA_V1)
+            .expect("embedded scoring profile schema must parse");
+        let validator = jsonschema::options()
+            .with_draft(jsonschema::Draft::Draft202012)
+            .should_validate_formats(true)
+            .build(&schema)
+            .expect("embedded scoring profile schema must compile");
+        Self { validator }
+    }
+
+    /// Validate a parsed JSON value against the schema.
+    pub fn validate(&self, value: &serde_json::Value, _mode: Mode) -> Result<()> {
+        if let Some(err) = self.validator.iter_errors(value).next() {
+            return Err(Error::Schema {
+                path: err.instance_path.to_string(),
+                message: err.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Validate a JSON string.
+    pub fn validate_str(&self, json: &str, mode: Mode) -> Result<()> {
+        let value: serde_json::Value = serde_json::from_str(json)?;
+        self.validate(&value, mode)
+    }
+}
+
+impl Default for ProfileValidator {
+    fn default() -> Self {
+        Self::new_v1()
+    }
+}

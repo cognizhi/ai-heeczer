@@ -64,20 +64,29 @@ fn migrate_status_requires_database_url() {
 }
 
 #[test]
-fn migrate_up_then_status_reports_version_one() {
+fn migrate_up_then_status_reports_latest_version() {
     let dir = tempfile::tempdir().expect("tempdir");
     let db = dir.path().join("aih.sqlite");
     let url = format!("sqlite://{}?mode=rwc", db.display());
+
+    // Resolve the highest embedded migration version dynamically so the
+    // assertion does not need to be touched every time we add one.
+    let latest = heeczer_storage::sqlite::MIGRATOR
+        .migrations
+        .iter()
+        .map(|m| m.version)
+        .max()
+        .expect("at least one migration");
 
     aih()
         .args(["migrate", "up", "--database-url", &url])
         .assert()
         .success()
-        .stdout(predicate::str::contains("migrated to 1"));
+        .stdout(predicate::str::contains(format!("migrated to {latest}")));
 
     aih()
         .args(["migrate", "status", "--database-url", &url])
         .assert()
         .success()
-        .stdout(predicate::str::contains("Some(1)"));
+        .stdout(predicate::str::contains(format!("Some({latest})")));
 }

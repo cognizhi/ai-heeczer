@@ -10,7 +10,8 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.85"
+# MSRV must match rust-toolchain.toml so contributors and CI build identically.
+rust-version = "1.88"
 license = "MIT"
 repository = "https://github.com/cognizhi/ai-heeczer"
 authors = ["ai-heeczer contributors"]

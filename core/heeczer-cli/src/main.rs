@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use heeczer_core::{
-    schema::{EventValidator, Mode},
+    schema::{EventValidator, Mode, ProfileValidator},
     score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
 
@@ -19,6 +19,11 @@ const MAX_INPUT_BYTES: u64 = 1024 * 1024;
 fn validator() -> &'static EventValidator {
     static V: OnceLock<EventValidator> = OnceLock::new();
     V.get_or_init(EventValidator::new_v1)
+}
+
+fn profile_validator() -> &'static ProfileValidator {
+    static V: OnceLock<ProfileValidator> = OnceLock::new();
+    V.get_or_init(ProfileValidator::new_v1)
 }
 
 #[derive(Debug, Parser)]
@@ -165,7 +170,14 @@ fn cmd_score(args: &ScoreArgs) -> Result<()> {
     let event: Event = serde_json::from_value(value).context("materialising Event")?;
 
     let profile = match &args.profile {
-        Some(p) => serde_json::from_str(&std::fs::read_to_string(p)?)?,
+        Some(p) => {
+            let body = std::fs::read_to_string(p)
+                .with_context(|| format!("reading profile {}", p.display()))?;
+            profile_validator()
+                .validate_str(&body, Mode::Strict)
+                .map_err(|e| anyhow::anyhow!("scoring profile schema validation failed: {e}"))?;
+            serde_json::from_str(&body).context("materialising ScoringProfile")?
+        }
         None => ScoringProfile::default_v1(),
     };
     let tiers = match &args.tiers {

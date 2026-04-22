@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 
 /// A complete scoring profile. Append-only and versioned (ADR-0003).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ScoringProfile {
     /// Profile identifier.
     pub profile_id: String,
