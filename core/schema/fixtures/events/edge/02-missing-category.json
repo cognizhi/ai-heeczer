@@ -1,0 +1,20 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000003",
+  "timestamp": "2026-04-22T10:05:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_uncat",
+  "task": {
+    "name": "no_category_task",
+    "outcome": "partial_success"
+  },
+  "metrics": {
+    "duration_ms": 5000,
+    "tokens_prompt": 100,
+    "tokens_completion": 200
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

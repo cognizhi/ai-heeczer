@@ -1,0 +1,24 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000005",
+  "timestamp": "2026-04-22T10:15:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_unicode",
+  "task": {
+    "name": "翻译_文档_📝",
+    "category": "summarization",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 12345,
+    "tokens_prompt": 800,
+    "tokens_completion": 2400
+  },
+  "context": {
+    "tags": ["i18n", "中文", "español"]
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

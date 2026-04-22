@@ -1,0 +1,11 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-0000000000a2",
+  "timestamp": "2026-04-22T10:00:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_x",
+  "task": { "name": "unknown_top", "outcome": "success" },
+  "metrics": { "duration_ms": 100 },
+  "meta": { "sdk_language": "test", "sdk_version": "0.0.0" },
+  "rogue_top_level": "rejected in strict mode"
+}

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-heeczer.dev/schema/event.v1.json",
+  "title": "ai-heeczer canonical event (v1)",
+  "description": "Canonical telemetry event consumed by the ai-heeczer scoring core. See PRD §13.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec_version",
+    "event_id",
+    "timestamp",
+    "framework_source",
+    "workspace_id",
+    "task",
+    "metrics",
+    "meta"
+  ],
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version. Must be the literal string '1.0' for v1 events."
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "RFC 4122 UUID. Primary idempotency key (PRD §12.19, §19.4)."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 / ISO 8601 timestamp in UTC."
+    },
+    "framework_source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+    },
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "project_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "identity": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "user_id": { "type": ["string", "null"], "maxLength": 128 },
+        "team_id": { "type": ["string", "null"], "maxLength": 128 },
+        "business_unit_id": { "type": ["string", "null"], "maxLength": 128 },
+        "tier_id": { "type": ["string", "null"], "maxLength": 64 }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "outcome"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "category": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9_]*$",
+          "description": "Optional. Missing or null normalizes to 'uncategorized' per PRD §14.2.1."
+        },
+        "sub_category": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9_]*$"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["success", "partial_success", "failure", "timeout"]
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration_ms"],
+      "properties": {
+        "duration_ms": { "type": "integer", "minimum": 0, "maximum": 86400000 },
+        "tokens_prompt": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000000 },
+        "tokens_completion": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000000 },
+        "tool_call_count": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+        "workflow_steps": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+        "retries": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000 },
+        "artifact_count": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+        "output_size_proxy": { "type": ["number", "null"], "minimum": 0, "maximum": 1000000 }
+      }
+    },
+    "context": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "human_in_loop": { "type": ["boolean", "null"] },
+        "review_required": { "type": ["boolean", "null"] },
+        "temperature": { "type": ["number", "null"], "minimum": 0, "maximum": 2 },
+        "risk_class": {
+          "type": ["string", "null"],
+          "enum": ["low", "medium", "high", null]
+        },
+        "tags": {
+          "type": ["array", "null"],
+          "maxItems": 32,
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sdk_language", "sdk_version"],
+      "properties": {
+        "sdk_language": {
+          "type": "string",
+          "enum": ["rust", "node", "python", "go", "java", "cli", "test"]
+        },
+        "sdk_version": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "scoring_profile": { "type": ["string", "null"], "maxLength": 64 },
+        "extensions": {
+          "type": ["object", "null"],
+          "description": "Sole permitted location for unknown fields per PRD §13 Schema Rules.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

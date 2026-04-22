@@ -2,8 +2,8 @@
 
 - **Status:** Active
 - **Owner:** DevEx Engineer
-- **PRD:** §26, §12.13
-- **ADR:** ADR-0007
+- **PRD:** §26, §12.13, §12.21
+- **ADR:** ADR-0007, ADR-0010
 
 ## Goal
 Make the repo trivially easy to clone, bootstrap, test, and contribute to.
@@ -35,6 +35,11 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 
 ### Local containers
 - [ ] `docker-compose.dev.yml` brings up ingestion service + PostgreSQL + dashboard for local dev.
+
+### Local CLI (`aih`, ADR-0010)
+- [ ] `make cli-install` builds and installs `aih` into `~/.cargo/bin`.
+- [ ] `make cli-smoke` runs `aih schema validate`, `aih score`, and `aih diff` against shipped fixtures and exits non-zero on any drift.
+- [ ] README quickstart includes `aih score examples/event.json` as the first thing a contributor runs.
 
 ### Editor configs
 - [ ] `.editorconfig`.

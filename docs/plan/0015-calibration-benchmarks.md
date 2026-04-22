@@ -20,7 +20,7 @@ Provide a versioned calibration framework so organizations can tune the scoring 
 - [ ] Each item: expected human-effort range, telemetry profile, category, expected confidence band.
 
 ### Calibration workflow
-- [ ] CLI: `heeczerctl calibrate run --pack <id> --profile <id>`.
+- [ ] CLI: `aih calibrate run --pack <id> --profile <id>` (per ADR-0010).
 - [ ] Output: per-item delta from expected range, suggested profile adjustments.
 - [ ] Profile updates create a new profile version (never mutate).
 

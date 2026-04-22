@@ -34,7 +34,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 ### Migrations (ADR-0004)
 - [ ] Wire `sqlx::migrate!` into the ingestion service crate.
 - [ ] Author `0001_init.sql` with separate SQLite/PostgreSQL variants where dialects diverge.
-- [ ] Add `heeczerctl migrate up|status|verify` CLI subcommands.
+- [ ] Add `aih migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan).
 - [ ] Document migration authoring guide in `docs/architecture/data-model.md`.
 
 ### Multi-tenancy
