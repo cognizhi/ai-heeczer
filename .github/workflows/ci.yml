@@ -85,3 +85,89 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: EmbarkStudios/cargo-deny-action@91bf2b620e09e18d6eb78b92e7861937469acedb # v2.0.17
+
+  sdk-js-test:
+    name: SDK — @heeczer/sdk (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: bindings/heeczer-js/package-lock.json
+      - run: npm ci
+        working-directory: bindings/heeczer-js
+      - run: npm test
+        working-directory: bindings/heeczer-js
+
+  sdk-js-lint:
+    name: SDK — @heeczer/sdk TypeScript typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: bindings/heeczer-js/package-lock.json
+      - run: npm ci
+        working-directory: bindings/heeczer-js
+      - run: npx tsc --noEmit
+        working-directory: bindings/heeczer-js
+
+  sdk-python-test:
+    name: SDK — heeczer-py (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v5.4.2
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --all-extras
+        working-directory: bindings/heeczer-py
+      - run: uv run pytest
+        working-directory: bindings/heeczer-py
+      - run: uv run mypy src/heeczer --strict
+        working-directory: bindings/heeczer-py
+      - run: uv run ruff check src tests
+        working-directory: bindings/heeczer-py
+
+  sdk-go-test:
+    name: SDK — heeczer-go (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.22", "1.23"]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: bindings/heeczer-go/go.sum
+      - run: go test ./...
+        working-directory: bindings/heeczer-go
+      - run: go vet ./...
+        working-directory: bindings/heeczer-go
+
+  sdk-java-test:
+    name: SDK — heeczer-java (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - run: mvn -q test
+        working-directory: bindings/heeczer-java

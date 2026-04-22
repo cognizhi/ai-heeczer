@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": true,
+  "packages": {
+    ".": {
+      "release-type": "rust",
+      "component": "workspace",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "bindings/heeczer-js": {
+      "release-type": "node",
+      "component": "heeczer-js",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "bindings/heeczer-py": {
+      "release-type": "python",
+      "component": "heeczer-py",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "bindings/heeczer-go": {
+      "release-type": "simple",
+      "component": "heeczer-go",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "bindings/heeczer-java": {
+      "release-type": "maven",
+      "component": "heeczer-java",
+      "changelog-path": "CHANGELOG.md"
+    }
+  },
+  "pull-request-title-pattern": "chore: release${component}",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "deps", "section": "Dependencies" },
+    { "type": "revert", "section": "Reverts" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "style", "section": "Styles", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous Chores", "hidden": true },
+    { "type": "refactor", "section": "Code Refactoring", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "build", "section": "Build System", "hidden": true },
+    { "type": "ci", "section": "Continuous Integration", "hidden": true }
+  ]
+}

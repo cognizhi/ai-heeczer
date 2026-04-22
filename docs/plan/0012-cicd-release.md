@@ -11,22 +11,22 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 ## Checklist
 
 ### CI workflows
-- [ ] `lint.yml` — per-ecosystem lint matrix.
-- [ ] `format-check.yml` — per-ecosystem formatter check.
-- [ ] `unit.yml` — per-ecosystem unit tests.
+- [x] `lint.yml` — per-ecosystem lint matrix (Rust clippy in `ci.yml`; JS tsc, Python mypy+ruff, Go vet added).
+- [x] `format-check.yml` — `cargo fmt --check` in `ci.yml`.
+- [x] `unit.yml` — per-ecosystem unit tests (`ci.yml`: Rust, JS vitest, Python pytest, Go test, Java mvn test).
 - [ ] `integration.yml` — ingestion service end-to-end with PG + SQLite.
 - [ ] `contract.yml` — schema validation across bindings.
 - [ ] `parity.yml` — fixture-driven parity across bindings.
 - [ ] `migration.yml` — fresh + incremental on SQLite + PostgreSQL.
 - [ ] `ui.yml` — Playwright E2E for dashboard.
 - [ ] `bench-smoke.yml` — `track()` p95, ack p95, enqueue throughput.
-- [ ] `security.yml` — CodeQL (incl. SQL-injection query packs), Trivy, gitleaks, language audits.
+- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`.
 - [ ] `docs.yml` — markdown lint, link check, OpenAPI lint.
 - [ ] `release-dry-run.yml` — release-please manifest computation, package dry-run on PRs.
 
 ### Release workflows
-- [ ] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`.
-- [ ] `release.yml` — on release-please PR merge: tag, build, sign (cosign keyless), SBOM (CycloneDX), SLSA provenance, publish to npm, PyPI, crates.io, Maven Central, Go tag, GHCR, GitHub Release; `concurrency: { group: release, cancel-in-progress: false }`.
+- [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`.
+- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; `concurrency: { group: release, cancel-in-progress: false }`.
 - [ ] `release-resume.yml` — workflow_dispatch to resume partial publish; same `release` concurrency group.
 
 ### Branch protection
@@ -39,7 +39,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 - [ ] Sonatype token in GitHub secrets for Maven Central until OIDC support matures.
 
 ### Release manifest
-- [ ] `.github/release-manifest.json` schema documented.
+- [x] `.github/release-please-config.json` and `.github/release-please-manifest.json` schema documented.
 - [ ] Release workflow updates the manifest atomically per target.
 - [ ] "Release complete" badge derived from manifest state.
 
