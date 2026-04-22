@@ -1,0 +1,13 @@
+//! Storage layer (plan 0003). SQLite is the MVP backend; PostgreSQL parity arrives in Phase 2.
+//!
+//! Tables follow PRD §20. Migrations live under `migrations/` and are embedded
+//! at compile time via [`sqlx::migrate!`]. Append-only invariants for
+//! `aih_events` and `aih_scores` are enforced both at the Rust API layer and
+//! by SQL triggers in the migration scripts.
+
+#![cfg_attr(not(test), warn(missing_docs))]
+
+pub mod error;
+pub mod sqlite;
+
+pub use error::{Error, Result};
