@@ -34,6 +34,9 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 ### Migrations (ADR-0004)
 - [ ] Wire `sqlx::migrate!` into the ingestion service crate.
 - [x] Author `0001_init.sql` with SQLite dialect (PR #1); PostgreSQL parity migration deferred to plan 04.
+- [x] Author `migrations-pg/0001_init.sql` — PostgreSQL dialect (PL/pgSQL triggers, `NOW()` defaults). (plan 0004)
+- [x] Author `migrations-pg/0002_append_only_audit_and_global_unique.sql` — PostgreSQL dialect. (plan 0004)
+- [x] Add `src/pg.rs` PostgreSQL backend module (`heeczer_storage::pg`). (plan 0004)
 - [x] Add `aih migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan). (PR #1)
 - [ ] Document migration authoring guide in `docs/architecture/data-model.md`.
 
@@ -42,7 +45,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Repository layer enforces workspace scoping at the type level (newtype wrapper).
 
 ### Append-only enforcement
-- [ ] `aih_events` and `aih_scores` have DB triggers (PG) and runtime guards (SQLite + Rust) preventing UPDATE/DELETE except via tombstone insert. (partial: SQLite triggers for `aih_events` + `aih_scores` + `aih_audit_log` implemented; PostgreSQL triggers pending plan 04)
+- [x] `aih_events` and `aih_scores` have DB triggers preventing UPDATE/DELETE except via tombstone insert. (SQLite: migration 0001; PostgreSQL: PL/pgSQL functions in migrations-pg/0001)
 - [x] Re-scoring path inserts new score rows; never updates. (PR #1)
 - [x] `aih_audit_log` append-only trigger pair (PRD §22.5). (migration 0002, commit 9fb81aa)
 
