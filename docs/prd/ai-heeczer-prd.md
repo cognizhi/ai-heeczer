@@ -430,6 +430,19 @@ All ingestion endpoints shall honor `event_id` as the primary idempotency key pe
 ### 12.20 Database Schema Migrations
 The project shall use a versioned, forward-only migration tool with one migration history table (`aih_schema_migrations`) shared across SQLite and PostgreSQL adapters. Migration choice is documented in ADR-0004. Every schema change shall ship with a migration script, a rollback note, and a migration test that runs on both backends in CI.
 
+### 12.21 Local Developer CLI (`aih`)
+The project shall ship a first-class command-line tool, `aih`, as the canonical local invocation surface for the Rust scoring core. It is the single tool a contributor uses to atomically test the analyzer without standing up the ingestion service or any SDK. Decision and rationale are recorded in ADR-0010.
+
+Required MVP subcommands:
+- `aih schema validate` — validate a JSON event against the canonical schema in strict or compatibility mode.
+- `aih score` — run the deterministic scoring engine and emit `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or human-readable table.
+- `aih fixtures list|show` — enumerate and emit shipped golden fixtures for use in downstream SDK and adapter test suites.
+- `aih diff` — diff two `ScoreResult`s for parity verification.
+- `aih migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the previously planned `heeczerctl` binary).
+- `aih version` — print CLI, `scoring_version`, `spec_version`, and core crate versions.
+
+The CLI's JSON output is part of the public contract (§12.15) and changes are versioned alongside `scoring_version` and `spec_version`. The CLI is published to crates.io and as signed prebuilt binaries on each GitHub Release per §27.4 and §27.5.
+
 ---
 
 ## 13. Canonical Event Schema (v1)
@@ -1230,6 +1243,7 @@ OpenTelemetry bridge, Langfuse integration, profile marketplace, optional AI-ass
     0007-monorepo-tooling.md
     0008-dashboard-ui-framework.md
     0009-release-control-plane.md
+    0010-local-developer-cli.md
   /architecture
     system-overview.md
     data-model.md
