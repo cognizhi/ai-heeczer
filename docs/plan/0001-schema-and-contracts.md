@@ -1,0 +1,50 @@
+# Plan 01 — Schema and contracts
+
+- **Status:** Active
+- **Owner:** Tech Lead + SDK Engineer
+- **PRD:** §13, §12.2, §12.16, §12.15
+- **ADR:** ADR-0002
+
+## Goal
+Establish the canonical event schema as the single, versioned, fixture-driven contract consumed by the Rust core, every SDK, the ingestion service, the dashboard data layer, and all framework adapters.
+
+## Deliverables
+- `core/schema/event.v1.json` — JSON Schema draft 2020-12.
+- `core/schema/fixtures/` — shared fixtures (valid, invalid, edge cases).
+- Generated typed bindings per language (rust struct, TS interface, python dataclass/pydantic, go struct, java POJO).
+- Contract test job in CI that asserts every binding accepts/rejects the same fixtures byte-for-byte.
+
+## Checklist
+
+### Schema definition
+- [ ] Author `core/schema/event.v1.json` matching PRD §13.
+- [ ] Add validation rules: `spec_version` mandatory, `meta.extensions` is the only unknown-field bucket, strict mode rejects all other unknowns.
+- [ ] Add fixture set: `valid/`, `invalid/`, `edge/` (min payload, max payload, unicode, missing optional fields, extension passthrough).
+- [ ] Document the schema authoring guide in `docs/architecture/data-model.md`.
+
+### Generation and bindings
+- [ ] Generate Rust types via `typify` or hand-written serde structs validated against the schema.
+- [ ] Generate TS types via `json-schema-to-typescript`.
+- [ ] Generate Python types via `datamodel-code-generator` (pydantic v2).
+- [ ] Generate Go types via `quicktype` or hand-written, validated against the schema.
+- [ ] Generate Java POJOs via `jsonschema2pojo`.
+
+### Tests
+- [ ] Unit: schema validator round-trips every valid fixture.
+- [ ] Unit: schema validator rejects every invalid fixture with the documented error code.
+- [ ] Contract: all five bindings produce byte-equal normalized JSON for every valid fixture.
+- [ ] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode.
+
+### Versioning
+- [ ] Document the v1 → v2 evolution policy in ADR-0002.
+- [ ] Wire `spec_version` into the ingestion service as the routing key for parser selection.
+- [ ] Add a "deprecated header" middleware skeleton for future v1-on-v2 deprecation.
+
+### Docs
+- [ ] Update root README schema section.
+- [ ] Update `docs/architecture/data-model.md` with diagrams.
+- [ ] Mark this plan Done in `0000-overview.md` once all items are `[x]`.
+
+## Acceptance
+- All contract tests green on `main`.
+- Schema and fixtures referenced from at least one test in every binding.
