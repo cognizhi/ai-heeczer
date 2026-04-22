@@ -10,6 +10,12 @@ use heeczer_core::{
     schema::{EventValidator, Mode, ProfileValidator},
     score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
+use include_dir::{include_dir, Dir};
+
+/// Bundled fixture tree, embedded at compile time (PRD §12.21, ADR-0010).
+/// The path is relative to this Cargo manifest. Using a manifest-relative
+/// include keeps `cargo install --path core/heeczer-cli` working.
+static FIXTURES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../schema/fixtures");
 
 /// Hard upper bound for any single JSON document the CLI accepts. Prevents an
 /// unbounded stdin from turning into an OOM. The same constant should be
@@ -66,8 +72,13 @@ enum SchemaCmd {
 
 #[derive(Debug, Subcommand)]
 enum FixturesCmd {
-    /// List bundled fixture names by category.
+    /// List bundled fixture names.
     List,
+    /// Print the canonical bundled fixture body to stdout.
+    Show {
+        /// Fixture name relative to the bundled root, e.g. `valid/01-prd-canonical.json`.
+        name: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -124,6 +135,7 @@ fn main() -> Result<()> {
         Command::Score(args) => cmd_score(&args),
         Command::Fixtures { sub } => match sub {
             FixturesCmd::List => cmd_fixtures_list(),
+            FixturesCmd::Show { name } => cmd_fixtures_show(&name),
         },
         Command::Diff { a, b } => cmd_diff(&a, &b),
         Command::Migrate { sub } => cmd_migrate(sub),
@@ -223,18 +235,44 @@ fn cmd_score(args: &ScoreArgs) -> Result<()> {
 }
 
 fn cmd_fixtures_list() -> Result<()> {
-    // Bundled fixture names live under `core/schema/fixtures/events/`.
-    // We don't embed every fixture into the binary; instead, the CLI walks the
-    // crate's known relative path when run from a checkout, and otherwise
-    // points the user at the published catalog.
+    // Bundled fixtures are embedded at compile time via `include_dir!` so
+    // installed binaries work regardless of the source-tree location.
     println!("Bundled fixture catalog:");
-    println!("  valid/01-prd-canonical.json");
-    println!("  edge/01-minimum-required.json");
-    println!("  edge/02-missing-category.json");
-    println!("  edge/03-extensions-passthrough.json");
-    println!("  edge/04-unicode.json");
-    println!("(see core/schema/fixtures/events/ in the source tree)");
+    let mut paths: Vec<&str> = bundled_fixture_paths().collect();
+    paths.sort_unstable();
+    for p in paths {
+        println!("  {p}");
+    }
     Ok(())
+}
+
+fn cmd_fixtures_show(name: &str) -> Result<()> {
+    let normalized = name.trim_start_matches("./").trim_start_matches('/');
+    let file = FIXTURES
+        .get_file(normalized)
+        .with_context(|| format!("fixture not found: {normalized} (try `aih fixtures list`)"))?;
+    let body = file.contents_utf8().context("fixture is not valid UTF-8")?;
+    let stdout = std::io::stdout();
+    let mut out = stdout.lock();
+    out.write_all(body.as_bytes())?;
+    if !body.ends_with('\n') {
+        writeln!(&mut out)?;
+    }
+    Ok(())
+}
+
+fn bundled_fixture_paths() -> impl Iterator<Item = &'static str> {
+    fn walk<'a>(dir: &'a include_dir::Dir<'a>, out: &mut Vec<&'a str>) {
+        for f in dir.files() {
+            out.push(f.path().to_str().expect("fixture path is UTF-8"));
+        }
+        for d in dir.dirs() {
+            walk(d, out);
+        }
+    }
+    let mut buf = Vec::new();
+    walk(&FIXTURES, &mut buf);
+    buf.into_iter()
 }
 
 fn cmd_diff(a: &PathBuf, b: &PathBuf) -> Result<()> {

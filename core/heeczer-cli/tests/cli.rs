@@ -90,3 +90,32 @@ fn migrate_up_then_status_reports_latest_version() {
         .success()
         .stdout(predicate::str::contains(format!("Some({latest})")));
 }
+
+#[test]
+fn fixtures_list_includes_canonical_fixture() {
+    aih()
+        .args(["fixtures", "list"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "events/valid/01-prd-canonical.json",
+        ));
+}
+
+#[test]
+fn fixtures_show_prints_embedded_body() {
+    aih()
+        .args(["fixtures", "show", "events/valid/01-prd-canonical.json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"event_id\""));
+}
+
+#[test]
+fn fixtures_show_unknown_name_fails() {
+    aih()
+        .args(["fixtures", "show", "events/valid/does-not-exist.json"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("fixture not found"));
+}
