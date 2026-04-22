@@ -171,4 +171,72 @@ mod tests {
         assert!(view.contains("\"ok\":false"));
         unsafe { heeczer_free_string(out) };
     }
+
+    // ---- foundation backlog: extra ABI coverage ---------------------------
+
+    #[test]
+    fn versions_json_returns_pinned_constants() {
+        let out = heeczer_versions_json();
+        assert!(!out.is_null());
+        let view = unsafe { CStr::from_ptr(out) }.to_str().unwrap().to_owned();
+        // Result must be parseable JSON with both fields present.
+        let v: serde_json::Value = serde_json::from_str(&view).expect("valid JSON envelope");
+        assert_eq!(v["scoring_version"], heeczer_core::SCORING_VERSION);
+        assert_eq!(v["spec_version"], heeczer_core::SPEC_VERSION);
+        unsafe { heeczer_free_string(out) };
+    }
+
+    #[test]
+    fn free_string_on_null_is_a_no_op() {
+        // Must not panic, must not abort. Run it a few times for good measure.
+        for _ in 0..3 {
+            unsafe { heeczer_free_string(std::ptr::null_mut()) };
+        }
+    }
+
+    #[test]
+    fn non_utf8_input_returns_error_envelope_not_panic() {
+        // Build a non-UTF-8 buffer manually. CString rejects interior NULs but
+        // accepts arbitrary bytes; we then force a non-UTF-8 byte sequence.
+        let bytes: [u8; 5] = [b'{', 0xff, 0xfe, b'}', 0];
+        let out = unsafe {
+            heeczer_score_json(
+                bytes.as_ptr().cast(),
+                std::ptr::null(),
+                std::ptr::null(),
+                std::ptr::null(),
+            )
+        };
+        assert!(!out.is_null());
+        let view = unsafe { CStr::from_ptr(out) }.to_str().unwrap().to_owned();
+        let v: serde_json::Value =
+            serde_json::from_str(&view).expect("envelope must be parseable JSON");
+        assert_eq!(v["ok"], false);
+        unsafe { heeczer_free_string(out) };
+    }
+
+    #[test]
+    fn success_envelope_is_parseable_json() {
+        let body = std::fs::read_to_string(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../schema/fixtures/events/valid/01-prd-canonical.json"),
+        )
+        .unwrap();
+        let cs_event = cs(&body);
+        let out = unsafe {
+            heeczer_score_json(
+                cs_event.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                std::ptr::null(),
+            )
+        };
+        let view = unsafe { CStr::from_ptr(out) }.to_str().unwrap().to_owned();
+        let v: serde_json::Value = serde_json::from_str(&view).expect("envelope parseable");
+        assert_eq!(v["ok"], true);
+        // The result subtree must itself be a JSON object with scoring_version.
+        assert!(v["result"].is_object(), "result must be a JSON object");
+        assert!(v["result"]["scoring_version"].is_string());
+        unsafe { heeczer_free_string(out) };
+    }
 }

@@ -1,0 +1,37 @@
+{
+  "scoring_version": "1.0.0",
+  "spec_version": "1.0",
+  "scoring_profile": "default",
+  "bcu_breakdown": {
+    "tokens": "10.40",
+    "duration": "7.25",
+    "steps": "10",
+    "tools": "9",
+    "artifacts": "6.0",
+    "output": "3.00",
+    "review": "5"
+  },
+  "category": "code_generation",
+  "category_multiplier": "1.2",
+  "context_multiplier": {
+    "retry": "1.25",
+    "ambiguity": "1",
+    "risk": "1.0",
+    "human_in_loop": "1",
+    "outcome": "1.0"
+  },
+  "baseline_human_minutes": "75.98",
+  "tier": {
+    "id": "tier_mid_eng",
+    "multiplier": "1.0",
+    "hourly_rate": "75",
+    "currency": "USD"
+  },
+  "final_estimated_minutes": "75.98",
+  "estimated_hours": "1.27",
+  "estimated_days": "0.16",
+  "financial_equivalent_cost": "94.97",
+  "confidence_score": "0.9000",
+  "confidence_band": "High",
+  "human_summary": "Estimated 75.98 Mid-Level Engineer-equivalent minutes (~94.97 cost) for `code_generation`; confidence high."
+}

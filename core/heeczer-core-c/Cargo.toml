@@ -17,6 +17,7 @@ heeczer-core = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
+serde_json = { workspace = true }
 
 [lints.rust]
 unsafe_code = "allow"
