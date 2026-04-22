@@ -12,23 +12,23 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 ## Checklist
 
 ### Package
-- [ ] `bindings/python/` package with `pyproject.toml` + maturin.
-- [ ] abi3 wheels for cpython 3.10+, manylinux/musllinux/macos/windows.
-- [ ] Type stubs (`.pyi`) generated from schema; `py.typed` marker.
+- [x] `bindings/heeczer-py/` package with `pyproject.toml` (uv-managed, hatchling backend, Python ≥ 3.11 since the test fixtures use modern type syntax). Path differs from the original `bindings/python/` placeholder.
+- [ ] abi3 wheels for cpython 3.10+, manylinux/musllinux/macos/windows. (deferred: HTTP-first SDK ships now; pyo3/maturin in-process binding follows once parity test rig + napi-rs sibling land)
+- [x] `py.typed` marker shipped; types inline in `client.py` via `TypedDict` + `Literal` (closed `kind` enum).
 
 ### Public API
-- [ ] `Client` with `track`, `track_batch`, `flush`, `close`.
-- [ ] Both sync and async (`asyncio`) methods.
-- [ ] Mode selection: `native` and `image`.
-- [ ] Pydantic v2 models for events, scores, traces.
+- [x] `HeeczerClient` async client with `healthz`, `version`, `ingest_event`, `test_score_pipeline`. (The plan's original `track`/`track_batch`/`flush`/`close` shape predates the ingestion service; HTTP-first surface is the foundation, with batching following the batch endpoint in plan 0004.)
+- [ ] Both sync and async (`asyncio`) methods. (async-only today; sync wrapper deferred)
+- [ ] Mode selection: `native` and `image`. (image-only today; in-process scoring depends on pyo3 binding above)
+- [ ] Pydantic v2 models for events, scores, traces. (TypedDicts today to keep the wheel stdlib-only beyond httpx)
 
 ### Tests
-- [ ] Unit (`pytest`).
-- [ ] Contract: shared fixtures.
+- [x] Unit (`pytest` async; httpx.MockTransport instead of mocks per the user's "use emulation method as priority" guidance). 8/8 pass.
+- [ ] Contract: shared fixtures. (pending: needs the parity fixture rig in plan 0001 §Tests)
 - [ ] Parity: byte-equal output vs Rust reference.
-- [ ] `mypy --strict` clean.
-- [ ] `ruff check` clean.
-- [ ] Packaging: `maturin build --release` smoke test.
+- [x] `mypy --strict` clean (3 source files).
+- [x] `ruff check` clean.
+- [ ] Packaging: `maturin build --release` smoke test. (depends on pyo3 binding above)
 
 ### Docs
 - [ ] `bindings/python/README.md` with quickstart, API reference.
