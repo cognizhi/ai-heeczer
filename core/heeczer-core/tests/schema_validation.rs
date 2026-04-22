@@ -150,3 +150,64 @@ fn scoring_profile_struct_rejects_unknown_field_via_serde() {
         "ScoringProfile must reject unknown top-level fields"
     );
 }
+
+// ---- TierSetValidator -------------------------------------------------------
+
+#[test]
+fn embedded_default_tier_set_validates() {
+    let v = heeczer_core::schema::TierSetValidator::new_v1();
+    let body = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../schema/tiers/default.v1.json"),
+    )
+    .unwrap();
+    v.validate_str(&body, Mode::Strict)
+        .expect("default tier set must validate against its own schema");
+}
+
+#[test]
+fn tier_set_validator_rejects_missing_required_field() {
+    let v = heeczer_core::schema::TierSetValidator::new_v1();
+    // Missing `currency`, `tiers`, and `effective_at`.
+    let body = r#"{
+        "tier_set_id": "ts-test",
+        "version": "1.0.0"
+    }"#;
+    assert!(
+        v.validate_str(body, Mode::Strict).is_err(),
+        "tier-set without required fields must be rejected"
+    );
+}
+
+#[test]
+fn tier_set_validator_rejects_empty_tiers_array() {
+    let v = heeczer_core::schema::TierSetValidator::new_v1();
+    let body = r#"{
+        "tier_set_id": "ts-test",
+        "version": "1.0.0",
+        "effective_at": "2026-01-01T00:00:00Z",
+        "currency": "USD",
+        "tiers": []
+    }"#;
+    assert!(
+        v.validate_str(body, Mode::Strict).is_err(),
+        "tier-set with empty tiers array must be rejected"
+    );
+}
+
+#[test]
+fn tier_set_validator_rejects_unknown_top_level_field() {
+    let v = heeczer_core::schema::TierSetValidator::new_v1();
+    let body = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../schema/tiers/default.v1.json"),
+    )
+    .unwrap();
+    let mut value: serde_json::Value = serde_json::from_str(&body).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .insert("rogue".to_string(), serde_json::json!(true));
+    assert!(
+        v.validate(&value, Mode::Strict).is_err(),
+        "tier-set with unknown field must be rejected in strict mode"
+    );
+}

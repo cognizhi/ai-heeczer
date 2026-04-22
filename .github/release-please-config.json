@@ -27,6 +27,11 @@
       "release-type": "maven",
       "component": "heeczer-java",
       "changelog-path": "CHANGELOG.md"
+    },
+    "dashboard": {
+      "release-type": "node",
+      "component": "dashboard",
+      "changelog-path": "CHANGELOG.md"
     }
   },
   "pull-request-title-pattern": "chore: release${component}",

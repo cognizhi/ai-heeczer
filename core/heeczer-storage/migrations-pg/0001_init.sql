@@ -11,7 +11,7 @@
 CREATE TABLE aih_workspaces (
     workspace_id   TEXT PRIMARY KEY,
     display_name   TEXT NOT NULL,
-    created_at     TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    created_at     TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     settings_json  TEXT NOT NULL DEFAULT '{}'
 );
 
@@ -20,7 +20,7 @@ CREATE TABLE aih_api_keys (
     workspace_id   TEXT NOT NULL REFERENCES aih_workspaces(workspace_id) ON DELETE CASCADE,
     hashed_key     TEXT NOT NULL UNIQUE,
     label          TEXT NOT NULL,
-    created_at     TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    created_at     TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     revoked_at     TEXT
 );
 CREATE INDEX idx_aih_api_keys_workspace ON aih_api_keys(workspace_id);
@@ -66,7 +66,7 @@ CREATE TABLE aih_events (
     correlation_id    TEXT,
     payload           TEXT NOT NULL,
     payload_hash      TEXT NOT NULL DEFAULT '',
-    received_at       TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    received_at       TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     PRIMARY KEY (workspace_id, event_id)
 );
 CREATE INDEX idx_aih_events_workspace_time
@@ -111,7 +111,7 @@ CREATE TABLE aih_scores (
     final_fec           TEXT NOT NULL,
     confidence          TEXT NOT NULL,
     confidence_band     TEXT NOT NULL,
-    created_at          TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    created_at          TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     PRIMARY KEY (workspace_id, event_id, scoring_version, scoring_profile_id, profile_version),
     FOREIGN KEY (workspace_id, event_id) REFERENCES aih_events(workspace_id, event_id)
 );
@@ -133,8 +133,8 @@ CREATE TABLE aih_jobs (
     state          TEXT NOT NULL CHECK (state IN ('pending','running','succeeded','failed','dead_letter')),
     attempts       INTEGER NOT NULL DEFAULT 0,
     last_error     TEXT,
-    available_at   TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-    enqueued_at    TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    available_at   TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+    enqueued_at    TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     finished_at    TEXT
 );
 CREATE INDEX idx_aih_jobs_state_available
@@ -148,7 +148,7 @@ CREATE TABLE aih_audit_log (
     target_table   TEXT,
     target_id      TEXT,
     payload_json   TEXT NOT NULL DEFAULT '{}',
-    created_at     TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+    created_at     TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
 );
 CREATE INDEX idx_aih_audit_log_workspace_time
     ON aih_audit_log(workspace_id, created_at);
@@ -168,7 +168,7 @@ CREATE TABLE aih_daily_aggregates (
 CREATE TABLE aih_tombstones (
     workspace_id   TEXT NOT NULL REFERENCES aih_workspaces(workspace_id),
     event_id       TEXT NOT NULL,
-    deleted_at     TEXT NOT NULL DEFAULT to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    deleted_at     TEXT NOT NULL DEFAULT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
     reason         TEXT NOT NULL,
     PRIMARY KEY (workspace_id, event_id)
 );

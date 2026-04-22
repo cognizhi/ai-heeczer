@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+// maxResponseBytes caps the amount of data read from any single API response
+// to prevent memory exhaustion from malicious or misconfigured servers.
+const maxResponseBytes = 4 * 1024 * 1024 // 4 MiB
+
 // Version is the SDK version. Kept in lockstep with the npm + PyPI
 // siblings.
 const Version = "0.1.0"
@@ -254,9 +258,12 @@ func (c *Client) do(
 
 func (c *Client) handle(resp *http.Response, out any) error {
 	defer resp.Body.Close()
-	raw, err := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return fmt.Errorf("heeczer: read body: %w", err)
+	}
+	if int64(len(raw)) == maxResponseBytes {
+		return fmt.Errorf("heeczer: response body exceeds %d bytes", maxResponseBytes)
 	}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		if out == nil {

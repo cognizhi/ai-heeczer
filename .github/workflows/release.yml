@@ -41,11 +41,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
       - name: publish heeczer-core
-        run: cargo publish -p heeczer-core --no-verify
+        run: cargo publish -p heeczer-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       - name: publish heeczer (Rust SDK)
-        run: cargo publish -p heeczer --no-verify
+        run: cargo publish -p heeczer
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 

@@ -23,7 +23,7 @@ export function PipelineRunner({ fixture, onResult }: PipelineRunnerProps) {
     setRunning(true);
     setError(null);
     try {
-      const res = await fetch(`${ingestUrl}/v1/score/test`, {
+      const res = await fetch(`${ingestUrl}/v1/test/score-pipeline`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -32,8 +32,11 @@ export function PipelineRunner({ fixture, onResult }: PipelineRunnerProps) {
         body: JSON.stringify({ fixture }),
       });
       if (!res.ok) {
-        const body = (await res.json()) as Record<string, unknown>;
-        throw new Error(String(body["message"] ?? res.statusText));
+        const body = (await res.json()) as {
+          error?: { kind?: string; message?: string };
+        };
+        const msg = body.error?.message ?? res.statusText;
+        throw new Error(msg.slice(0, 200));
       }
       const data = (await res.json()) as Record<string, unknown>;
       onResult(data);

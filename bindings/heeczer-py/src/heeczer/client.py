@@ -8,7 +8,7 @@ callers do not pattern-match on strings.
 
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast, get_args
 
 import httpx
 
@@ -170,6 +170,7 @@ class HeeczerClient:
             return resp.json()
         kind: ApiErrorKind = "unknown"
         message = resp.text or resp.reason_phrase
+        _valid_kinds: frozenset[str] = frozenset(get_args(ApiErrorKind))
         try:
             payload = resp.json()
             if (
@@ -179,7 +180,11 @@ class HeeczerClient:
             ):
                 err = payload["error"]
                 if isinstance(err.get("kind"), str):
-                    kind = err["kind"]
+                    raw_kind = err["kind"]
+                    kind = cast(
+                        ApiErrorKind,
+                        raw_kind if raw_kind in _valid_kinds else "unknown",
+                    )
                 if isinstance(err.get("message"), str):
                     message = err["message"]
         except ValueError:

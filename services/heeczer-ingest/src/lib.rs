@@ -20,7 +20,11 @@ pub use state::{AppState, Features};
 
 use axum::routing::{get, post};
 use axum::Router;
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::TraceLayer;
+
+/// Maximum request body size (1 MiB) — mirrors the CLI's `MAX_INPUT_BYTES`.
+const MAX_REQUEST_BODY_BYTES: usize = 1 * 1024 * 1024;
 
 /// Build the application router. Kept as a free function so integration tests
 /// can construct an in-memory database, build a Router, and exercise it via
@@ -34,6 +38,7 @@ pub fn build_router(state: AppState) -> Router {
             "/v1/test/score-pipeline",
             post(handlers::test_score_pipeline),
         )
+        .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

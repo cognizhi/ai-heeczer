@@ -66,12 +66,25 @@ struct ErrorPayload<'a> {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        // Log the full internal detail for Storage and Scoring errors so operators
+        // can diagnose problems without exposing internals to callers.
+        let client_message = match &self {
+            ApiError::Storage(detail) => {
+                tracing::error!(kind = "storage", detail = %detail, "storage error");
+                "a storage error occurred".to_string()
+            }
+            ApiError::Scoring(detail) => {
+                tracing::error!(kind = "scoring", detail = %detail, "scoring error");
+                "a scoring error occurred".to_string()
+            }
+            other => other.to_string(),
+        };
         let body = ErrorBody {
             ok: false,
             envelope_version: "1",
             error: ErrorPayload {
                 kind: self.kind(),
-                message: self.to_string(),
+                message: client_message,
             },
         };
         (self.status(), Json(body)).into_response()

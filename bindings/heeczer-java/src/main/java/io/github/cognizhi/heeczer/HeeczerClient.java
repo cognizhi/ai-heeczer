@@ -1,12 +1,14 @@
 package io.github.cognizhi.heeczer;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +31,8 @@ public final class HeeczerClient implements AutoCloseable {
     /** SDK version constant. */
     public static final String SDK_VERSION = "0.1.0";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final String baseUrl;
     private final String apiKey;
@@ -173,17 +176,13 @@ public final class HeeczerClient implements AutoCloseable {
         }
         // Parse the error envelope.
         ApiErrorKind kind = ApiErrorKind.unknown;
-        String message = new String(resp.body());
+        String message = new String(resp.body(), StandardCharsets.UTF_8);
         try {
             JsonNode root = MAPPER.readTree(resp.body());
             if (root.has("error")) {
                 JsonNode err = root.get("error");
                 if (err.has("kind")) {
-                    try {
-                        kind = ApiErrorKind.valueOf(err.get("kind").asText());
-                    } catch (IllegalArgumentException ignored) {
-                        // Non-enum string → keep unknown.
-                    }
+                    kind = ApiErrorKind.fromWireValue(err.get("kind").asText());
                 }
                 if (err.has("message")) message = err.get("message").asText();
             }

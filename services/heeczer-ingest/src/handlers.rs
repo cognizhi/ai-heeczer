@@ -77,6 +77,18 @@ pub async fn ingest_event(
     if body.workspace_id.is_empty() {
         return Err(ApiError::BadRequest("workspace_id is required".into()));
     }
+    // Constrain workspace_id to safe characters and reasonable length.
+    // Accepted: alphanumeric, '-', '_'. Max 128 chars.
+    if body.workspace_id.len() > 128
+        || !body
+            .workspace_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(ApiError::BadRequest(
+            "workspace_id must be 1–128 ASCII alphanumeric, dash, or underscore chars".into(),
+        ));
+    }
     validator()
         .validate(&body.event, Mode::Strict)
         .map_err(|e| ApiError::Schema(e.to_string()))?;

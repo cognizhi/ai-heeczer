@@ -17,6 +17,7 @@ export default function OverviewPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* TODO (plan 0010): wire these cards to the ingestion service read API. */}
         <MetricCard
           label="Total Tasks (7d)"
           value="—"

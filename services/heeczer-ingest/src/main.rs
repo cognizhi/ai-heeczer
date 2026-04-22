@@ -7,6 +7,27 @@ use std::net::SocketAddr;
 use anyhow::Context;
 use heeczer_ingest::{build_router, AppState, Features};
 
+/// Redact the password component of a database DSN so it is safe to log.
+/// Returns the DSN unchanged if it cannot be parsed as a URL.
+fn redact_dsn(dsn: &str) -> String {
+    // Fast path: no "//" means it's not a URL (e.g. "sqlite::memory:").
+    if !dsn.contains("://") {
+        return dsn.to_owned();
+    }
+    // Replace ://user:password@ with ://user:***@
+    if let Some(at_pos) = dsn.rfind('@') {
+        let scheme_end = dsn.find("://").map(|i| i + 3).unwrap_or(0);
+        let authority = &dsn[scheme_end..at_pos];
+        if let Some(colon) = authority.find(':') {
+            let user = &authority[..colon];
+            let prefix = &dsn[..scheme_end];
+            let suffix = &dsn[at_pos..];
+            return format!("{prefix}{user}:***{suffix}");
+        }
+    }
+    dsn.to_owned()
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -20,7 +41,11 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("HEECZER_DATABASE_URL").unwrap_or_else(|_| "sqlite::memory:".to_string());
     let pool = heeczer_storage::sqlite::open(&database_url)
         .await
-        .with_context(|| format!("opening database at {database_url}"))?;
+        .with_context(|| {
+            // Redact password component so credentials don't appear in logs.
+            let redacted = redact_dsn(&database_url);
+            format!("opening database at {redacted}")
+        })?;
     heeczer_storage::sqlite::migrate(&pool).await?;
 
     let features = Features {

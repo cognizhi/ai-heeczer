@@ -198,3 +198,77 @@ async fn test_score_pipeline_runs_back_to_back() {
     assert_eq!(body["ok"], true);
     assert!(body["score"]["final_estimated_minutes"].is_string());
 }
+
+#[tokio::test]
+async fn ingest_event_is_idempotent_on_duplicate_event_id() {
+    // PRD §19.4: posting the same event_id twice must return HTTP 200 both times.
+    let app = router_with_features(Features::default()).await;
+    let event: Value = serde_json::from_str(&std::fs::read_to_string(CANONICAL).unwrap()).unwrap();
+    let req_body = json!({ "workspace_id": "ws_idem", "event": event });
+
+    for attempt in 0..2 {
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/v1/events")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&req_body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "attempt {attempt}: duplicate event_id must return 200"
+        );
+    }
+}
+
+#[tokio::test]
+async fn ingest_event_rejects_oversized_workspace_id() {
+    let app = router_with_features(Features::default()).await;
+    let event: Value = serde_json::from_str(&std::fs::read_to_string(CANONICAL).unwrap()).unwrap();
+    // 129-character workspace_id should be rejected.
+    let long_id = "a".repeat(129);
+    let req_body = json!({ "workspace_id": long_id, "event": event });
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/events")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&req_body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    let body = body_json(resp).await;
+    assert_eq!(body["error"]["kind"], "bad_request");
+}
+
+#[tokio::test]
+async fn ingest_event_rejects_illegal_characters_in_workspace_id() {
+    let app = router_with_features(Features::default()).await;
+    let event: Value = serde_json::from_str(&std::fs::read_to_string(CANONICAL).unwrap()).unwrap();
+    // Newline and semicolon are not in the allowlist.
+    let req_body = json!({ "workspace_id": "ws\ninjection;", "event": event });
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/events")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&req_body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    let body = body_json(resp).await;
+    assert_eq!(body["error"]["kind"], "bad_request");
+}
+

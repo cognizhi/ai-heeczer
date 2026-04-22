@@ -3,11 +3,14 @@ import { describe, it, expect, vi } from "vitest";
 import { FixtureBrowser } from "@/components/test-orchestration/fixture-browser";
 
 describe("FixtureBrowser", () => {
-  it("lists all bundled fixtures", () => {
+  it("lists all bundled fixtures including edge cases", () => {
     const onSelect = vi.fn();
     render(<FixtureBrowser selected={null} onSelect={onSelect} />);
     expect(
       screen.getByText("valid/01-prd-canonical.json")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("edge/01-minimum-required.json")
     ).toBeInTheDocument();
   });
 

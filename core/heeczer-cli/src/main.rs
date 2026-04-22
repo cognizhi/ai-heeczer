@@ -253,7 +253,14 @@ fn cmd_score(args: &ScoreArgs) -> Result<()> {
         None => ScoringProfile::default_v1(),
     };
     let tiers = match &args.tiers {
-        Some(p) => serde_json::from_str(&std::fs::read_to_string(p)?)?,
+        Some(p) => {
+            let body = std::fs::read_to_string(p)
+                .with_context(|| format!("reading tier-set {}", p.display()))?;
+            tier_set_validator()
+                .validate_str(&body, Mode::Strict)
+                .map_err(|e| anyhow::anyhow!("tier-set schema validation failed: {e}"))?;
+            serde_json::from_str(&body).context("materialising TierSet")?
+        }
         None => TierSet::default_v1(),
     };
     let result = score(&event, &profile, &tiers, args.tier.as_deref())
