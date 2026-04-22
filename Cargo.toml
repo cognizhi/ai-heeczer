@@ -5,6 +5,7 @@ members = [
     "core/heeczer-core-c",
     "core/heeczer-cli",
     "core/heeczer-storage",
+    "services/heeczer-ingest",
 ]
 
 [workspace.package]
