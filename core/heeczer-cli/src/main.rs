@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use heeczer_core::{
-    schema::{EventValidator, Mode, ProfileValidator},
+    schema::{EventValidator, Mode, ProfileValidator, TierSetValidator},
     score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
 use include_dir::{include_dir, Dir};
@@ -31,6 +31,11 @@ fn validator() -> &'static EventValidator {
 fn profile_validator() -> &'static ProfileValidator {
     static V: OnceLock<ProfileValidator> = OnceLock::new();
     V.get_or_init(ProfileValidator::new_v1)
+}
+
+fn tier_set_validator() -> &'static TierSetValidator {
+    static V: OnceLock<TierSetValidator> = OnceLock::new();
+    V.get_or_init(TierSetValidator::new_v1)
 }
 
 #[derive(Debug, Parser)]
@@ -461,16 +466,16 @@ fn cmd_validate(sub: ValidateCmd) -> Result<()> {
             println!("ok");
             Ok(())
         }
-        ValidateCmd::Tier { input: _ } => {
-            // The tier-set JSON Schema (`tier_set.v1.json`) is not yet shipped.
-            // Surface is reserved by ADR-0010 Phase 2 so downstream tooling can
-            // depend on the command path now and the schema can land later
-            // without a breaking CLI change.
-            bail!(
-                "tier-set schema not yet shipped (ADR-0010 Phase 2); \
-                 the `aih validate tier` surface is reserved \
-                 and will activate once `core/schema/tier_set.v1.json` lands"
-            );
+        ValidateCmd::Tier { input } => {
+            let body = read_input(&input)?;
+            tier_set_validator()
+                .validate_str(&body, Mode::Strict)
+                .map_err(|e| anyhow::anyhow!("tier-set schema validation failed: {e}"))?;
+            // Round-trip through the typed struct so deny_unknown_fields fires too.
+            let _: TierSet =
+                serde_json::from_str(&body).context("materialising TierSet")?;
+            println!("ok");
+            Ok(())
         }
     }
 }

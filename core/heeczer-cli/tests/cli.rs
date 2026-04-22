@@ -153,12 +153,12 @@ fn validate_profile_rejects_event_payload() {
 }
 
 #[test]
-fn validate_tier_surface_is_reserved_until_schema_lands() {
+fn validate_tier_set_default_passes() {
     aih()
         .args(["validate", "tier", "../schema/tiers/default.v1.json"])
         .assert()
-        .failure()
-        .stderr(predicate::str::contains("schema not yet shipped"));
+        .success()
+        .stdout(predicate::str::contains("ok"));
 }
 
 #[test]
