@@ -1,0 +1,9 @@
+# Generated files
+.next/
+out/
+node_modules/
+*.tsbuildinfo
+dist/
+.playwright-report/
+test-results/
+playwright-report/

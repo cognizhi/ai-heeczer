@@ -11,18 +11,20 @@ Ship a Next.js dashboard container that renders summary metrics, trends, leaderb
 ## Checklist
 
 ### Scaffolding
-- [ ] `dashboard/` Next.js (App Router) + TypeScript + Tailwind + shadcn/ui.
+- [x] `dashboard/` Next.js 15 (App Router) + TypeScript + Tailwind CSS.
+- [x] Security headers in `next.config.ts` (HSTS, CSP, X-Frame-Options, X-Content-Type-Options).
 - [ ] Container image with non-root user; HSTS; CSP locked down.
 - [ ] Auth integration (session-based; OIDC pluggable).
 
 ### User dashboard pages
-- [ ] Overview: total tasks, HEE (min/h/d), FEC, confidence distribution.
+- [x] Overview: total tasks, HEE (min/h/d), FEC, confidence distribution (scaffold).
 - [ ] Trends: time-series with date-range filter.
 - [ ] Leaderboards: by user, team, project, framework, category.
 - [ ] Event drill-down with explainability trace view.
 - [ ] Queue health: depth, age, throughput, retries, DLQ.
 
 ### Admin console
+- [x] `/test-orchestration` view: fixture browser → pipeline runner → golden diff (ADR-0012 scaffold).
 - [ ] Tier management.
 - [ ] Scoring profile management.
 - [ ] Rate management with effective-date editing.
@@ -36,13 +38,14 @@ Ship a Next.js dashboard container that renders summary metrics, trends, leaderb
 - [ ] Confidence badge visible on every score.
 
 ### Tests (PRD §28.4)
-- [ ] Vitest + RTL unit tests for components.
-- [ ] Playwright E2E for: summary render, filter+drill-down, explainability load, settings persistence, RBAC denial.
+- [x] Vitest + RTL unit tests for components — 9/9 pass (ConfidenceBadge, MetricCard, FixtureBrowser).
+- [x] Playwright E2E skeleton: overview heading, test-orchestration page, Run button state.
+- [ ] Full Playwright E2E for: summary render, filter+drill-down, explainability load, settings persistence, RBAC denial.
 - [ ] Accessibility assertions in Playwright (axe).
 - [ ] Visual regression for the overview and explainability pages.
 
 ### Docs
-- [ ] `dashboard/README.md`.
+- [x] `dashboard/README.md`.
 - [ ] `docs/architecture/dashboard.md` with data contract.
 
 ## Acceptance
