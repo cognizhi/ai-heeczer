@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-heeczer.dev/schema/scoring_profile.v1.json",
+  "title": "ai-heeczer scoring profile (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "version", "effective_at", "components", "category_multipliers", "context_multipliers", "confidence", "rounding"],
+  "properties": {
+    "profile_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "effective_at": { "type": "string", "format": "date-time" },
+    "superseded_at": { "type": ["string", "null"], "format": "date-time" },
+    "scoring_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token_divisor", "duration_seconds_divisor", "step_weight", "tool_weight", "artifact_weight", "artifact_cap", "review_weight"],
+      "properties": {
+        "token_divisor": { "type": "string" },
+        "duration_seconds_divisor": { "type": "string" },
+        "step_weight": { "type": "string" },
+        "tool_weight": { "type": "string" },
+        "artifact_weight": { "type": "string" },
+        "artifact_cap": { "type": "integer", "minimum": 0 },
+        "output_default_weight": { "type": "string" },
+        "review_weight": { "type": "string" }
+      }
+    },
+    "category_multipliers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "required": ["uncategorized"]
+    },
+    "category_output_weights": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "category_review_weights": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "context_multipliers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retry_per_unit", "retry_cap", "ambiguity_high_temp", "ambiguity_temp_threshold", "risk_high", "risk_medium", "risk_low", "human_in_loop", "outcome"],
+      "properties": {
+        "retry_per_unit": { "type": "string" },
+        "retry_cap": { "type": "string" },
+        "ambiguity_high_temp": { "type": "string" },
+        "ambiguity_temp_threshold": { "type": "string" },
+        "risk_high": { "type": "string" },
+        "risk_medium": { "type": "string" },
+        "risk_low": { "type": "string" },
+        "human_in_loop": { "type": "string" },
+        "outcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["success", "partial_success", "failure", "timeout"],
+          "properties": {
+            "success": { "type": "string" },
+            "partial_success": { "type": "string" },
+            "failure": { "type": "string" },
+            "timeout": { "type": "string" }
+          }
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "missing_category_penalty", "missing_tokens_penalty", "missing_steps_penalty", "missing_tools_penalty", "retry_penalty_per_unit", "retry_penalty_cap", "high_risk_cap", "min", "max"],
+      "properties": {
+        "base": { "type": "string" },
+        "missing_category_penalty": { "type": "string" },
+        "missing_tokens_penalty": { "type": "string" },
+        "missing_steps_penalty": { "type": "string" },
+        "missing_tools_penalty": { "type": "string" },
+        "retry_penalty_per_unit": { "type": "string" },
+        "retry_penalty_cap": { "type": "string" },
+        "high_risk_cap": { "type": "string" },
+        "min": { "type": "string" },
+        "max": { "type": "string" }
+      }
+    },
+    "rounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minutes_dp", "hours_dp", "days_dp", "fec_dp", "confidence_dp"],
+      "properties": {
+        "minutes_dp": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "hours_dp": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "days_dp": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "fec_dp": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "confidence_dp": { "type": "integer", "minimum": 0, "maximum": 8 }
+      }
+    }
+  }
+}

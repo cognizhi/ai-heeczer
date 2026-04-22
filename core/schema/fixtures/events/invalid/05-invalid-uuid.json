@@ -1,0 +1,10 @@
+{
+  "spec_version": "1.0",
+  "event_id": "not-a-uuid",
+  "timestamp": "2026-04-22T10:00:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_x",
+  "task": { "name": "bad_uuid", "outcome": "success" },
+  "metrics": { "duration_ms": 100 },
+  "meta": { "sdk_language": "test", "sdk_version": "0.0.0" }
+}

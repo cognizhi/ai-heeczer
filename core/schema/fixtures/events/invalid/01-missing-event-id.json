@@ -1,0 +1,9 @@
+{
+  "spec_version": "1.0",
+  "timestamp": "2026-04-22T10:00:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_x",
+  "task": { "name": "no_id", "outcome": "success" },
+  "metrics": { "duration_ms": 100 },
+  "meta": { "sdk_language": "test", "sdk_version": "0.0.0" }
+}

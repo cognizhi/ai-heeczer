@@ -1,0 +1,44 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000001",
+  "correlation_id": "task-batch-001",
+  "timestamp": "2026-04-22T09:46:00Z",
+  "framework_source": "langgraph",
+  "workspace_id": "ws_001",
+  "project_id": "proj_001",
+  "identity": {
+    "user_id": "usr_123",
+    "team_id": "tm_456",
+    "business_unit_id": "bu_007",
+    "tier_id": "tier_mid_eng"
+  },
+  "task": {
+    "name": "generate_api_spec",
+    "category": "code_generation",
+    "sub_category": "api_design",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 14500,
+    "tokens_prompt": 1200,
+    "tokens_completion": 4000,
+    "tool_call_count": 3,
+    "workflow_steps": 5,
+    "retries": 1,
+    "artifact_count": 4,
+    "output_size_proxy": 2.5
+  },
+  "context": {
+    "human_in_loop": false,
+    "review_required": true,
+    "temperature": 0.2,
+    "risk_class": "medium",
+    "tags": ["frontend", "jira-sync"]
+  },
+  "meta": {
+    "sdk_language": "python",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {}
+  }
+}

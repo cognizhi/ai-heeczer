@@ -1,0 +1,36 @@
+{
+  "tier_set_id": "default",
+  "version": "1.0.0",
+  "effective_at": "2026-04-22T00:00:00Z",
+  "currency": "USD",
+  "tiers": [
+    {
+      "tier_id": "tier_principal_eng",
+      "display_name": "Principal Engineer",
+      "productivity_multiplier": "3.0",
+      "hourly_rate": "200",
+      "working_hours_per_day": "8"
+    },
+    {
+      "tier_id": "tier_senior_eng",
+      "display_name": "Senior Engineer",
+      "productivity_multiplier": "2.0",
+      "hourly_rate": "125",
+      "working_hours_per_day": "8"
+    },
+    {
+      "tier_id": "tier_mid_eng",
+      "display_name": "Mid-Level Engineer",
+      "productivity_multiplier": "1.0",
+      "hourly_rate": "75",
+      "working_hours_per_day": "8"
+    },
+    {
+      "tier_id": "tier_junior_eng",
+      "display_name": "Junior Engineer",
+      "productivity_multiplier": "0.5",
+      "hourly_rate": "45",
+      "working_hours_per_day": "8"
+    }
+  ]
+}
