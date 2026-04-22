@@ -1,9 +1,11 @@
 # ai-heeczer
 
 A reproducible scoring engine that turns raw AI agent task telemetry into
-**Behavioral Currency Units (BCU)** and **Financial Equivalent Cost (FEC)** so
-that engineering organizations can evaluate AI productivity with the same rigor
-as human work.
+**Human Equivalent Effort (HEE)** and **Financial Equivalent Cost (FEC)** so
+that engineering organizations can evaluate AI productivity with the same
+rigor as human work. HEE is aggregated from per-event **Base Cognitive Units
+(BCU)**; the full pipeline (BCU → minutes → hours/days/FEC) is defined in PRD
+§14.
 
 This repository delivers the spec, the scoring core, language SDKs, an
 ingestion service, a dashboard, and the operational tooling to ship them. See
@@ -28,8 +30,8 @@ land iteratively on top of this foundation.
 ## Quickstart
 
 ```bash
-# install rust toolchain (rust-toolchain.toml pins 1.88)
-rustup show
+# install rust toolchain (rust-toolchain.toml pins 1.88) then verify everything
+make bootstrap
 
 # build & test the entire workspace
 make test
@@ -86,4 +88,4 @@ must keep the canonical scoring tests green and may not bump
 
 ## License
 
-[Apache-2.0](LICENSE).
+[MIT](LICENSE).

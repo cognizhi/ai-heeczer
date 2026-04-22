@@ -47,7 +47,7 @@ The canonical contract is asserted by:
 
 `heeczer-storage` enforces append-only semantics for `aih_events` and
 `aih_scores` via SQLite triggers (`aih_events_no_update`, `aih_events_no_delete`,
-matching pair on scores). Tombstones live in `aih_event_tombstones` so we can
+matching pair on scores). Tombstones live in `aih_tombstones` so we can
 honor data subject deletion requests without breaking the immutability of the
 event log itself.
 
@@ -57,7 +57,7 @@ Two versions matter:
 
 | Constant          | Defined in                               | Bumps when                                    |
 | ----------------- | ---------------------------------------- | --------------------------------------------- |
-| `SPEC_VERSION`    | `core/heeczer-core/src/version.rs`       | Schema shape changes (additive = same major)  |
+| `SPEC_VERSION`    | `core/heeczer-core/src/version.rs`       | Schema shape changes; currently `"1.0"` (PRD `spec_version` field) |
 | `SCORING_VERSION` | `core/heeczer-core/src/version.rs`       | Any math, rounding, or default change (semver)|
 
 Both are baked into `ScoreResult` so every persisted score is reproducible.

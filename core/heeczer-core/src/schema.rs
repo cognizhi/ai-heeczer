@@ -10,13 +10,16 @@ pub const EVENT_SCHEMA_V1: &str = include_str!("../../schema/event.v1.json");
 pub const SCORING_PROFILE_SCHEMA_V1: &str = include_str!("../../schema/scoring_profile.v1.json");
 
 /// Validation mode. PRD §13.
+///
+/// Only `Strict` exists today. A future `Compatibility` mode (drop a known
+/// allowlist of unknown top-level fields with a warning) is planned but is not
+/// implemented; we refuse to expose a no-op variant and silently mislead
+/// callers. See `docs/plan/0001-schema-and-contracts.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Mode {
     /// Strict mode rejects every unknown top-level field outside `meta.extensions`.
     Strict,
-    /// Compatibility mode drops unknown top-level fields silently. Reserved for
-    /// explicit migration paths; never the default.
-    Compatibility,
 }
 
 impl Default for Mode {

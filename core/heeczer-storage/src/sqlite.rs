@@ -1,26 +1,55 @@
 //! SQLite backend. Uses `sqlx::SqlitePool`; migrations are embedded.
 
 use crate::error::Result;
-use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::{ConnectOptions, Executor, SqlitePool};
 use std::path::Path;
+use std::str::FromStr;
 
 /// Embedded migrations (`core/heeczer-storage/migrations/`).
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
-/// Open a SQLite pool. Pass `:memory:` for an ephemeral database.
+/// Open a SQLite pool. Pass `sqlite::memory:` for an ephemeral database.
+///
+/// `:memory:` databases are private per-connection in SQLite, so we cap the
+/// pool to a single connection to avoid silent state fragmentation. We also
+/// enforce `PRAGMA foreign_keys = ON` on every acquired connection because the
+/// pragma is per-connection and resets on reconnect.
 pub async fn open(url: &str) -> Result<SqlitePool> {
+    let opts = SqliteConnectOptions::from_str(url)?.disable_statement_logging();
+    let is_memory = url.contains(":memory:");
     let pool = SqlitePoolOptions::new()
-        .max_connections(8)
-        .connect(url)
+        .max_connections(if is_memory { 1 } else { 8 })
+        .after_connect(|conn, _| {
+            Box::pin(async move {
+                conn.execute("PRAGMA foreign_keys = ON;").await?;
+                Ok(())
+            })
+        })
+        .connect_with(opts)
         .await?;
     Ok(pool)
 }
 
-/// Open or create a SQLite database at the given filesystem path.
+/// Open or create a SQLite database at the given filesystem path. Avoids
+/// string DSN construction so that paths containing `?`, `#`, or `&` cannot be
+/// reinterpreted as URL query/fragment by sqlx (CWE-88 hardening).
 pub async fn open_path(path: &Path) -> Result<SqlitePool> {
-    let url = format!("sqlite://{}?mode=rwc", path.display());
-    open(&url).await
+    let opts = SqliteConnectOptions::new()
+        .filename(path)
+        .create_if_missing(true)
+        .disable_statement_logging();
+    let pool = SqlitePoolOptions::new()
+        .max_connections(8)
+        .after_connect(|conn, _| {
+            Box::pin(async move {
+                conn.execute("PRAGMA foreign_keys = ON;").await?;
+                Ok(())
+            })
+        })
+        .connect_with(opts)
+        .await?;
+    Ok(pool)
 }
 
 /// Run all pending migrations.

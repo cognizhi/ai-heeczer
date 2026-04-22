@@ -2,6 +2,7 @@
 
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::sync::OnceLock;
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -9,6 +10,16 @@ use heeczer_core::{
     schema::{EventValidator, Mode},
     score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
+
+/// Hard upper bound for any single JSON document the CLI accepts. Prevents an
+/// unbounded stdin from turning into an OOM. The same constant should be
+/// honored by the future ingestion service (plan 0004).
+const MAX_INPUT_BYTES: u64 = 1024 * 1024;
+
+fn validator() -> &'static EventValidator {
+    static V: OnceLock<EventValidator> = OnceLock::new();
+    V.get_or_init(EventValidator::new_v1)
+}
 
 #[derive(Debug, Parser)]
 #[command(name = "aih", version, about = "ai-heeczer local developer CLI", long_about = None)]
@@ -45,11 +56,7 @@ enum Command {
 #[derive(Debug, Subcommand)]
 enum SchemaCmd {
     /// Validate a JSON event against `event.v1.json`. Pass `-` to read stdin.
-    Validate {
-        input: String,
-        #[arg(long, value_enum, default_value_t = ValidationMode::Strict)]
-        mode: ValidationMode,
-    },
+    Validate { input: String },
 }
 
 #[derive(Debug, Subcommand)]
@@ -68,12 +75,12 @@ enum MigrateCmd {
     },
     /// Print the current migration version.
     Status {
-        #[arg(long, default_value = "sqlite::memory:")]
+        #[arg(long)]
         database_url: String,
     },
     /// Verify the database has all expected migrations applied.
     Verify {
-        #[arg(long, default_value = "sqlite::memory:")]
+        #[arg(long)]
         database_url: String,
     },
 }
@@ -103,26 +110,11 @@ enum OutputFormat {
     Table,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum ValidationMode {
-    Strict,
-    Compatibility,
-}
-
-impl From<ValidationMode> for Mode {
-    fn from(v: ValidationMode) -> Self {
-        match v {
-            ValidationMode::Strict => Mode::Strict,
-            ValidationMode::Compatibility => Mode::Compatibility,
-        }
-    }
-}
-
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Command::Schema { sub } => match sub {
-            SchemaCmd::Validate { input, mode } => cmd_schema_validate(&input, mode.into()),
+            SchemaCmd::Validate { input } => cmd_schema_validate(&input),
         },
         Command::Score(args) => cmd_score(&args),
         Command::Fixtures { sub } => match sub {
@@ -138,18 +130,27 @@ fn read_input(arg: &str) -> Result<String> {
     if arg == "-" {
         let mut s = String::new();
         std::io::stdin()
+            .lock()
+            .take(MAX_INPUT_BYTES + 1)
             .read_to_string(&mut s)
             .context("reading stdin")?;
+        if s.len() as u64 > MAX_INPUT_BYTES {
+            bail!("input larger than {MAX_INPUT_BYTES} bytes");
+        }
         Ok(s)
     } else {
+        let meta = std::fs::metadata(arg).with_context(|| format!("stat {arg}"))?;
+        if meta.len() > MAX_INPUT_BYTES {
+            bail!("input file {arg} is larger than {MAX_INPUT_BYTES} bytes");
+        }
         std::fs::read_to_string(arg).with_context(|| format!("reading {arg}"))
     }
 }
 
-fn cmd_schema_validate(input: &str, mode: Mode) -> Result<()> {
+fn cmd_schema_validate(input: &str) -> Result<()> {
     let body = read_input(input)?;
-    let v = EventValidator::new_v1();
-    v.validate_str(&body, mode)
+    validator()
+        .validate_str(&body, Mode::Strict)
         .map_err(|e| anyhow::anyhow!("schema validation failed: {e}"))?;
     println!("ok");
     Ok(())
@@ -157,11 +158,11 @@ fn cmd_schema_validate(input: &str, mode: Mode) -> Result<()> {
 
 fn cmd_score(args: &ScoreArgs) -> Result<()> {
     let body = read_input(&args.input)?;
-    let event: Event = serde_json::from_str(&body).context("parsing event JSON")?;
-
-    EventValidator::new_v1()
-        .validate(&serde_json::from_str(&body)?, Mode::Strict)
+    let value: serde_json::Value = serde_json::from_str(&body).context("parsing event JSON")?;
+    validator()
+        .validate(&value, Mode::Strict)
         .map_err(|e| anyhow::anyhow!("schema validation failed: {e}"))?;
+    let event: Event = serde_json::from_value(value).context("materialising Event")?;
 
     let profile = match &args.profile {
         Some(p) => serde_json::from_str(&std::fs::read_to_string(p)?)?,
@@ -231,7 +232,6 @@ fn cmd_diff(a: &PathBuf, b: &PathBuf) -> Result<()> {
         println!("equal");
         Ok(())
     } else {
-        eprintln!("differ");
         bail!("ScoreResult JSONs differ");
     }
 }

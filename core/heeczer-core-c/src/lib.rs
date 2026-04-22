@@ -43,7 +43,15 @@ pub unsafe extern "C" fn heeczer_score_json(
 ) -> *mut c_char {
     let response = catch_unwind(AssertUnwindSafe(|| {
         let event_s = unsafe { cstr(event_json) }.ok_or("event_json must be non-null")?;
-        let event: Event = serde_json::from_str(event_s).map_err(|e| e.to_string())?;
+        // Parse once and gate on the canonical schema before materialising the
+        // typed Event. Every non-Rust SDK funnels through this entry point and
+        // must see the same strict-mode rejection the CLI gives (PRD §13).
+        let event_value: serde_json::Value =
+            serde_json::from_str(event_s).map_err(|e| e.to_string())?;
+        heeczer_core::schema::EventValidator::new_v1()
+            .validate(&event_value, heeczer_core::schema::Mode::Strict)
+            .map_err(|e| e.to_string())?;
+        let event: Event = serde_json::from_value(event_value).map_err(|e| e.to_string())?;
 
         let profile = if profile_json.is_null() {
             ScoringProfile::default_v1()

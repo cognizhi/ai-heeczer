@@ -1,8 +1,9 @@
 -- ai-heeczer initial schema (plan 0003, PRD §20).
 -- Backend: SQLite. PostgreSQL parity migration ships in plan 0004.
-
-PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
+--
+-- PRAGMA foreign_keys / journal_mode are connection-scoped in SQLite and are
+-- set by the storage layer in `after_connect`, not here, because journal_mode
+-- cannot be changed inside a transaction (which sqlx wraps each migration in).
 
 CREATE TABLE aih_workspaces (
     workspace_id   TEXT PRIMARY KEY,

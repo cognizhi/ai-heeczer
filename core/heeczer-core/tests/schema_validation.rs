@@ -11,8 +11,7 @@ fn fixture_dir(rel: &str) -> PathBuf {
 fn load_jsons(dir: &str) -> Vec<(String, String)> {
     let p = fixture_dir(dir);
     let mut out = Vec::new();
-    for entry in std::fs::read_dir(&p).unwrap_or_else(|e| panic!("read_dir {}: {e}", p.display()))
-    {
+    for entry in std::fs::read_dir(&p).unwrap_or_else(|e| panic!("read_dir {}: {e}", p.display())) {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) == Some("json") {
