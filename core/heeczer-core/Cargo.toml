@@ -1,0 +1,33 @@
+[package]
+name = "heeczer-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Deterministic, fixed-point scoring core for ai-heeczer (HEE/FEC analytics for agentic AI)."
+readme = "README.md"
+keywords = ["ai", "telemetry", "scoring", "analytics", "observability"]
+categories = ["science", "algorithms"]
+
+[lib]
+name = "heeczer_core"
+
+[dependencies]
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+jsonschema = { workspace = true }
+time = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+insta = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true
