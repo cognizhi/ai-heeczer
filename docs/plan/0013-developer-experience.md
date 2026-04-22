@@ -11,14 +11,14 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 ## Checklist
 
 ### Makefile (PRD §12.13)
-- [ ] Targets: `bootstrap`, `format`, `lint`, `unit-test`, `integration-test`, `contract-test`, `parity-test`, `ui-test`, `migration-test`, `benchmark-smoke`, `test`, `build`, `release-dry-run`, `docs`, `clean`.
-- [ ] Help target `make help` lists every target with one-line description.
-- [ ] Idempotent `bootstrap` detects existing toolchains.
+- [x] Targets: `bootstrap`, `format`, `lint`, `unit-test`, `integration-test`, `contract-test`, `parity-test`, `ui-test`, `migration-test`, `benchmark-smoke`, `test`, `build`, `release-dry-run`, `docs`, `clean`. (PR #1)
+- [x] Help target `make help` lists every target with one-line description. (PR #1)
+- [x] Idempotent `bootstrap` detects existing toolchains. (PR #1)
 
 ### Toolchain pinning
-- [ ] `rust-toolchain.toml`.
-- [ ] `.nvmrc`.
-- [ ] `.python-version` + `uv.lock`.
+- [x] `rust-toolchain.toml`. (PR #1)
+- [x] `.nvmrc`. (PR #1)
+- [ ] `.python-version` + `uv.lock`. (partial: `.python-version` added PR #1; `uv.lock` pending Python SDK work)
 - [ ] `go.work` + `go.mod` versions aligned.
 - [ ] Maven properties pinned.
 
@@ -37,8 +37,8 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 - [ ] `docker-compose.dev.yml` brings up ingestion service + PostgreSQL + dashboard for local dev.
 
 ### Local CLI (`aih`, ADR-0010)
-- [ ] `make cli-install` builds and installs `aih` into `~/.cargo/bin`.
-- [ ] `make cli-smoke` runs `aih schema validate`, `aih score`, and `aih diff` against shipped fixtures and exits non-zero on any drift.
+- [x] `make cli-install` builds and installs `aih` into `~/.cargo/bin`. (PR #1)
+- [x] `make cli-smoke` runs `aih schema validate`, `aih score`, and `aih diff` against shipped fixtures and exits non-zero on any drift. (PR #1)
 - [ ] README quickstart includes `aih score examples/event.json` as the first thing a contributor runs.
 
 ### Editor configs

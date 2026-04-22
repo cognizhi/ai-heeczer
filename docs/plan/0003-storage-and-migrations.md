@@ -11,30 +11,30 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 ## Checklist
 
 ### Tables (PRD §20)
-- [ ] `aih_workspaces` — tenant root.
-- [ ] `aih_api_keys` — hashed keys per workspace.
-- [ ] `aih_events` — append-only raw normalized events keyed by `event_id`.
-- [ ] `aih_scores` — append-only, keyed by `(event_id, scoring_version, scoring_profile_id)`.
-- [ ] `aih_jobs` — queue rows for image-mode workers (ADR-0006).
-- [ ] `aih_tiers` — append-only with `effective_at`.
-- [ ] `aih_rates` — append-only with `effective_at`.
-- [ ] `aih_scoring_profiles` — append-only with `effective_at`.
-- [ ] `aih_audit_log` — every config change and re-scoring event.
-- [ ] `aih_daily_aggregates` — derived rollups.
-- [ ] `aih_tombstones` — for hard-deletion (PRD §12.17).
-- [ ] `aih_schema_migrations` — migration history (ADR-0004).
+- [x] `aih_workspaces` — tenant root. (PR #1)
+- [x] `aih_api_keys` — hashed keys per workspace. (PR #1)
+- [x] `aih_events` — append-only raw normalized events keyed by `event_id`. (PR #1)
+- [x] `aih_scores` — append-only, keyed by `(event_id, scoring_version, scoring_profile_id)`. (PR #1)
+- [x] `aih_jobs` — queue rows for image-mode workers (ADR-0006). (PR #1)
+- [x] `aih_tiers` — append-only with `effective_at`. (PR #1)
+- [x] `aih_rates` — append-only with `effective_at`. (PR #1)
+- [x] `aih_scoring_profiles` — append-only with `effective_at`. (PR #1)
+- [x] `aih_audit_log` — every config change and re-scoring event. (PR #1)
+- [x] `aih_daily_aggregates` — derived rollups. (PR #1)
+- [x] `aih_tombstones` — for hard-deletion (PRD §12.17). (PR #1)
+- [x] `aih_schema_migrations` — migration history view alias over `_sqlx_migrations` (ADR-0004). (PR #1)
 
 ### Indexes
-- [ ] `aih_events(workspace_id, timestamp)`, `aih_events(workspace_id, event_id)` unique.
-- [ ] `aih_scores(workspace_id, event_id, scoring_version)` unique.
-- [ ] `aih_scores(workspace_id, scoring_profile_id, created_at)` for dashboard rollups.
-- [ ] `aih_jobs(state, available_at)` partial index for queue scans.
-- [ ] `aih_audit_log(workspace_id, created_at)`.
+- [x] `aih_events(workspace_id, timestamp)`, `aih_events(workspace_id, event_id)` unique. (PR #1)
+- [x] `aih_scores(workspace_id, event_id, scoring_version)` unique. (PR #1)
+- [x] `aih_scores(workspace_id, scoring_profile_id, created_at)` for dashboard rollups. (PR #1)
+- [x] `aih_jobs(state, available_at)` partial index for queue scans. (PR #1)
+- [x] `aih_audit_log(workspace_id, created_at)`. (PR #1)
 
 ### Migrations (ADR-0004)
 - [ ] Wire `sqlx::migrate!` into the ingestion service crate.
-- [ ] Author `0001_init.sql` with separate SQLite/PostgreSQL variants where dialects diverge.
-- [ ] Add `aih migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan).
+- [x] Author `0001_init.sql` with SQLite dialect (PR #1); PostgreSQL parity migration deferred to plan 04.
+- [x] Add `aih migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan). (PR #1)
 - [ ] Document migration authoring guide in `docs/architecture/data-model.md`.
 
 ### Multi-tenancy
@@ -42,8 +42,8 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Repository layer enforces workspace scoping at the type level (newtype wrapper).
 
 ### Append-only enforcement
-- [ ] `aih_events` and `aih_scores` have DB triggers (PG) and runtime guards (SQLite + Rust) preventing UPDATE/DELETE except via tombstone insert.
-- [ ] Re-scoring path inserts new score rows; never updates.
+- [ ] `aih_events` and `aih_scores` have DB triggers (PG) and runtime guards (SQLite + Rust) preventing UPDATE/DELETE except via tombstone insert. (partial: SQLite triggers for both tables implemented PR #1; PostgreSQL triggers pending plan 04)
+- [x] Re-scoring path inserts new score rows; never updates. (PR #1)
 
 ### Retention and deletion (PRD §12.17)
 - [ ] Background sweeper deletes events past retention; writes tombstone rows.
@@ -51,9 +51,9 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Aggregates remain anonymized after raw deletion.
 
 ### Tests
-- [ ] Migration test: fresh-install on SQLite and PostgreSQL.
+- [ ] Migration test: fresh-install on SQLite and PostgreSQL. (partial: SQLite covered via CLI integration test PR #1; PostgreSQL pending)
 - [ ] Migration test: incremental upgrade from each prior version.
-- [ ] Unit: append-only guard rejects updates/deletes.
+- [ ] Unit: append-only guard rejects updates/deletes. (`aih_events` trigger tested PR #1; `aih_scores` trigger test pending)
 - [ ] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4).
 - [ ] Integration: conflicting payload for same `event_id` rejected with `409 Conflict` and audit-log entry.
 - [ ] Integration: tombstone prevents re-scoring of deleted event.

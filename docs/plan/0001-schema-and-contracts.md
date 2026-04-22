@@ -17,21 +17,21 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 ## Checklist
 
 ### Schema definition
-- [ ] Author `core/schema/event.v1.json` matching PRD §13.
-- [ ] Add validation rules: `spec_version` mandatory, `meta.extensions` is the only unknown-field bucket, strict mode rejects all other unknowns.
-- [ ] Add fixture set: `valid/`, `invalid/`, `edge/` (min payload, max payload, unicode, missing optional fields, extension passthrough).
+- [x] Author `core/schema/event.v1.json` matching PRD §13. (PR #1)
+- [x] Add validation rules: `spec_version` mandatory, `meta.extensions` is the only unknown-field bucket, strict mode rejects all other unknowns. (PR #1)
+- [x] Add fixture set: `valid/`, `invalid/`, `edge/` (min payload, max payload, unicode, missing optional fields, extension passthrough). (PR #1)
 - [ ] Document the schema authoring guide in `docs/architecture/data-model.md`.
 
 ### Generation and bindings
-- [ ] Generate Rust types via `typify` or hand-written serde structs validated against the schema.
+- [x] Generate Rust types via hand-written serde structs validated against the schema. (PR #1)
 - [ ] Generate TS types via `json-schema-to-typescript`.
 - [ ] Generate Python types via `datamodel-code-generator` (pydantic v2).
 - [ ] Generate Go types via `quicktype` or hand-written, validated against the schema.
 - [ ] Generate Java POJOs via `jsonschema2pojo`.
 
 ### Tests
-- [ ] Unit: schema validator round-trips every valid fixture.
-- [ ] Unit: schema validator rejects every invalid fixture with the documented error code.
+- [x] Unit: schema validator round-trips every valid fixture. (PR #1)
+- [x] Unit: schema validator rejects every invalid fixture with the documented error code. (PR #1)
 - [ ] Contract: all five bindings produce byte-equal normalized JSON for every valid fixture.
 - [ ] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode.
 

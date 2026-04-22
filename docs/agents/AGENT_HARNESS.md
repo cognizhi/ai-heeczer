@@ -32,6 +32,7 @@ Every behavior change follows this exact loop. No exceptions.
 
 1. **Locate** the PRD section(s) and ADR(s) the change touches. Cite them in the PR description.
 2. **Plan** — pick or create a checklist item under `docs/plan/`. Mark it in-progress.
+   Updating the relevant `docs/plan/*` file in the same change is mandatory whenever the work changes status, scope, sequencing, acceptance criteria, shipped behavior, or follow-up backlog for that planned area.
 3. **Contract** — if the change touches a contract (schema, API, ABI, scoring math, public SDK surface, Makefile target, dashboard data shape), update the contract doc and fixtures **first**.
 4. **Failing test** — write the failing test (unit, integration, contract, parity, UI, migration, benchmark — pick the right layer per `docs/implementation/test-strategy.md`).
 5. **Implement** — minimum code to pass the test. No drive-by refactors.
@@ -40,7 +41,7 @@ Every behavior change follows this exact loop. No exceptions.
    - README (root or per-package)
    - architecture docs
    - relevant ADR (or write a new one)
-   - relevant `docs/plan/*` checklist (mark item done)
+   - relevant `docs/plan/*` file (status/checklist/backlog/links) — mandatory for every relevant change, not just at completion
    - per-binding CHANGELOG when public surface changes
    - release impact note ([template](../../.github/RELEASE_IMPACT_TEMPLATE.md)) if package contract changed (PRD §27)
 8. **CI** — every test layer used has a corresponding required GitHub Actions job. If you added a new layer, add the job in the same PR and update branch protection requirements in the PR description.
@@ -60,6 +61,8 @@ Every behavior change follows this exact loop. No exceptions.
 | CI/CD | release runbook, branch protection list, ADR-0009 if release flow changes |
 | Dependencies | license check, security audit run, SBOM regeneration on next release |
 | Makefile | README quickstart, CI jobs that invoke the target, `docs/plan/0013-developer-experience.md` |
+
+If a change maps to an existing plan slice and the corresponding `docs/plan/*` file is not updated in the same PR, the change is incomplete.
 
 ## 4. Subagents and when to invoke them
 
