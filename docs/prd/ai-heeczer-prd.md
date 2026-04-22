@@ -441,6 +441,12 @@ Required MVP subcommands:
 - `aih migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the previously planned `heeczerctl` binary).
 - `aih version` — print CLI, `scoring_version`, `spec_version`, and core crate versions.
 
+Phase 2 subcommands (per ADR-0010 amendment, 2026-04-23):
+- `aih score detail` — same scoring path as `aih score`, formatted explainability trace.
+- `aih validate profile|tier` — validate scoring-profile / tier-set JSONs against their schemas.
+- `aih replay <DB_URL> <event_id>` — read-only re-score of a persisted event; diffs against the latest persisted score row (does not insert a new row — that is reserved for the dashboard test-orchestration view per §21).
+- `aih bench [--iter N] [--fixture PATH] [--budget-ms M]` — p50/p95/p99 measurement of `score()`; non-zero exit on budget breach.
+
 The CLI's JSON output is part of the public contract (§12.15) and changes are versioned alongside `scoring_version` and `spec_version`. The CLI is published to crates.io and as signed prebuilt binaries on each GitHub Release per §27.4 and §27.5.
 
 ---
@@ -852,6 +858,23 @@ If the dashboard or admin console is in scope for a delivery, the implementation
 - explainability view loading
 - settings persistence
 - role-restricted actions where RBAC exists
+- test-orchestration view: fixture run, golden diff, suite runner, replay (see §21 Test Orchestration View)
+
+### Test Orchestration View
+The dashboard must ship a `/test-orchestration` view that is the GUI counterpart to `aih` (§12.21) and provides back-to-back coverage of the scoring pipeline against shipped or user-supplied fixtures. Decision and scope are recorded in ADR-0012.
+
+Required capabilities:
+- fixture browser over `core/schema/fixtures/` with category and validity filters
+- pipeline runner that scores a selected event + profile + tier-set via the ingestion service's RBAC-gated `POST /v1/test/score-pipeline` endpoint and renders the `ScoreResult` and explainability trace
+- golden diff against any matching `*.score_result.json` fixture, with mismatched JSON paths surfaced inline
+- one-click suite runner over the full golden set with a pass/fail matrix; progress streams via SSE
+- benchmark stub that charts p50/p95 of `score()` over N iterations against a reference fixture
+- replay of any persisted `event_id` against the currently selected profile, inserting new append-only score rows per §20
+
+Constraints:
+- view is RBAC-gated (`Tester`, `Admin`); test-orchestration endpoints sit behind a `features.test_orchestration` feature flag so production deployments can disable them
+- never mutates `aih_events` or `aih_scores` outside the append-only contract (§20)
+- every test-orchestration call emits a structured audit-log entry (§22)
 
 ---
 
