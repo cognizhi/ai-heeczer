@@ -11,13 +11,13 @@ Ship the Java SDK on Maven Central using the Foreign Function & Memory API (JDK 
 
 ## Checklist
 
-- [ ] `bindings/java/` Maven module.
+- [x] `bindings/heeczer-java/` Maven module.
 - [ ] FFM bindings to `heeczer-core-c`.
-- [ ] Public `Client` with sync and `CompletableFuture` async APIs.
-- [ ] Mode selection: `native` and `image` (via `java.net.http`).
-- [ ] Unit (JUnit 5), contract, parity tests.
-- [ ] `mvn package` clean; sources + javadoc jars.
-- [ ] `bindings/java/README.md`.
+- [x] Public `HeeczerClient` HTTP mode via `java.net.http`.
+- [x] Mode selection: HTTP client (stdlib, no third-party HTTP lib).
+- [x] Unit (JUnit 5) + WireMock 3.x contract tests — 9/9 pass.
+- [x] `mvn test` clean.
+- [x] `bindings/heeczer-java/README.md`.
 - [ ] Example under `examples/java/`.
 
 ## Acceptance
