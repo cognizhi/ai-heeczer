@@ -1,0 +1,17 @@
+# gitleaks configuration. See https://github.com/gitleaks/gitleaks
+title = "ai-heeczer gitleaks"
+
+# Inherit the upstream rule set so we keep parity with the action defaults.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Project-specific false positives"
+paths = [
+  '''target/''',
+  '''node_modules/''',
+  '''dist/''',
+  '''docs/adr/.*\.md''',
+  '''docs/plan/.*\.md''',
+  '''docs/prd/.*\.md''',
+]
