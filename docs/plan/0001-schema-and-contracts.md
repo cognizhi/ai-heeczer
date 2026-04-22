@@ -32,6 +32,8 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 ### Tests
 - [x] Unit: schema validator round-trips every valid fixture. (PR #1)
 - [x] Unit: schema validator rejects every invalid fixture with the documented error code. (PR #1)
+- [x] Unit: `ProfileValidator` validates the embedded default profile and rejects unknown / missing fields. (commit 2d11a69)
+- [x] Unit: `ScoringProfile` struct rejects unknown top-level fields via `serde(deny_unknown_fields)`. (commit 2d11a69)
 - [ ] Contract: all five bindings produce byte-equal normalized JSON for every valid fixture.
 - [ ] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode.
 

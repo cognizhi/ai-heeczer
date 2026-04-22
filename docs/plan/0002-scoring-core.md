@@ -55,16 +55,20 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 - [ ] Embed `SCORING_VERSION` constant; build fails if changed without a fixture diff. (partial: constant embedded PR #1; CI fixture-diff guard pending)
 - [ ] Add a `scoring_version_check` script wired into CI.
 - [x] Define `ScoringProfile` JSON schema under `core/schema/scoring_profile.v1.json`; profiles are append-only with `effective_at` and `superseded_at` columns; `superseded_at` is the only mutable field. (PR #1)
+- [x] Property test: rounding idempotence, scale preservation, score purity, JSON round-trip stability, confidence-band bounds, token-BCU linearity. (foundation hardening, commit cb06b1f)
 - [ ] Property test: `Decimal` operations cannot overflow on PRD §29 maximum payload sizes.
 
 ### C ABI
 - [ ] Create `core/heeczer-core-c/` with `cbindgen` headers. (partial: crate created and ABI functions implemented PR #1; `cbindgen` header generation pending)
 - [x] Expose `heeczer_score_json(input_json, profile_json, ...) -> *c_char` and `heeczer_free_string(*c_char)`. (PR #1)
-- [ ] Add memory-leak test using `valgrind` in CI on Linux.
+- [x] C ABI envelope contract written and accepted (ADR-0011). (commit 13d75f1)
+- [x] ABI gap tests: `heeczer_versions_json`, `heeczer_free_string(NULL)` no-op, non-UTF-8 bytes, envelope-is-parseable-JSON. (foundation hardening, commit cb06b1f)
+- [ ] Add a memory-leak test using `valgrind` in CI on Linux.
 
 ### Tests
 - [x] Unit tests for every component. (PR #1 — determinism, golden fixture, and C ABI integration tests)
 - [ ] Golden fixtures: minimum input, maximum input, every category, every outcome, every confidence band. (partial: PRD canonical fixture PR #1; per-outcome, per-category, and per-band fixtures pending)
+- [x] Byte-stable golden ScoreResult JSON file under `core/schema/fixtures/golden/`. (foundation hardening, commit cb06b1f)
 - [ ] Property tests with `proptest` for monotonicity (more tokens → ≥ same BCU).
 - [ ] Benchmark: `score()` p50/p95 on a reference event.
 

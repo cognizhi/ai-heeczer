@@ -42,8 +42,9 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Repository layer enforces workspace scoping at the type level (newtype wrapper).
 
 ### Append-only enforcement
-- [ ] `aih_events` and `aih_scores` have DB triggers (PG) and runtime guards (SQLite + Rust) preventing UPDATE/DELETE except via tombstone insert. (partial: SQLite triggers for both tables implemented PR #1; PostgreSQL triggers pending plan 04)
+- [ ] `aih_events` and `aih_scores` have DB triggers (PG) and runtime guards (SQLite + Rust) preventing UPDATE/DELETE except via tombstone insert. (partial: SQLite triggers for `aih_events` + `aih_scores` + `aih_audit_log` implemented; PostgreSQL triggers pending plan 04)
 - [x] Re-scoring path inserts new score rows; never updates. (PR #1)
+- [x] `aih_audit_log` append-only trigger pair (PRD §22.5). (migration 0002, commit 9fb81aa)
 
 ### Retention and deletion (PRD §12.17)
 - [ ] Background sweeper deletes events past retention; writes tombstone rows.
@@ -53,7 +54,9 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 ### Tests
 - [ ] Migration test: fresh-install on SQLite and PostgreSQL. (partial: SQLite covered via CLI integration test PR #1; PostgreSQL pending)
 - [ ] Migration test: incremental upgrade from each prior version.
-- [ ] Unit: append-only guard rejects updates/deletes. (`aih_events` trigger tested PR #1; `aih_scores` trigger test pending)
+- [x] Unit: append-only guard rejects updates/deletes. (`aih_events`, `aih_scores`, `aih_audit_log` triggers all under test in `tests/hardening.rs`, commit 9fb81aa)
+- [x] Unit: `current_version` matches the embedded migration count, FK enforcement, `aih_jobs.state` CHECK constraint, `open_path` round-trip. (foundation hardening, commit 9fb81aa)
+- [x] Unit: global rows on profiles/tiers/rates cannot duplicate via unique-with-COALESCE indexes (closes nullable-`workspace_id` PK hole). (migration 0002, commit 9fb81aa)
 - [ ] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4).
 - [ ] Integration: conflicting payload for same `event_id` rejected with `409 Conflict` and audit-log entry.
 - [ ] Integration: tombstone prevents re-scoring of deleted event.

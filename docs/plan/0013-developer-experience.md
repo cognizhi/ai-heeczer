@@ -39,6 +39,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 ### Local CLI (`aih`, ADR-0010)
 - [x] `make cli-install` builds and installs `aih` into `~/.cargo/bin`. (PR #1)
 - [x] `make cli-smoke` runs `aih schema validate`, `aih score`, and `aih diff` against shipped fixtures and exits non-zero on any drift. (PR #1)
+- [x] `aih fixtures list` + `aih fixtures show <NAME>` walk the embedded fixture tree (`include_dir!`). (commit 13d75f1)
 - [ ] README quickstart includes `aih score examples/event.json` as the first thing a contributor runs.
 
 ### Editor configs
