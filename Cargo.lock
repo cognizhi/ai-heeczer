@@ -744,6 +744,7 @@ dependencies = [
  "predicates",
  "serde",
  "serde_json",
+ "sqlx",
  "tempfile",
  "tokio",
 ]
