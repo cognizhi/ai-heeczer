@@ -1,0 +1,360 @@
+name: Workflow Defuser
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_to_safest:
+        description: Resolve each action to the latest stable release tag before pinning.
+        required: false
+        type: boolean
+        default: false
+      excluded_tags:
+        description: Comma-separated refs to leave unchanged.
+        required: false
+        type: string
+        default: ""
+      excluded_actions:
+        description: Comma-separated action slugs to leave unchanged.
+        required: false
+        type: string
+        default: ""
+  schedule:
+        - cron: "17 5 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: workflow-defuser
+  cancel-in-progress: false
+
+jobs:
+  scan-and-pin:
+    name: scan and pin actions
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: "${{ github.token }}"
+      BASE_BRANCH: "${{ github.event.repository.default_branch || github.ref_name }}"
+      BRANCH_NAME: "automation/workflow-defuser"
+      UPDATE_TO_SAFEST: "${{ inputs.update_to_safest || 'false' }}"
+      EXCLUDED_TAGS: "${{ inputs.excluded_tags || '' }}"
+      EXCLUDED_ACTIONS: "${{ inputs.excluded_actions || '' }}"
+      SELF_WORKFLOW_REF: "${{ github.workflow_ref }}"
+      PR_TITLE: "chore(ci): pin GitHub Actions to full SHAs"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.repository.default_branch || github.ref_name }}
+          token: ${{ github.token }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Scan and pin actions to full commit SHAs
+        id: scan
+        run: |
+          set -Eeuo pipefail
+          python3 <<'PY'
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import datetime as dt
+          import urllib.parse
+          from typing import Optional
+
+          WORKFLOW_DIR = pathlib.Path('.github/workflows')
+          MIN_ACTION_AGE_DAYS = 14
+          MIN_ACTION_AGE = dt.timedelta(days=MIN_ACTION_AGE_DAYS)
+          NOW = dt.datetime.now(dt.timezone.utc)
+          UPDATE_TO_SAFEST = os.environ.get('UPDATE_TO_SAFEST', 'false').lower() == 'true'
+          EXCLUDED_TAGS = {item.strip() for item in os.environ.get('EXCLUDED_TAGS', '').split(',') if item.strip()}
+          EXCLUDED_ACTIONS = {item.strip() for item in os.environ.get('EXCLUDED_ACTIONS', '').split(',') if item.strip()}
+          GITHUB_OUTPUT = pathlib.Path(os.environ['GITHUB_OUTPUT'])
+          GITHUB_STEP_SUMMARY = pathlib.Path(os.environ['GITHUB_STEP_SUMMARY'])
+          PR_BODY_PATH = pathlib.Path(os.environ['RUNNER_TEMP']) / 'workflow-defuser-pr-body.md'
+          SELF_WORKFLOW_REF = os.environ.get('SELF_WORKFLOW_REF', '')
+
+          USES_RE = re.compile(r'^(\s*(?:-\s+)?uses:\s+)(["\']?)([^@"\'\s]+)@([^"\'\s#]+)(["\']?)(\s*(?:#.*)?)$')
+          FULL_SHA_RE = re.compile(r'^[0-9a-fA-F]{40}$')
+
+          def run_gh(args: list[str]) -> str:
+              result = subprocess.run(
+                  ['gh', *args],
+                  check=False,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+                  text=True,
+              )
+              if result.returncode != 0:
+                  return ''
+              return result.stdout.strip()
+
+          def is_full_sha(value: str) -> bool:
+              return bool(FULL_SHA_RE.fullmatch(value))
+
+          def parse_iso8601(value: str) -> Optional[dt.datetime]:
+              if not value:
+                  return None
+              normalized = value.replace('Z', '+00:00')
+              try:
+                  parsed = dt.datetime.fromisoformat(normalized)
+              except ValueError:
+                  return None
+              if parsed.tzinfo is None:
+                  parsed = parsed.replace(tzinfo=dt.timezone.utc)
+              return parsed.astimezone(dt.timezone.utc)
+
+          def is_old_enough(timestamp: Optional[dt.datetime]) -> bool:
+              if timestamp is None:
+                  return False
+              return (NOW - timestamp) >= MIN_ACTION_AGE
+
+          def extract_repo_slug(target: str) -> Optional[str]:
+              if target.startswith('./') or target.startswith('docker://'):
+                  return None
+              parts = target.split('/')
+              if len(parts) < 2:
+                  return None
+              return f'{parts[0]}/{parts[1]}'
+
+          def parse_workflow_ref(value: str) -> tuple[str, str]:
+              if '@' not in value:
+                  return '', ''
+              target, ref = value.rsplit('@', 1)
+              return target, ref
+
+          SELF_TARGET, SELF_REF = parse_workflow_ref(SELF_WORKFLOW_REF)
+
+          def should_exclude(target: str, ref: str, repo_slug: Optional[str]) -> bool:
+              if ref in EXCLUDED_TAGS:
+                  return True
+              if target in EXCLUDED_ACTIONS:
+                  return True
+              if repo_slug and repo_slug in EXCLUDED_ACTIONS:
+                  return True
+              if target == SELF_TARGET and ref == SELF_REF:
+                  return True
+              return False
+
+          def safest_tag(repo_slug: str) -> str:
+              output = run_gh([
+                  'api',
+                  f'repos/{repo_slug}/releases?per_page=100',
+                  '--jq',
+                  (
+                      'map(select((.draft | not) and (.prerelease | not))) '
+                      '| sort_by(.published_at) '
+                      '| reverse '
+                      '| map(select(.published_at != null)) '
+                      '| map(select(((now - (.published_at | fromdateiso8601)) / 86400) >= 14)) '
+                      '| .[0].tag_name // ""'
+                  ),
+              ])
+              return output
+
+          def commit_date(repo_slug: str, ref: str) -> Optional[dt.datetime]:
+              encoded_ref = urllib.parse.quote(ref, safe='')
+              output = run_gh([
+                  'api',
+                  f'repos/{repo_slug}/commits/{encoded_ref}',
+                  '--jq',
+                  '.commit.committer.date // .commit.author.date // ""',
+              ])
+              return parse_iso8601(output)
+
+          def resolve_sha(repo_slug: str, ref: str) -> str:
+              encoded_ref = urllib.parse.quote(ref, safe='')
+              return run_gh([
+                  'api',
+                  f'repos/{repo_slug}/commits/{encoded_ref}',
+                  '--jq',
+                  '.sha',
+              ])
+
+          def update_file(path: pathlib.Path) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+              original_lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+              updated_lines: list[str] = []
+              changes: list[dict[str, str]] = []
+              skipped: list[dict[str, str]] = []
+
+              for line in original_lines:
+                  match = USES_RE.match(line.rstrip('\n'))
+                  if not match:
+                      updated_lines.append(line)
+                      continue
+
+                  prefix, open_quote, target, ref, close_quote, _suffix = match.groups()
+                  repo_slug = extract_repo_slug(target)
+                  if repo_slug is None or is_full_sha(ref) or should_exclude(target, ref, repo_slug):
+                      updated_lines.append(line)
+                      continue
+
+                  desired_ref = ref
+                  if UPDATE_TO_SAFEST:
+                      safest = safest_tag(repo_slug)
+                      if safest:
+                          desired_ref = safest
+
+                  resolved_at = commit_date(repo_slug, desired_ref)
+                  if not is_old_enough(resolved_at):
+                      updated_lines.append(line)
+                      skipped.append(
+                          {
+                              'file': str(path),
+                              'target': target,
+                              'ref': desired_ref,
+                              'reason': f'younger than {MIN_ACTION_AGE_DAYS} days',
+                          }
+                      )
+                      continue
+
+                  resolved_sha = resolve_sha(repo_slug, desired_ref)
+                  if not is_full_sha(resolved_sha):
+                      updated_lines.append(line)
+                      continue
+
+                  updated_lines.append(f'{prefix}{open_quote}{target}@{resolved_sha}{close_quote} # {desired_ref}\n')
+                  changes.append(
+                      {
+                          'file': str(path),
+                          'target': target,
+                          'from_ref': ref,
+                          'display_ref': desired_ref,
+                          'sha': resolved_sha,
+                      }
+                  )
+
+              if changes:
+                  path.write_text(''.join(updated_lines), encoding='utf-8')
+              return changes, skipped
+
+          all_changes: list[dict[str, str]] = []
+          skipped_changes: list[dict[str, str]] = []
+          for workflow_path in sorted(list(WORKFLOW_DIR.glob('*.yml')) + list(WORKFLOW_DIR.glob('*.yaml'))):
+              changes, skipped = update_file(workflow_path)
+              all_changes.extend(changes)
+              skipped_changes.extend(skipped)
+
+          summary_lines = [
+              '## Workflow Defuser',
+              '',
+          ]
+          pr_body_lines = [
+              '## Summary',
+              'This PR pins GitHub Actions references under `.github/workflows/` to full commit SHAs.',
+              f'- Only action refs whose resolved release or commit is at least {MIN_ACTION_AGE_DAYS} days old are eligible for pinning.',
+              '- This workflow uses the repository runtime token, so pull request checks may need a manual rerun if GitHub suppresses workflow fan-out for the created PR event.',
+              '',
+          ]
+
+          if all_changes:
+              summary_lines.extend(
+                  [
+                      f'- Updated {len(all_changes)} action reference(s).',
+                      '',
+                      '| File | Action | Previous ref | Pinned comment | SHA |',
+                      '| --- | --- | --- | --- | --- |',
+                  ]
+              )
+              pr_body_lines.extend(
+                  [
+                      f'- Updated {len(all_changes)} action reference(s).',
+                      '',
+                      '| File | Action | Previous ref | Pinned comment | SHA |',
+                      '| --- | --- | --- | --- | --- |',
+                  ]
+              )
+              for change in all_changes:
+                  row = (
+                      f"| `{change['file']}` | `{change['target']}` | `{change['from_ref']}` | "
+                      f"`{change['display_ref']}` | `{change['sha']}` |"
+                  )
+                  summary_lines.append(row)
+                  pr_body_lines.append(row)
+          else:
+              summary_lines.append('- No unpinned action references were found.')
+              pr_body_lines.append('- No unpinned action references were found.')
+
+          if skipped_changes:
+              summary_lines.extend(
+                  [
+                      '',
+                      f'### Deferred for age safeguard (< {MIN_ACTION_AGE_DAYS} days)',
+                      '',
+                  ]
+              )
+              pr_body_lines.extend(
+                  [
+                      '',
+                      f'### Deferred for age safeguard (< {MIN_ACTION_AGE_DAYS} days)',
+                      '',
+                  ]
+              )
+              for skipped in skipped_changes:
+                  row = f"- `{skipped['file']}`: `{skipped['target']}@{skipped['ref']}` ({skipped['reason']})"
+                  summary_lines.append(row)
+                  pr_body_lines.append(row)
+
+          GITHUB_STEP_SUMMARY.write_text('\n'.join(summary_lines) + '\n', encoding='utf-8')
+          PR_BODY_PATH.write_text('\n'.join(pr_body_lines) + '\n', encoding='utf-8')
+          with GITHUB_OUTPUT.open('a', encoding='utf-8') as handle:
+              handle.write(f"has_changes={'true' if all_changes else 'false'}\n")
+              handle.write(f'change_count={len(all_changes)}\n')
+          PY
+
+      - name: Create or update pull request
+        if: steps.scan.outputs.has_changes == 'true'
+        run: |
+          set -Eeuo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+                    existing_pr="$(gh pr list \
+                        --repo "$GITHUB_REPOSITORY" \
+                        --head "$BRANCH_NAME" \
+                        --base "$BASE_BRANCH" \
+                        --state open \
+                        --json number \
+                        --jq '.[0].number // empty')"
+
+                    if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+                        git fetch origin "$BRANCH_NAME"
+                        if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+                            git switch "$BRANCH_NAME"
+                        else
+                            git switch -c "$BRANCH_NAME" --track "origin/$BRANCH_NAME"
+                        fi
+                        git reset --hard "origin/$BRANCH_NAME"
+                    else
+                        git switch -c "$BRANCH_NAME"
+                    fi
+
+          git add .github/workflows
+                    if git diff --cached --quiet; then
+                        echo "No staged workflow changes remained after syncing the automation branch." >> "$GITHUB_STEP_SUMMARY"
+                        exit 0
+                    fi
+
+                    git commit -m "$PR_TITLE"
+                    git push origin "$BRANCH_NAME"
+
+          if [[ -n "$existing_pr" ]]; then
+            gh pr edit "$existing_pr" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$PR_TITLE" \
+              --body-file "$RUNNER_TEMP/workflow-defuser-pr-body.md"
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$BASE_BRANCH" \
+              --head "$BRANCH_NAME" \
+              --title "$PR_TITLE" \
+              --body-file "$RUNNER_TEMP/workflow-defuser-pr-body.md"
+          fi
+
+      - name: Report no-op
+        if: steps.scan.outputs.has_changes != 'true'
+        run: echo "No workflow action refs required pinning." >> "$GITHUB_STEP_SUMMARY"

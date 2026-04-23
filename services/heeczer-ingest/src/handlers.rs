@@ -95,7 +95,7 @@ pub async fn ingest_event(
         .map_err(|e| ApiError::Schema(e.to_string()))?;
     let event: Event = serde_json::from_value(body.event.clone())
         .map_err(|e| ApiError::BadRequest(format!("materialising Event: {e}")))?;
-    let event_id = event.event_id.clone();
+    let event_id = event.event_id.to_string();
 
     let profile = ScoringProfile::default_v1();
     let tiers = TierSet::default_v1();
