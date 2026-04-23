@@ -89,3 +89,47 @@ fn output_is_byte_stable_when_serialised_to_json() {
     let b = serde_json::to_string(&score(&event, &profile, &tiers, None).unwrap()).unwrap();
     assert_eq!(a, b);
 }
+
+/// Contract: every fixture under `core/schema/fixtures/events/valid/` must
+/// not only schema-validate (covered in `schema_validation.rs`) but also
+/// score cleanly under the embedded default profile + tier set. Adding a
+/// new use-case fixture that fails to score should fail this test.
+#[test]
+fn every_valid_fixture_scores_under_default_profile() {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let dir = manifest.join("../schema/fixtures/events/valid");
+    let mut entries: Vec<_> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("read_dir {}: {e}", dir.display()))
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("json"))
+        .collect();
+    entries.sort();
+    assert!(
+        !entries.is_empty(),
+        "valid/ must contain at least the PRD canonical fixture"
+    );
+
+    let profile = ScoringProfile::default_v1();
+    let tiers = TierSet::default_v1();
+    for path in entries {
+        let body = std::fs::read_to_string(&path).unwrap();
+        let event: Event = serde_json::from_str(&body)
+            .unwrap_or_else(|e| panic!("deserialize {}: {e}", path.display()));
+        let r = score(&event, &profile, &tiers, None)
+            .unwrap_or_else(|e| panic!("score {} failed: {e:?}", path.display()));
+        assert_eq!(r.scoring_version, "1.0.0");
+        assert_eq!(r.spec_version, "1.0");
+        assert!(
+            r.confidence_score >= dec("0") && r.confidence_score <= dec("1"),
+            "confidence out of [0,1] for {}: {}",
+            path.display(),
+            r.confidence_score
+        );
+        assert!(
+            r.final_estimated_minutes >= dec("0"),
+            "negative minutes for {}: {}",
+            path.display(),
+            r.final_estimated_minutes
+        );
+    }
+}

@@ -31,8 +31,8 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 - [ ] Packaging: `maturin build --release` smoke test. (depends on pyo3 binding above)
 
 ### Docs
-- [ ] `bindings/python/README.md` with quickstart, API reference.
-- [ ] Example app under `examples/python/`.
+- [x] `bindings/heeczer-py/README.md` with quickstart, configuration, methods table, error-kind matrix, and link to runnable example.
+- [x] Example app under `examples/python/quickstart.py` (cross-language index in `examples/README.md`).
 
 ## Acceptance
 - Parity job green.

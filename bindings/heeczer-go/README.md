@@ -7,6 +7,11 @@ Go client for the [ai-heeczer](https://github.com/cognizhi/ai-heeczer) ingestion
 
 ## Install
 
+> **Pre-release.** No release tag has been pushed to the canonical module
+> path yet (see plan 0012). For local development, the
+> [`examples/go/`](../../examples/go/) module pulls the SDK in via a
+> `replace` directive.
+
 ```bash
 go get github.com/cognizhi/ai-heeczer/bindings/heeczer-go
 ```
@@ -40,9 +45,81 @@ fmt.Println(resp.Score.FinalEstimatedMinutes, resp.Score.ConfidenceBand)
 
 Every method returns `*heeczer.APIError` on a non-2xx response. The error
 carries the closed `Kind` enum mirrored from the ingestion service
-envelope (`schema`, `bad_request`, `scoring`, `storage`, `not_found`,
-`forbidden`, `feature_disabled`), plus an `unknown` fallback for non-JSON
-5xx bodies.
+envelope:
+
+| Kind | When |
+| --- | --- |
+| `ErrSchema` | Event failed canonical schema validation. |
+| `ErrBadRequest` | Malformed JSON or missing top-level fields. |
+| `ErrScoring` | Engine rejected a normalized event (e.g. unknown tier id). |
+| `ErrStorage` | Persistence layer error. |
+| `ErrNotFound` | Read endpoint did not find the resource. |
+| `ErrForbidden` | Auth or RBAC denied the request. |
+| `ErrFeatureDisabled` | Endpoint exists but the feature flag is off. |
+| `ErrUnknown` | Non-JSON 5xx body; the raw text is in `Message`. |
+
+Use `heeczer.IsKind(err, heeczer.ErrSchema)` for typed branching.
+
+## Functional options
+
+| Option | Description |
+| --- | --- |
+| `WithAPIKey(string)` | Sets the `x-heeczer-api-key` header. |
+| `WithHTTPClient(heeczer.Doer)` | Inject a custom `Doer` (e.g. `*http.Client` with a transport, or a fake in tests). |
+
+## Methods
+
+| Method | HTTP | Returns |
+| --- | --- | --- |
+| `Healthz(ctx)` | `GET /healthz` | `bool, error` |
+| `Version(ctx)` | `GET /v1/version` | `*VersionResponse, error` |
+| `IngestEvent(ctx, workspaceID, event)` | `POST /v1/events` | `*IngestEventResponse, error` |
+| `TestScorePipeline(ctx, req)` | `POST /v1/test/score-pipeline` | `*TestPipelineResponse, error` (gated by the test-orchestration feature flag) |
+
+## Contract
+
+The SDK speaks `envelope_version: "1"` to the ingestion service per
+[ADR-0011](../../docs/adr/0011-c-abi-envelope.md). Additive fields land
+without breaking the typed surface.
+
+## Runnable example
+
+See [`examples/go/quickstart.go`](../../examples/go/quickstart.go) and the
+cross-language index in [`examples/README.md`](../../examples/README.md).
+
+## Common patterns
+
+**Validate locally before sending** (avoids a network round-trip on bad
+events). The schema is JSON Schema Draft 2020-12;
+[`santhosh-tekuri/jsonschema/v6`](https://pkg.go.dev/github.com/santhosh-tekuri/jsonschema/v6)
+works well:
+
+```go
+import (
+    "os"
+    jschema "github.com/santhosh-tekuri/jsonschema/v6"
+)
+
+f, _ := os.Open("core/schema/event.v1.json")
+sch, _ := jschema.UnmarshalJSON(f)
+if err := sch.Validate(eventMap); err != nil { /* … */ }
+```
+
+**Surface schema field errors from the service:**
+
+```go
+_, err := client.IngestEvent(ctx, "ws", event)
+if heeczer.IsKind(err, heeczer.ErrSchema) {
+    var apiErr *heeczer.APIError
+    errors.As(err, &apiErr)
+    fmt.Println("schema rejection:", apiErr.Message)
+}
+```
+
+**Batching note.** `POST /v1/events:batch` (single-transaction,
+partial-success semantics) is planned but not yet shipped — see
+[plan 0004](../../docs/plan/0004-ingestion-service.md). Until then,
+send events concurrently with goroutines + `errgroup`.
 
 ## License
 

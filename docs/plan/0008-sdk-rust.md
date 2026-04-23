@@ -19,6 +19,10 @@ Ship `heeczer` crate as a thin idiomatic Rust SDK over `heeczer-core`.
 - [ ] Contract: shared fixtures parity. (pending: needs the parity fixture rig in plan 0001 §Tests)
 - [ ] `cargo publish --dry-run` clean in CI. (pending plan 0012 CI work)
 
+### Delivered after the original checklist (Apr 2026)
+- [x] Runnable example: `cargo run -p heeczer --example quickstart` (loads `examples/event.json`, scores, prints summary + JSON).
+- [x] README expanded with API reference, custom profile/tier-set loading, error-variant matrix, and example link.
+
 ## Acceptance
 - Parity job green.
 - `cargo publish --dry-run` clean in CI.

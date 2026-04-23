@@ -1,0 +1,46 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000004",
+  "correlation_id": "arch-review-2026-q2",
+  "timestamp": "2026-04-23T08:05:00Z",
+  "framework_source": "langgraph",
+  "workspace_id": "ws_default",
+  "project_id": "proj_platform",
+  "identity": {
+    "user_id": "usr_arch_lead",
+    "team_id": "tm_platform_arch",
+    "business_unit_id": "bu_engineering",
+    "tier_id": "tier_principal_eng"
+  },
+  "task": {
+    "name": "draft_service_decomposition_plan",
+    "category": "planning_architecture",
+    "sub_category": "service_split",
+    "outcome": "partial_success"
+  },
+  "metrics": {
+    "duration_ms": 270000,
+    "tokens_prompt": 24000,
+    "tokens_completion": 11000,
+    "tool_call_count": 9,
+    "workflow_steps": 11,
+    "retries": 2,
+    "artifact_count": 8,
+    "output_size_proxy": 4.5
+  },
+  "context": {
+    "human_in_loop": true,
+    "review_required": true,
+    "temperature": 0.4,
+    "risk_class": "medium",
+    "tags": ["architecture", "rfc"]
+  },
+  "meta": {
+    "sdk_language": "node",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {
+      "vendor.rfc_link": "https://internal.example/rfc/2026-042"
+    }
+  }
+}

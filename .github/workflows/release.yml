@@ -44,10 +44,33 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+      - name: package check (heeczer-core)
+        run: cargo publish -p heeczer-core --dry-run --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: package check (heeczer)
+        run: cargo publish -p heeczer --dry-run --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: list packaged files (heeczer-core)
+        run: cargo package -p heeczer-core --list
+
+      - name: list packaged files (heeczer)
+        run: cargo package -p heeczer --list
       - name: publish heeczer-core
         run: cargo publish -p heeczer-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: wait for heeczer-core to appear
+        run: |
+          for i in {1..30}; do
+            cargo search heeczer-core --limit 1 | grep heeczer-core && exit 0
+            sleep 10
+          done
+          echo "heeczer-core did not appear in index in time"
+          exit 1  
       - name: publish heeczer (Rust SDK)
         run: cargo publish -p heeczer
         env:
@@ -55,9 +78,10 @@ jobs:
 
   # ── JS/TS SDK ─────────────────────────────────────────────────────────────────
   publish-npm:
-    name: publish (@heeczer/sdk → npm)
+    name: publish (@cognizhi/heeczer-sdk → npm)
     runs-on: ubuntu-latest
     if: startsWith(github.ref_name, 'heeczer-js-v')
+    environment: publish
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: pnpm/action-setup@a15d269cd4658e1107c09f1fabf4cbd7bd1f308a # v4.4.0
@@ -77,15 +101,13 @@ jobs:
         working-directory: bindings/heeczer-js
       - run: npm publish --provenance --access public
         working-directory: bindings/heeczer-js
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ── Python SDK ────────────────────────────────────────────────────────────────
   publish-pypi:
-    name: publish (heeczer → PyPI)
+    name: publish (cognizhi-heeczer → PyPI)
     runs-on: ubuntu-latest
     if: startsWith(github.ref_name, 'heeczer-py-v')
-    environment: pypi
+    environment: publish
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
@@ -96,6 +118,8 @@ jobs:
       - run: uv run pytest
         working-directory: bindings/heeczer-py
       - run: uv build
+        working-directory: bindings/heeczer-py
+      - run: uv tool run twine check dist/*
         working-directory: bindings/heeczer-py
       - name: publish (OIDC trusted publisher)
         uses: pypa/gh-action-pypi-publish@7f25271a4aa483500f742f9492b2ab5648d61011 # v1.12.4
@@ -122,25 +146,31 @@ jobs:
     name: publish (heeczer-sdk → Maven Central)
     runs-on: ubuntu-latest
     if: startsWith(github.ref_name, 'heeczer-java-v')
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
           java-version: "17"
           cache: maven
-          server-id: ossrh
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_TOKEN
+          server-id: central
+          server-username: CENTRAL_TOKEN_USERNAME
+          server-password: CENTRAL_TOKEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
-      - run: mvn -q test
+
+      - run: mvn -B -ntp test
         working-directory: bindings/heeczer-java
-      - run: mvn -q deploy -DskipTests
+
+      - run: mvn -B -ntp deploy -DskipTests
         working-directory: bindings/heeczer-java
         env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
   # ── GitHub Release ────────────────────────────────────────────────────────────

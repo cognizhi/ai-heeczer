@@ -24,6 +24,9 @@ build/
 
 # Go
 vendor/
+# Built Go example binaries (compiled name matches the directory or main file).
+examples/go/go
+examples/go/quickstart
 
 # Java
 .gradle/

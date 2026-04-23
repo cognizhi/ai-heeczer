@@ -41,6 +41,7 @@ This is the entry point for ai-heeczer implementation plans. Each linked documen
 | 13 | [Developer experience](0013-developer-experience.md) | §26, §12.13, §12.21 | ADR-0007, ADR-0010 |
 | 14 | [Security and privacy](0014-security-and-privacy.md) | §22, §12.17–§12.19 | — |
 | 15 | [Calibration and benchmarks](0015-calibration-benchmarks.md) | §25, §12.8 | — |
+| 16 | [Local per-SDK test stacks](0016-local-sdk-test-stacks.md) | §12.13, §12.21, §23, §24, §26 | ADR-0005, ADR-0007, ADR-0008, ADR-0010 |
 
 ## Cross-cutting acceptance gates
 

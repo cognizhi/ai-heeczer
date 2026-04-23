@@ -18,7 +18,7 @@ Ship the Java SDK on Maven Central using the Foreign Function & Memory API (JDK 
 - [x] Unit (JUnit 5) + WireMock 3.x contract tests — 9/9 pass.
 - [x] `mvn test` clean.
 - [x] `bindings/heeczer-java/README.md`.
-- [ ] Example under `examples/java/`.
+- [x] Example under `examples/java/Quickstart.java` (cross-language index in `examples/README.md`).
 
 ## Acceptance
 - Parity job green.

@@ -1,0 +1,44 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000006",
+  "correlation_id": "release-notes-v2.4.0",
+  "timestamp": "2026-04-23T11:11:11Z",
+  "framework_source": "langgraph",
+  "workspace_id": "ws_default",
+  "project_id": "proj_marketing",
+  "identity": {
+    "user_id": "usr_pmm_02",
+    "team_id": "tm_pmm",
+    "business_unit_id": "bu_marketing",
+    "tier_id": "tier_mid_eng"
+  },
+  "task": {
+    "name": "draft_release_notes",
+    "category": "drafting",
+    "sub_category": "release_notes",
+    "outcome": "timeout"
+  },
+  "metrics": {
+    "duration_ms": 60000,
+    "tokens_prompt": 5000,
+    "tokens_completion": 0,
+    "tool_call_count": 0,
+    "workflow_steps": 2,
+    "retries": 3,
+    "artifact_count": 0,
+    "output_size_proxy": 0.0
+  },
+  "context": {
+    "human_in_loop": false,
+    "review_required": false,
+    "temperature": 0.8,
+    "risk_class": "low",
+    "tags": ["release", "draft"]
+  },
+  "meta": {
+    "sdk_language": "node",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {}
+  }
+}

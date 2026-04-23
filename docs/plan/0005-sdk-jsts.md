@@ -36,8 +36,8 @@ Ship `@ai-heeczer/sdk` for Node.js (CJS + ESM), with native bindings to `heeczer
 - [ ] Packaging: `npm pack` smoke test in CI matrix.
 
 ### Docs
-- [ ] `bindings/node/README.md` with quickstart, API reference, examples.
-- [ ] Example app under `examples/node/`.
+- [x] `bindings/heeczer-js/README.md` with quickstart, configuration, methods table, error-kind matrix, and link to runnable example.
+- [x] Example app under `examples/node/quickstart.mjs` (cross-language index in `examples/README.md`).
 - [ ] CHANGELOG.md (managed by release-please).
 
 ## Acceptance

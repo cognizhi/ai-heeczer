@@ -27,7 +27,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 
 ### Release workflows
 - [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`. The Rust workspace release anchor uses a non-published root package plus concrete member crate versions/internal path-version dependencies so `release-please` can update Cargo manifests while preserving the plain `vX.Y.Z` Rust tag contract.
-- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@heeczer/sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
+- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@cognizhi/heeczer-sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
 - [ ] `release-resume.yml` — workflow_dispatch to resume partial publish; same `release` concurrency group.
 
 ### Branch protection

@@ -1,0 +1,41 @@
+{
+  "spec_version": "1.0",
+  "event_id": "11111111-2222-4333-8444-555555555555",
+  "correlation_id": "quickstart-001",
+  "timestamp": "2026-04-23T09:00:00Z",
+  "framework_source": "quickstart",
+  "workspace_id": "ws_default",
+  "project_id": "proj_demo",
+  "identity": {
+    "user_id": "usr_demo",
+    "tier_id": "tier_mid_eng"
+  },
+  "task": {
+    "name": "draft_release_notes",
+    "category": "drafting",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 12000,
+    "tokens_prompt": 2000,
+    "tokens_completion": 800,
+    "tool_call_count": 1,
+    "workflow_steps": 2,
+    "retries": 0,
+    "artifact_count": 1,
+    "output_size_proxy": 1.0
+  },
+  "context": {
+    "human_in_loop": false,
+    "review_required": true,
+    "temperature": 0.4,
+    "risk_class": "low",
+    "tags": ["demo", "quickstart"]
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {}
+  }
+}

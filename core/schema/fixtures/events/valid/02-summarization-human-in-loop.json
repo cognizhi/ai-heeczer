@@ -1,0 +1,46 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000002",
+  "correlation_id": "weekly-digest-2026-w17",
+  "timestamp": "2026-04-22T13:15:30Z",
+  "framework_source": "langgraph",
+  "workspace_id": "ws_default",
+  "project_id": "proj_research",
+  "identity": {
+    "user_id": "usr_456",
+    "team_id": "tm_research",
+    "business_unit_id": "bu_rnd",
+    "tier_id": "tier_senior_eng"
+  },
+  "task": {
+    "name": "summarize_long_document",
+    "category": "summarization",
+    "sub_category": "executive_brief",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 42000,
+    "tokens_prompt": 18000,
+    "tokens_completion": 1500,
+    "tool_call_count": 1,
+    "workflow_steps": 3,
+    "retries": 0,
+    "artifact_count": 1,
+    "output_size_proxy": 1.0
+  },
+  "context": {
+    "human_in_loop": true,
+    "review_required": true,
+    "temperature": 0.3,
+    "risk_class": "low",
+    "tags": ["weekly-digest", "executive"]
+  },
+  "meta": {
+    "sdk_language": "python",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {
+      "vendor.source_doc_pages": 87
+    }
+  }
+}

@@ -1,5 +1,5 @@
 [project]
-name = "heeczer"
+name = "cognizhi-heeczer"
 version = "0.1.0"
 description = "Python client for the ai-heeczer ingestion service."
 readme = "README.md"

@@ -1,0 +1,47 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000005",
+  "correlation_id": "compliance-review-2026-04-23",
+  "timestamp": "2026-04-23T10:22:45Z",
+  "framework_source": "google_adk",
+  "workspace_id": "ws_default",
+  "project_id": "proj_compliance",
+  "identity": {
+    "user_id": "usr_legal_07",
+    "team_id": "tm_legal",
+    "business_unit_id": "bu_grc",
+    "tier_id": "tier_senior_eng"
+  },
+  "task": {
+    "name": "summarize_regulatory_change_impact",
+    "category": "regulated_decision_support",
+    "sub_category": "compliance_briefing",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 96000,
+    "tokens_prompt": 22000,
+    "tokens_completion": 4500,
+    "tool_call_count": 6,
+    "workflow_steps": 7,
+    "retries": 0,
+    "artifact_count": 3,
+    "output_size_proxy": 2.0
+  },
+  "context": {
+    "human_in_loop": true,
+    "review_required": true,
+    "temperature": 0.0,
+    "risk_class": "high",
+    "tags": ["compliance", "regulated"]
+  },
+  "meta": {
+    "sdk_language": "java",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {
+      "vendor.regulation": "EU-AI-Act",
+      "vendor.review_chain": ["legal_l1", "legal_l2"]
+    }
+  }
+}

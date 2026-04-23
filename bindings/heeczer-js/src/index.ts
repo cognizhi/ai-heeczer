@@ -5,7 +5,7 @@
  * envelope-version-1 JSON contract (mirrors the C ABI envelope from
  * ADR-0011) and surfaces typed errors. It does NOT embed the Rust scoring
  * core; for in-process scoring without a network hop, use the future
- * `@heeczer/sdk-core` (FFI binding, plan 0005 follow-up).
+ * `@cognizhi/heeczer-sdk-core` (FFI binding, plan 0005 follow-up).
  */
 
 /** Confidence band, matches the Rust `ConfidenceBand` enum. */

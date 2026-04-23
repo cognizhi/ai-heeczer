@@ -1,0 +1,47 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000007",
+  "correlation_id": "ci-triage-pr-9214",
+  "timestamp": "2026-04-23T14:00:00Z",
+  "framework_source": "google_adk",
+  "workspace_id": "ws_default",
+  "project_id": "proj_devex",
+  "identity": {
+    "user_id": "usr_devex_01",
+    "team_id": "tm_devex",
+    "business_unit_id": "bu_engineering",
+    "tier_id": "tier_mid_eng"
+  },
+  "task": {
+    "name": "triage_failing_ci_run",
+    "category": "code_generation",
+    "sub_category": "ci_triage",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 22000,
+    "tokens_prompt": 6500,
+    "tokens_completion": 1200,
+    "tool_call_count": 11,
+    "workflow_steps": 6,
+    "retries": 0,
+    "artifact_count": 2,
+    "output_size_proxy": 1.1
+  },
+  "context": {
+    "human_in_loop": false,
+    "review_required": false,
+    "temperature": 0.2,
+    "risk_class": "low",
+    "tags": ["ci", "triage", "automation"]
+  },
+  "meta": {
+    "sdk_language": "go",
+    "sdk_version": "0.1.0",
+    "scoring_profile": "default",
+    "extensions": {
+      "vendor.pr": 9214,
+      "vendor.repo": "cognizhi/ai-heeczer"
+    }
+  }
+}

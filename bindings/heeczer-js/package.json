@@ -1,5 +1,5 @@
 {
-  "name": "@heeczer/sdk",
+  "name": "@cognizhi/heeczer-sdk",
   "version": "0.1.0",
   "description": "JavaScript/TypeScript client for the ai-heeczer ingestion service.",
   "license": "MIT",

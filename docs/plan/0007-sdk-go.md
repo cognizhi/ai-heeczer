@@ -29,8 +29,8 @@ Ship the Go SDK as a Go module that consumes the Rust core via the C ABI (`heecz
 - [ ] `govulncheck` clean.
 
 ### Docs
-- [ ] `bindings/go/README.md` with quickstart, API reference.
-- [ ] Example app under `examples/go/`.
+- [x] `bindings/heeczer-go/README.md` with quickstart, error-kind matrix, functional-options table, and link to runnable example.
+- [x] Example app under `examples/go/quickstart.go` (with local `replace` directive in `examples/go/go.mod` so the demo compiles before the module is published).
 
 ## Acceptance
 - Parity job green.

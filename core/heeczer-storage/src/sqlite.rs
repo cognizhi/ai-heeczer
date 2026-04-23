@@ -95,10 +95,12 @@ mod tests {
         let pool = open("sqlite::memory:").await.unwrap();
         migrate(&pool).await.unwrap();
 
-        query("INSERT INTO heec_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')")
-            .execute(&pool)
-            .await
-            .unwrap();
+        query(
+            "INSERT INTO heec_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
 
         query(
             "INSERT INTO heec_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)

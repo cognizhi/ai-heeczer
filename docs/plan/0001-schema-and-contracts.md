@@ -20,6 +20,7 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 - [x] Author `core/schema/event.v1.json` matching PRD §13. (PR #1)
 - [x] Add validation rules: `spec_version` mandatory, `meta.extensions` is the only unknown-field bucket, strict mode rejects all other unknowns. (PR #1)
 - [x] Add fixture set: `valid/`, `invalid/`, `edge/` (min payload, max payload, unicode, missing optional fields, extension passthrough). (PR #1)
+- [x] Expand `valid/` fixtures to cover representative use cases beyond the canonical PRD example: summarization HIL, RCA failure high-risk, planning-architecture partial, regulated decision support, drafting timeout, CI triage tool-heavy. (now 7 fixtures total; auto-discovered by `every_valid_fixture_validates` and `every_valid_fixture_scores_under_default_profile`.)
 - [ ] Document the schema authoring guide in `docs/architecture/data-model.md`.
 
 ### Generation and bindings

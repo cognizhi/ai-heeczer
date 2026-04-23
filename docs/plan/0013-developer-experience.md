@@ -24,9 +24,9 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 - [ ] Maven properties pinned.
 
 ### Examples
-- [ ] `examples/quickstart/` (cross-language).
-- [ ] `examples/node/`, `examples/python/`, `examples/go/`, `examples/rust/`, `examples/java/`.
-- [ ] `examples/langgraph/`, `examples/google-adk/`.
+- [x] `examples/` cross-language quickstarts indexed by [`examples/README.md`](../../examples/README.md). Every per-language quickstart submits the same canonical [`examples/event.json`](../../examples/event.json) for an apples-to-apples comparison. (Original bullet read `examples/quickstart/`; the shipped layout puts the index at `examples/README.md` instead of a `quickstart/` subdir, so per-language quickstarts can sit at `examples/<lang>/`.)
+- [x] `examples/node/`, `examples/python/`, `examples/go/`, `examples/java/` plus the in-tree Rust example at `bindings/heeczer-rs/examples/quickstart.rs` (`cargo run -p heeczer --example quickstart`).
+- [ ] `examples/langgraph/`, `examples/google-adk/`. (pending plan 0011 framework adapters)
 - [ ] Each example wired to `make example-<name>`.
 - [ ] Examples smoke-tested in CI.
 
@@ -36,6 +36,10 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 
 ### Local containers
 - [ ] `docker-compose.dev.yml` brings up ingestion service + PostgreSQL + dashboard for local dev.
+  Per-SDK contributor sandboxes (Node/Python/PydanticAI/Go/Java/Rust chatbot
+  stacks with persisted DB, dashboard, and pluggable LLM provider) are designed
+  in [plan 0016](0016-local-sdk-test-stacks.md). This bullet stays scoped to the
+  minimal `docker-compose.dev.yml` for everyday core development.
 
 ### Local CLI (`heec`, ADR-0010)
 - [x] `make cli-install` builds and installs `heec` into `~/.cargo/bin`. (PR #1)
