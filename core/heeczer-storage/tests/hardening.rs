@@ -10,12 +10,15 @@
 //! - open_path round-trip through a filesystem path
 
 use heeczer_storage::sqlite::{current_version, migrate, open, open_path, MIGRATOR};
+use sqlx_core::query::query;
+use sqlx_core::query_as::query_as;
+use sqlx_sqlite::SqlitePool;
 use tempfile::tempdir;
 
-async fn fresh_pool() -> sqlx::SqlitePool {
+async fn fresh_pool() -> SqlitePool {
     let pool = open("sqlite::memory:").await.expect("open in-memory");
     migrate(&pool).await.expect("migrate");
-    sqlx::query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_t', 'T')")
+    query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_t', 'T')")
         .execute(&pool)
         .await
         .expect("seed workspace");
@@ -25,14 +28,14 @@ async fn fresh_pool() -> sqlx::SqlitePool {
 #[tokio::test]
 async fn aih_scores_rejects_update_and_delete() {
     let pool = fresh_pool().await;
-    sqlx::query(
+    query(
         "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
          VALUES ('evt-1', 'ws_t', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
     )
     .execute(&pool)
     .await
     .unwrap();
-    sqlx::query(
+    query(
         "INSERT INTO aih_scores
             (workspace_id, event_id, scoring_version, scoring_profile_id, profile_version,
              tier_id, tier_version, rates_version, result_json, final_minutes, final_fec,
@@ -43,12 +46,12 @@ async fn aih_scores_rejects_update_and_delete() {
     .await
     .unwrap();
 
-    let upd = sqlx::query("UPDATE aih_scores SET final_fec = '9.99' WHERE event_id = 'evt-1'")
+    let upd = query("UPDATE aih_scores SET final_fec = '9.99' WHERE event_id = 'evt-1'")
         .execute(&pool)
         .await;
     assert!(upd.is_err(), "UPDATE on aih_scores must be rejected");
 
-    let del = sqlx::query("DELETE FROM aih_scores WHERE event_id = 'evt-1'")
+    let del = query("DELETE FROM aih_scores WHERE event_id = 'evt-1'")
         .execute(&pool)
         .await;
     assert!(del.is_err(), "DELETE on aih_scores must be rejected");
@@ -57,7 +60,7 @@ async fn aih_scores_rejects_update_and_delete() {
 #[tokio::test]
 async fn aih_audit_log_is_append_only() {
     let pool = fresh_pool().await;
-    sqlx::query(
+    query(
         "INSERT INTO aih_audit_log (audit_id, workspace_id, actor, action)
          VALUES ('a1','ws_t','tester','noop')",
     )
@@ -65,12 +68,12 @@ async fn aih_audit_log_is_append_only() {
     .await
     .unwrap();
 
-    let upd = sqlx::query("UPDATE aih_audit_log SET action = 'tampered' WHERE audit_id = 'a1'")
+    let upd = query("UPDATE aih_audit_log SET action = 'tampered' WHERE audit_id = 'a1'")
         .execute(&pool)
         .await;
     assert!(upd.is_err(), "UPDATE on aih_audit_log must be rejected");
 
-    let del = sqlx::query("DELETE FROM aih_audit_log WHERE audit_id = 'a1'")
+    let del = query("DELETE FROM aih_audit_log WHERE audit_id = 'a1'")
         .execute(&pool)
         .await;
     assert!(del.is_err(), "DELETE on aih_audit_log must be rejected");
@@ -83,7 +86,7 @@ async fn global_scoring_profile_rows_cannot_duplicate() {
     let insert = |i: i32| {
         let pool = pool.clone();
         async move {
-            sqlx::query(
+            query(
                 "INSERT INTO aih_scoring_profiles
                     (scoring_profile_id, version, workspace_id, profile_json, effective_at)
                  VALUES ('default','1.0', NULL, ?, '2026-04-22T00:00:00Z')",
@@ -120,7 +123,7 @@ async fn foreign_keys_are_enforced() {
     let pool = open("sqlite::memory:").await.unwrap();
     migrate(&pool).await.unwrap();
     // Insert an event for a workspace that doesn't exist — must be rejected.
-    let res = sqlx::query(
+    let res = query(
         "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
          VALUES ('evt-x', 'nope', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
     )
@@ -132,11 +135,10 @@ async fn foreign_keys_are_enforced() {
 #[tokio::test]
 async fn aih_jobs_check_constraint_rejects_unknown_state() {
     let pool = fresh_pool().await;
-    let res = sqlx::query(
-        "INSERT INTO aih_jobs (job_id, workspace_id, state) VALUES ('j1','ws_t','bogus')",
-    )
-    .execute(&pool)
-    .await;
+    let res =
+        query("INSERT INTO aih_jobs (job_id, workspace_id, state) VALUES ('j1','ws_t','bogus')")
+            .execute(&pool)
+            .await;
     assert!(
         res.is_err(),
         "CHECK constraint on aih_jobs.state must reject unknown values"
@@ -150,7 +152,7 @@ async fn open_path_round_trips_to_disk() {
     {
         let pool = open_path(&path).await.unwrap();
         migrate(&pool).await.unwrap();
-        sqlx::query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_d','D')")
+        query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_d','D')")
             .execute(&pool)
             .await
             .unwrap();
@@ -158,7 +160,7 @@ async fn open_path_round_trips_to_disk() {
     // Reopen — data must persist.
     let pool = open_path(&path).await.unwrap();
     let row: (String,) =
-        sqlx::query_as("SELECT display_name FROM aih_workspaces WHERE workspace_id = 'ws_d'")
+        query_as("SELECT display_name FROM aih_workspaces WHERE workspace_id = 'ws_d'")
             .fetch_one(&pool)
             .await
             .unwrap();

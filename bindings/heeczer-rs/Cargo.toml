@@ -14,7 +14,7 @@ heeczer-core = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"], optional = true }
 tokio = { version = "1", features = ["rt"], optional = true }
 
 [features]

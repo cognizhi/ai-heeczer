@@ -7,11 +7,11 @@ use thiserror::Error;
 pub enum Error {
     /// Underlying sqlx error.
     #[error(transparent)]
-    Sqlx(#[from] sqlx::Error),
+    Sqlx(#[from] sqlx_core::error::Error),
 
     /// Migration error.
     #[error(transparent)]
-    Migrate(#[from] sqlx::migrate::MigrateError),
+    Migrate(#[from] sqlx_core::migrate::MigrateError),
 
     /// Append-only invariant was violated by a caller.
     #[error("append-only invariant violated: {0}")]

@@ -1,13 +1,16 @@
-//! SQLite backend. Uses `sqlx::SqlitePool`; migrations are embedded.
+//! SQLite backend. Uses `sqlx_sqlite::SqlitePool`; migrations are embedded.
 
 use crate::error::Result;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::{ConnectOptions, Executor, SqlitePool};
+use sqlx_core::connection::ConnectOptions;
+use sqlx_core::executor::Executor;
+use sqlx_core::migrate::Migrator;
+use sqlx_core::query_as::query_as;
+use sqlx_sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use std::path::Path;
 use std::str::FromStr;
 
 /// Embedded migrations (`core/heeczer-storage/migrations/`).
-pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
+pub static MIGRATOR: Migrator = sqlx_macros::migrate!("./migrations");
 
 /// Open a SQLite pool. Pass `sqlite::memory:` for an ephemeral database.
 ///
@@ -61,7 +64,7 @@ pub async fn migrate(pool: &SqlitePool) -> Result<()> {
 /// Return the current migration version (highest applied), or `None` if empty.
 pub async fn current_version(pool: &SqlitePool) -> Result<Option<i64>> {
     let row: Option<(i64,)> =
-        sqlx::query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
+        query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(v,)| v))
@@ -70,6 +73,7 @@ pub async fn current_version(pool: &SqlitePool) -> Result<Option<i64>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sqlx_core::query::query;
 
     #[tokio::test]
     async fn fresh_in_memory_database_runs_migrations() {
@@ -91,14 +95,12 @@ mod tests {
         let pool = open("sqlite::memory:").await.unwrap();
         migrate(&pool).await.unwrap();
 
-        sqlx::query(
-            "INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
+        query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')")
+            .execute(&pool)
+            .await
+            .unwrap();
 
-        sqlx::query(
+        query(
             "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
              VALUES ('evt-1', 'ws_test', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
         )
@@ -106,14 +108,13 @@ mod tests {
         .await
         .unwrap();
 
-        let update = sqlx::query(
-            "UPDATE aih_events SET framework_source = 'tampered' WHERE event_id = 'evt-1'",
-        )
-        .execute(&pool)
-        .await;
+        let update =
+            query("UPDATE aih_events SET framework_source = 'tampered' WHERE event_id = 'evt-1'")
+                .execute(&pool)
+                .await;
         assert!(update.is_err(), "UPDATE on aih_events must be rejected");
 
-        let delete = sqlx::query("DELETE FROM aih_events WHERE event_id = 'evt-1'")
+        let delete = query("DELETE FROM aih_events WHERE event_id = 'evt-1'")
             .execute(&pool)
             .await;
         assert!(delete.is_err(), "DELETE on aih_events must be rejected");

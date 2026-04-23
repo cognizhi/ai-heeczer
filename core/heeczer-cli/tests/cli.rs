@@ -259,7 +259,9 @@ fn replay_persisted_event_emits_score_and_no_prior_row_marker() {
 }
 
 fn seed_event(url: &str, workspace: &str, event_id: &str, payload: &str) {
-    use sqlx::Executor;
+    use sqlx_core::executor::Executor;
+    use sqlx_core::query::query;
+
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -267,13 +269,13 @@ fn seed_event(url: &str, workspace: &str, event_id: &str, payload: &str) {
     rt.block_on(async {
         let pool = heeczer_storage::sqlite::open(url).await.unwrap();
         pool.execute(
-            sqlx::query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
+            query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
                 .bind(workspace),
         )
         .await
         .unwrap();
         pool.execute(
-            sqlx::query(
+            query(
                 "INSERT INTO aih_events
                  (event_id, workspace_id, spec_version, framework_source, payload, received_at)
                  VALUES (?1, ?2, '1.0', 'test', ?3, '2026-04-23T10:00:00Z')",

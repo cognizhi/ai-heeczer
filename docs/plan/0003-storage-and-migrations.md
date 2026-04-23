@@ -32,7 +32,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] `aih_audit_log(workspace_id, created_at)`. (PR #1)
 
 ### Migrations (ADR-0004)
-- [ ] Wire `sqlx::migrate!` into the ingestion service crate.
+- [x] Wire `sqlx_macros::migrate!` into the storage layer used by the ingestion service/CLI, with `sqlx-core` + `sqlx-sqlite` + `sqlx-postgres` split so the lockfile does not pull the unused MySQL driver into security scans. (CI hardening, April 2026)
 - [x] Author `0001_init.sql` with SQLite dialect (PR #1); PostgreSQL parity migration deferred to plan 04.
 - [x] Author `migrations-pg/0001_init.sql` — PostgreSQL dialect (PL/pgSQL triggers, `NOW()` defaults). (plan 0004)
 - [x] Author `migrations-pg/0002_append_only_audit_and_global_unique.sql` — PostgreSQL dialect. (plan 0004)

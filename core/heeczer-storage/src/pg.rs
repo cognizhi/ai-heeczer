@@ -1,22 +1,23 @@
-//! PostgreSQL backend. Uses `sqlx::PgPool`; migrations are embedded from
+//! PostgreSQL backend. Uses `sqlx_postgres::PgPool`; migrations are embedded from
 //! `migrations-pg/` which contains PostgreSQL-dialect SQL (PL/pgSQL triggers,
 //! `NOW()` defaults, etc.). See ADR-0004 for the dialect-parity strategy.
 
 use crate::error::Result;
-use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
-use sqlx::ConnectOptions;
-use sqlx::PgPool;
+use sqlx_core::connection::ConnectOptions;
+use sqlx_core::migrate::Migrator;
+use sqlx_core::query_as::query_as;
+use sqlx_postgres::{PgConnectOptions, PgPool, PgPoolOptions};
 use std::str::FromStr;
 
 /// Embedded PostgreSQL migrations (`core/heeczer-storage/migrations-pg/`).
-pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations-pg");
+pub static MIGRATOR: Migrator = sqlx_macros::migrate!("./migrations-pg");
 
 /// Open a PostgreSQL pool.
 ///
 /// `url` must be a valid `postgres://` or `postgresql://` DSN.
 ///
 /// # Security
-/// Always use `sqlx::PgConnectOptions::from_str` to parse the DSN rather than
+/// Always use `sqlx_postgres::PgConnectOptions::from_str` to parse the DSN rather than
 /// constructing it by string interpolation; this prevents host/port injection
 /// via URL special characters (CWE-88).
 pub async fn open(url: &str) -> Result<PgPool> {
@@ -37,7 +38,7 @@ pub async fn migrate(pool: &PgPool) -> Result<()> {
 /// Return the current migration version (highest applied), or `None` if empty.
 pub async fn current_version(pool: &PgPool) -> Result<Option<i64>> {
     let row: Option<(i64,)> =
-        sqlx::query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
+        query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(v,)| v))

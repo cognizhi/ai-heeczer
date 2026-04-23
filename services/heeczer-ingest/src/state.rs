@@ -1,6 +1,6 @@
 //! Shared application state for the ingestion service.
 
-use sqlx::SqlitePool;
+use sqlx_sqlite::SqlitePool;
 
 /// Feature flags for runtime-gated surfaces. Defaults are production-safe
 /// (everything optional is off).

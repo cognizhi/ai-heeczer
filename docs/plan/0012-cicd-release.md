@@ -20,7 +20,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 - [ ] `migration.yml` — fresh + incremental on SQLite + PostgreSQL.
 - [ ] `ui.yml` — Playwright E2E for dashboard.
 - [ ] `bench-smoke.yml` — `track()` p95, ack p95, enqueue throughput.
-- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`.
+- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`; Rust security checks are green locally after narrowing storage deps away from the unused `sqlx-mysql`/`rsa` path, switching the Rust SDK HTTP client to native cert roots, and codifying the remaining unavoidable duplicate-version exceptions in `deny.toml` so `cargo deny check` runs warning-free.
 - [ ] `docs.yml` — markdown lint, link check, OpenAPI lint.
 - [ ] `release-dry-run.yml` — release-please manifest computation, package dry-run on PRs.
 

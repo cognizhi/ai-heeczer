@@ -43,7 +43,10 @@ clap = { version = "4", features = ["derive", "wrap_help"] }
 anyhow = "1"
 
 # Storage
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "migrate", "chrono", "postgres"] }
+sqlx-core = { version = "0.8", default-features = false, features = ["_rt-tokio", "migrate"] }
+sqlx-sqlite = { version = "0.8", default-features = false, features = ["bundled", "migrate"] }
+sqlx-postgres = { version = "0.8", default-features = false, features = ["migrate"] }
+sqlx-macros = { version = "0.8", default-features = false, features = ["migrate", "sqlite", "postgres", "_rt-tokio"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }
 
 # Test

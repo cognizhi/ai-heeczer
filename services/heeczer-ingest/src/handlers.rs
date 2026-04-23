@@ -12,6 +12,7 @@ use heeczer_core::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sqlx_core::query::query;
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -112,17 +113,15 @@ pub async fn ingest_event(
         .await
         .map_err(|e| ApiError::Storage(e.to_string()))?;
 
-    sqlx::query(
-        "INSERT OR IGNORE INTO aih_workspaces (workspace_id, display_name) VALUES (?1, ?1)",
-    )
-    .bind(&body.workspace_id)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| ApiError::Storage(e.to_string()))?;
+    query("INSERT OR IGNORE INTO aih_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
+        .bind(&body.workspace_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| ApiError::Storage(e.to_string()))?;
 
     // PRD §19.4: duplicate event_id → return existing record. Use INSERT OR IGNORE
     // and rely on the (workspace_id, event_id) PK to dedupe.
-    sqlx::query(
+    query(
         "INSERT OR IGNORE INTO aih_events
          (event_id, workspace_id, spec_version, framework_source, payload, received_at)
          VALUES (?1, ?2, ?3, ?4, ?5, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
@@ -136,7 +135,7 @@ pub async fn ingest_event(
     .await
     .map_err(|e| ApiError::Storage(e.to_string()))?;
 
-    sqlx::query(
+    query(
         "INSERT OR IGNORE INTO aih_scores
          (workspace_id, event_id, scoring_version, scoring_profile_id, profile_version,
           tier_id, tier_version, rates_version, result_json,

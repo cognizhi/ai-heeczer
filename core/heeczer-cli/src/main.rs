@@ -12,6 +12,7 @@ use heeczer_core::{
     score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
 use include_dir::{include_dir, Dir};
+use sqlx_core::query_as::query_as;
 
 /// Bundled fixture tree, embedded at compile time (PRD §12.21, ADR-0010).
 /// The path is relative to this Cargo manifest. Using a manifest-relative
@@ -540,13 +541,12 @@ fn cmd_replay(args: &ReplayArgs) -> Result<()> {
         .build()?;
     rt.block_on(async move {
         let pool = heeczer_storage::sqlite::open(&args.database_url).await?;
-        let row: Option<(String,)> = sqlx::query_as(
-            "SELECT payload FROM aih_events WHERE workspace_id = ?1 AND event_id = ?2",
-        )
-        .bind(&args.workspace)
-        .bind(&args.event_id)
-        .fetch_optional(&pool)
-        .await?;
+        let row: Option<(String,)> =
+            query_as("SELECT payload FROM aih_events WHERE workspace_id = ?1 AND event_id = ?2")
+                .bind(&args.workspace)
+                .bind(&args.event_id)
+                .fetch_optional(&pool)
+                .await?;
         let payload = row.map(|(p,)| p).with_context(|| {
             format!(
                 "no aih_events row for workspace={} event_id={}",
@@ -565,7 +565,7 @@ fn cmd_replay(args: &ReplayArgs) -> Result<()> {
         let result = score(&event, &profile, &tiers, None)
             .map_err(|e| anyhow::anyhow!("scoring failed: {e}"))?;
 
-        let prior: Option<(String, String)> = sqlx::query_as(
+        let prior: Option<(String, String)> = query_as(
             "SELECT result_json, scoring_version FROM aih_scores
              WHERE workspace_id = ?1 AND event_id = ?2
              ORDER BY created_at DESC LIMIT 1",
