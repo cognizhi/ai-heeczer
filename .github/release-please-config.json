@@ -6,6 +6,7 @@
     ".": {
       "release-type": "rust",
       "component": "workspace",
+      "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md"
     },
     "bindings/heeczer-js": {
@@ -34,7 +35,7 @@
       "changelog-path": "CHANGELOG.md"
     }
   },
-  "pull-request-title-pattern": "chore: release${component}",
+  "pull-request-title-pattern": "chore${scope}: release${component} ${version}",
   "changelog-sections": [
     { "type": "feat", "section": "Features" },
     { "type": "fix", "section": "Bug Fixes" },

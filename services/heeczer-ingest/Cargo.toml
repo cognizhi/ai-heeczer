@@ -1,6 +1,6 @@
 [package]
 name = "heeczer-ingest"
-version.workspace = true
+version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -13,8 +13,8 @@ name = "heeczer-ingest"
 path = "src/main.rs"
 
 [dependencies]
-heeczer-core = { workspace = true }
-heeczer-storage = { workspace = true }
+heeczer-core = { path = "../../core/heeczer-core", version = "0.1.0" }
+heeczer-storage = { path = "../../core/heeczer-storage", version = "0.1.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

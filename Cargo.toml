@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    ".",
     "core/heeczer-core",
     "core/heeczer-core-c",
     "core/heeczer-cli",
@@ -9,8 +10,20 @@ members = [
     "bindings/heeczer-rs",
 ]
 
-[workspace.package]
+[package]
+name = "ai-heeczer-workspace"
 version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[workspace.package]
 edition = "2021"
 # MSRV must match rust-toolchain.toml so contributors and CI build identically.
 rust-version = "1.88"
@@ -19,9 +32,6 @@ repository = "https://github.com/cognizhi/ai-heeczer"
 authors = ["ai-heeczer contributors"]
 
 [workspace.dependencies]
-heeczer-core = { path = "core/heeczer-core", version = "0.1.0" }
-heeczer-storage = { path = "core/heeczer-storage", version = "0.1.0" }
-
 # Determinism + serde
 rust_decimal = { version = "1.36", default-features = false, features = ["serde-with-str", "maths"] }
 rust_decimal_macros = "1.36"
