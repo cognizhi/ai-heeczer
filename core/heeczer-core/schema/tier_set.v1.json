@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-heeczer.dev/schema/tier_set.v1.json",
+  "title": "ai-heeczer tier set (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tier_set_id", "version", "effective_at", "currency", "tiers"],
+  "properties": {
+    "tier_set_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "effective_at": { "type": "string", "format": "date-time" },
+    "superseded_at": { "type": ["string", "null"], "format": "date-time" },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "tiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tier_id", "display_name", "productivity_multiplier", "hourly_rate", "working_hours_per_day"],
+        "properties": {
+          "tier_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "display_name": { "type": "string", "minLength": 1 },
+          "productivity_multiplier": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+          "hourly_rate": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+          "working_hours_per_day": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+        }
+      }
+    }
+  }
+}

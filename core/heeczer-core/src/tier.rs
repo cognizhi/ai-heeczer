@@ -39,7 +39,7 @@ pub struct TierSet {
 impl TierSet {
     /// Embedded default v1 tier set.
     pub fn default_v1() -> Self {
-        const DEFAULT: &str = include_str!("../../schema/tiers/default.v1.json");
+        const DEFAULT: &str = include_str!("../schema/tiers/default.v1.json");
         serde_json::from_str(DEFAULT).expect("embedded default tier set must parse")
     }
 

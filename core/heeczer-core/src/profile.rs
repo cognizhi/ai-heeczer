@@ -150,7 +150,7 @@ pub struct Rounding {
 impl ScoringProfile {
     /// Embedded default v1 profile (`core/schema/profiles/default.v1.json`).
     pub fn default_v1() -> Self {
-        const DEFAULT_PROFILE: &str = include_str!("../../schema/profiles/default.v1.json");
+        const DEFAULT_PROFILE: &str = include_str!("../schema/profiles/default.v1.json");
         serde_json::from_str(DEFAULT_PROFILE).expect("embedded default profile must parse")
     }
 }

@@ -4,13 +4,13 @@ use crate::error::{Error, Result};
 
 /// Embedded canonical event schema (`event.v1.json`). Compiled into the binary so
 /// every consumer validates against the same bytes.
-pub const EVENT_SCHEMA_V1: &str = include_str!("../../schema/event.v1.json");
+pub const EVENT_SCHEMA_V1: &str = include_str!("../schema/event.v1.json");
 
 /// Embedded scoring profile schema (`scoring_profile.v1.json`).
-pub const SCORING_PROFILE_SCHEMA_V1: &str = include_str!("../../schema/scoring_profile.v1.json");
+pub const SCORING_PROFILE_SCHEMA_V1: &str = include_str!("../schema/scoring_profile.v1.json");
 
 /// Embedded tier-set schema (`tier_set.v1.json`).
-pub const TIER_SET_SCHEMA_V1: &str = include_str!("../../schema/tier_set.v1.json");
+pub const TIER_SET_SCHEMA_V1: &str = include_str!("../schema/tier_set.v1.json");
 
 /// Validation mode. PRD §13.
 ///
