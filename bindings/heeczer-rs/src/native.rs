@@ -2,7 +2,7 @@
 
 use crate::error::Result;
 use crate::IngestInput;
-use heeczer_core::{profile::ScoringProfile, scoring::score, tier::TierSet, explain::ScoreResult};
+use heeczer_core::{explain::ScoreResult, profile::ScoringProfile, scoring::score, tier::TierSet};
 
 /// Synchronous in-process scoring client.
 ///

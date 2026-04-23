@@ -83,14 +83,17 @@ jobs:
         node: ["20", "22"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.4
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
-          cache-dependency-path: bindings/heeczer-js/package-lock.json
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: bindings/heeczer-js/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: bindings/heeczer-js
-      - run: npm test
+      - run: pnpm test
         working-directory: bindings/heeczer-js
 
   sdk-js-lint:
@@ -98,14 +101,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.4
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: bindings/heeczer-js/package-lock.json
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: bindings/heeczer-js/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: bindings/heeczer-js
-      - run: npx tsc --noEmit
+      - run: pnpm run typecheck
         working-directory: bindings/heeczer-js
 
   sdk-python-test:
@@ -139,7 +145,7 @@ jobs:
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: ${{ matrix.go }}
-          cache-dependency-path: bindings/heeczer-go/go.sum
+          cache-dependency-path: bindings/heeczer-go/go.mod
       - run: go test ./...
         working-directory: bindings/heeczer-go
       - run: go vet ./...

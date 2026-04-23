@@ -11,9 +11,9 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 ## Checklist
 
 ### CI workflows
-- [x] `lint.yml` — per-ecosystem lint matrix (Rust clippy in `ci.yml`; JS tsc, Python mypy+ruff, Go vet added).
+- [x] `lint.yml` — per-ecosystem lint matrix (Rust clippy in `ci.yml`; JS typecheck runs via pnpm + lockfile cache, Python mypy+ruff, Go vet added).
 - [x] `format-check.yml` — `cargo fmt --check` in `ci.yml`.
-- [x] `unit.yml` — per-ecosystem unit tests (`ci.yml`: Rust, JS vitest, Python pytest, Go test, Java mvn test).
+- [x] `unit.yml` — per-ecosystem unit tests (`ci.yml`: Rust, JS vitest via pnpm, Python pytest, Go test, Java mvn test).
 - [ ] `integration.yml` — ingestion service end-to-end with PG + SQLite.
 - [ ] `contract.yml` — schema validation across bindings.
 - [ ] `parity.yml` — fixture-driven parity across bindings.
@@ -26,7 +26,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 
 ### Release workflows
 - [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`.
-- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; `concurrency: { group: release, cancel-in-progress: false }`.
+- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@heeczer/sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
 - [ ] `release-resume.yml` — workflow_dispatch to resume partial publish; same `release` concurrency group.
 
 ### Branch protection

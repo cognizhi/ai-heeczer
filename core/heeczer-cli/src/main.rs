@@ -479,8 +479,7 @@ fn cmd_validate(sub: ValidateCmd) -> Result<()> {
                 .validate_str(&body, Mode::Strict)
                 .map_err(|e| anyhow::anyhow!("tier-set schema validation failed: {e}"))?;
             // Round-trip through the typed struct so deny_unknown_fields fires too.
-            let _: TierSet =
-                serde_json::from_str(&body).context("materialising TierSet")?;
+            let _: TierSet = serde_json::from_str(&body).context("materialising TierSet")?;
             println!("ok");
             Ok(())
         }

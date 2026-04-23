@@ -2,9 +2,7 @@ use heeczer::{Client, Event, IngestInput};
 
 // Load the canonical fixture once.
 fn canonical_event() -> Event {
-    let raw = include_str!(
-        "../../../core/schema/fixtures/events/valid/01-prd-canonical.json"
-    );
+    let raw = include_str!("../../../core/schema/fixtures/events/valid/01-prd-canonical.json");
     serde_json::from_str(raw).unwrap()
 }
 

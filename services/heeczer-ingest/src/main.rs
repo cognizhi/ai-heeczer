@@ -16,7 +16,7 @@ fn redact_dsn(dsn: &str) -> String {
     }
     // Replace ://user:password@ with ://user:***@
     if let Some(at_pos) = dsn.rfind('@') {
-        let scheme_end = dsn.find("://").map(|i| i + 3).unwrap_or(0);
+        let scheme_end = dsn.find("://").map_or(0, |i| i + 3);
         let authority = &dsn[scheme_end..at_pos];
         if let Some(colon) = authority.find(':') {
             let user = &authority[..colon];

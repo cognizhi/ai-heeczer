@@ -271,4 +271,3 @@ async fn ingest_event_rejects_illegal_characters_in_workspace_id() {
     let body = body_json(resp).await;
     assert_eq!(body["error"]["kind"], "bad_request");
 }
-

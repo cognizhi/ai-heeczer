@@ -55,7 +55,7 @@ impl EventValidator {
         // because callers want a deterministic, single, actionable message.
         if let Some(err) = self.validator.iter_errors(value).next() {
             return Err(Error::Schema {
-                path: err.instance_path.to_string(),
+                path: err.instance_path().to_string(),
                 message: err.to_string(),
             });
         }
@@ -103,7 +103,7 @@ impl ProfileValidator {
     pub fn validate(&self, value: &serde_json::Value, _mode: Mode) -> Result<()> {
         if let Some(err) = self.validator.iter_errors(value).next() {
             return Err(Error::Schema {
-                path: err.instance_path.to_string(),
+                path: err.instance_path().to_string(),
                 message: err.to_string(),
             });
         }
@@ -131,8 +131,8 @@ pub struct TierSetValidator {
 impl TierSetValidator {
     /// Build a validator against the embedded `tier_set.v1.json`.
     pub fn new_v1() -> Self {
-        let schema: serde_json::Value = serde_json::from_str(TIER_SET_SCHEMA_V1)
-            .expect("embedded tier set schema must parse");
+        let schema: serde_json::Value =
+            serde_json::from_str(TIER_SET_SCHEMA_V1).expect("embedded tier set schema must parse");
         let validator = jsonschema::options()
             .with_draft(jsonschema::Draft::Draft202012)
             .should_validate_formats(true)
@@ -145,7 +145,7 @@ impl TierSetValidator {
     pub fn validate(&self, value: &serde_json::Value, _mode: Mode) -> Result<()> {
         if let Some(err) = self.validator.iter_errors(value).next() {
             return Err(Error::Schema {
-                path: err.instance_path.to_string(),
+                path: err.instance_path().to_string(),
                 message: err.to_string(),
             });
         }

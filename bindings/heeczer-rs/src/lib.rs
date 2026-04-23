@@ -24,12 +24,8 @@
 //! ```
 
 pub use heeczer_core::{
-    confidence::ConfidenceBand,
-    error::Error as CoreError,
-    event::Event,
-    explain::ScoreResult,
-    profile::ScoringProfile,
-    tier::TierSet,
+    confidence::ConfidenceBand, error::Error as CoreError, event::Event, explain::ScoreResult,
+    profile::ScoringProfile, tier::TierSet,
 };
 
 mod error;
