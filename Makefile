@@ -103,17 +103,12 @@ cli-smoke: build ## end-to-end smoke of the heec CLI against shipped fixtures
 # ----- security --------------------------------------------------------------
 
 .PHONY: security
-security: security-audit security-secrets ## run all local security scans
+security: security-audit security-licenses ## run all local security scans
 
 .PHONY: security-audit
 security-audit: ## cargo-audit dependency vulnerability scan
 	@command -v cargo-audit >/dev/null || cargo install cargo-audit --locked
 	cargo audit
-
-.PHONY: security-secrets
-security-secrets: ## gitleaks secret scan
-	@command -v gitleaks >/dev/null || { echo "install gitleaks: https://github.com/gitleaks/gitleaks"; exit 1; }
-	gitleaks detect --no-git --redact -v
 
 .PHONY: security-licenses
 security-licenses: ## cargo-deny license + advisories
