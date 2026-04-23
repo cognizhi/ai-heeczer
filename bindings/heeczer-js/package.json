@@ -1,6 +1,6 @@
 {
   "name": "@cognizhi/heeczer-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JavaScript/TypeScript client for the ai-heeczer ingestion service.",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
