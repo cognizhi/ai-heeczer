@@ -49,7 +49,7 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers at **conduct@ai-heeczer.dev** (replace with
+reported to the project maintainers at **conduct@cognizhi.ai** (replace with
 the project's actual contact). All complaints will be reviewed and investigated
 promptly and fairly.
 
