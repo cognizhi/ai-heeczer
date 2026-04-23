@@ -40,9 +40,9 @@ For complex online PostgreSQL migrations that exceed `sqlx`'s pure-SQL ergonomic
 - Negative: dialect divergences must be handled explicitly. We standardize on a small subset of portable SQL plus dialect-specific files when necessary.
 - Follow-ups: ship `heec migrate up|status|verify` CLI commands per ADR-0010 (delivered in the foundation slice); document the migration authoring guide in `docs/architecture/data-model.md`.
 
-## Amendment 2026-04-23 — `aih_schema_migrations` view
+## Amendment 2026-04-23 — `heec_schema_migrations` view
 
-`sqlx::migrate!` owns the underlying history table named `_sqlx_migrations`. PRD §20 and the storage README expose a stable view named `aih_schema_migrations` (created in migration `0001_init.sql`) that aliases the columns we promise externally. SDKs and the dashboard MUST query the view, not the underlying table; the view is the contract, the table is implementation detail. Migration scripts that change history-table semantics require an ADR amendment here.
+`sqlx::migrate!` owns the underlying history table named `_sqlx_migrations`. PRD §20 and the storage README expose a stable view named `heec_schema_migrations` (created in migration `0001_init.sql`) that aliases the columns we promise externally. SDKs and the dashboard MUST query the view, not the underlying table; the view is the contract, the table is implementation detail. Migration scripts that change history-table semantics require an ADR amendment here.
 
 ## References
 - PRD §12.20 Database Schema Migrations

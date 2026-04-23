@@ -46,8 +46,8 @@ You are the **Tech Lead** for ai-heeczer. Your authority covers architecture, AD
 - New ADRs needed, if any, with proposed titles.
 
 ## Hard "no" list
-- Mutating `aih_events` after acceptance.
-- Updating `aih_scores` rows in place.
+- Mutating `heec_events` after acceptance.
+- Updating `heec_scores` rows in place.
 - Changing scoring math without bumping `scoring_version` and updating fixtures.
 - Adding a Python or JVM runtime to the production ingestion image.
 - Storing prompt or model output content by default.

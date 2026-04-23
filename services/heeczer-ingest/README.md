@@ -51,7 +51,7 @@ HEECZER_DATABASE_URL=postgres://user:pass@localhost/heeczer \
 - Storage and scoring errors are **not** surfaced in HTTP responses; they are logged server-side only.
 - `workspace_id` is validated against an allowlist to prevent control-character injection.
 - The `/v1/test/score-pipeline` endpoint requires both the process-level feature flag **and** the `x-heeczer-tester: 1` request header.
-- Authentication (API-key middleware against `aih_api_keys.hashed_key`) is tracked in plan 0004 and is **not** active in the current bootstrap build.
+- Authentication (API-key middleware against `heec_api_keys.hashed_key`) is tracked in plan 0004 and is **not** active in the current bootstrap build.
 
 ## Error envelope
 

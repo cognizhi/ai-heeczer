@@ -56,7 +56,7 @@ Every behavior change follows this exact loop. No exceptions.
 | Event schema | `spec_version` or new `event.vN.json`, ADR-0002, all SDK fixtures, schema docs |
 | HTTP ingestion API | URL prefix version per PRD §12.16, OpenAPI doc, ingestion service README, dashboard data contract if affected |
 | SDK public API | per-binding README, per-binding CHANGELOG, parity tests, examples |
-| Database schema | migration script (SQLite + PostgreSQL paths), migration test, `aih_schema_migrations`, data-model doc |
+| Database schema | migration script (SQLite + PostgreSQL paths), migration test, `heec_schema_migrations`, data-model doc |
 | Dashboard UI | Playwright E2E for the affected critical flow, screenshots in docs if UX language changes |
 | CI/CD | release runbook, branch protection list, ADR-0009 if release flow changes |
 | Dependencies | license check, security audit run, SBOM regeneration on next release |

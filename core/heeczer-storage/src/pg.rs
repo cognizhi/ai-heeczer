@@ -38,7 +38,7 @@ pub async fn migrate(pool: &PgPool) -> Result<()> {
 /// Return the current migration version (highest applied), or `None` if empty.
 pub async fn current_version(pool: &PgPool) -> Result<Option<i64>> {
     let row: Option<(i64,)> =
-        query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
+        query_as("SELECT version FROM heec_schema_migrations ORDER BY version DESC LIMIT 1")
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(v,)| v))

@@ -64,7 +64,7 @@ pub async fn migrate(pool: &SqlitePool) -> Result<()> {
 /// Return the current migration version (highest applied), or `None` if empty.
 pub async fn current_version(pool: &SqlitePool) -> Result<Option<i64>> {
     let row: Option<(i64,)> =
-        query_as("SELECT version FROM aih_schema_migrations ORDER BY version DESC LIMIT 1")
+        query_as("SELECT version FROM heec_schema_migrations ORDER BY version DESC LIMIT 1")
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(v,)| v))
@@ -91,17 +91,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn aih_events_is_append_only_via_trigger() {
+    async fn heec_events_is_append_only_via_trigger() {
         let pool = open("sqlite::memory:").await.unwrap();
         migrate(&pool).await.unwrap();
 
-        query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')")
+        query("INSERT INTO heec_workspaces (workspace_id, display_name) VALUES ('ws_test', 'Test')")
             .execute(&pool)
             .await
             .unwrap();
 
         query(
-            "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
+            "INSERT INTO heec_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
              VALUES ('evt-1', 'ws_test', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
         )
         .execute(&pool)
@@ -109,14 +109,14 @@ mod tests {
         .unwrap();
 
         let update =
-            query("UPDATE aih_events SET framework_source = 'tampered' WHERE event_id = 'evt-1'")
+            query("UPDATE heec_events SET framework_source = 'tampered' WHERE event_id = 'evt-1'")
                 .execute(&pool)
                 .await;
-        assert!(update.is_err(), "UPDATE on aih_events must be rejected");
+        assert!(update.is_err(), "UPDATE on heec_events must be rejected");
 
-        let delete = query("DELETE FROM aih_events WHERE event_id = 'evt-1'")
+        let delete = query("DELETE FROM heec_events WHERE event_id = 'evt-1'")
             .execute(&pool)
             .await;
-        assert!(delete.is_err(), "DELETE on aih_events must be rejected");
+        assert!(delete.is_err(), "DELETE on heec_events must be rejected");
     }
 }

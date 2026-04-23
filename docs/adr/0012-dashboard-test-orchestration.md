@@ -19,11 +19,11 @@ Plan 0010 (Dashboard) ships a **Test Orchestration view** under an explicit, RBA
 - **Golden diff** — for any event fixture that has a corresponding `*.score_result.json` golden file, compute a structural JSON diff between the live result and the golden; surface mismatched paths inline.
 - **Suite runner** — kick off the full golden suite in one click; results render as a compact pass/fail matrix with collapsible per-failure detail. Suite progress streams via SSE.
 - **Benchmark stub** — invoke the future `heec bench` subcommand (or the equivalent benchmark endpoint) and chart p50/p95 of `score()` over N iterations.
-- **Replay** — given an `event_id` already persisted (PRD §20 `aih_events`), re-score it with the currently selected profile and surface any drift versus the persisted score row.
+- **Replay** — given an `event_id` already persisted (PRD §20 `heec_events`), re-score it with the currently selected profile and surface any drift versus the persisted score row.
 
 ### Constraints
 - Read-only against production data unless the operator holds the `Admin` role (RBAC, PRD §22).
-- No mutation of `aih_events` or `aih_scores` from this view; replays insert new score rows per the append-only invariant (plan 0003 §Append-only enforcement).
+- No mutation of `heec_events` or `heec_scores` from this view; replays insert new score rows per the append-only invariant (plan 0003 §Append-only enforcement).
 - Test-orchestration endpoints are gated behind a feature flag (`features.test_orchestration`) so production deployments can disable the suite runner if it would compete with live ingestion for capacity.
 - All test-orchestration endpoints emit structured audit-log entries (PRD §22).
 - UI uses the same component library as the user dashboard (ADR-0008) — no parallel tech stack.

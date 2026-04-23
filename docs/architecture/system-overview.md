@@ -45,9 +45,9 @@ The canonical contract is asserted by:
 
 ## Append-only storage contract
 
-`heeczer-storage` enforces append-only semantics for `aih_events` and
-`aih_scores` via SQLite triggers (`aih_events_no_update`, `aih_events_no_delete`,
-matching pair on scores). Tombstones live in `aih_tombstones` so we can
+`heeczer-storage` enforces append-only semantics for `heec_events` and
+`heec_scores` via SQLite triggers (`heec_events_no_update`, `heec_events_no_delete`,
+matching pair on scores). Tombstones live in `heec_tombstones` so we can
 honor data subject deletion requests without breaking the immutability of the
 event log itself.
 

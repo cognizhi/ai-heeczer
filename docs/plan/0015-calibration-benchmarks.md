@@ -11,8 +11,8 @@ Provide a versioned calibration framework so organizations can tune the scoring 
 ## Checklist
 
 ### Calibration data model
-- [ ] `aih_benchmark_packs` (versioned definitions).
-- [ ] `aih_calibration_runs` (results tied to a profile + pack version).
+- [ ] `heec_benchmark_packs` (versioned definitions).
+- [ ] `heec_calibration_runs` (results tied to a profile + pack version).
 - [ ] Append-only with audit trail.
 
 ### Reference benchmark pack (PRD §25)

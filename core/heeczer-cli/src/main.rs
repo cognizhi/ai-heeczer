@@ -542,20 +542,20 @@ fn cmd_replay(args: &ReplayArgs) -> Result<()> {
     rt.block_on(async move {
         let pool = heeczer_storage::sqlite::open(&args.database_url).await?;
         let row: Option<(String,)> =
-            query_as("SELECT payload FROM aih_events WHERE workspace_id = ?1 AND event_id = ?2")
+            query_as("SELECT payload FROM heec_events WHERE workspace_id = ?1 AND event_id = ?2")
                 .bind(&args.workspace)
                 .bind(&args.event_id)
                 .fetch_optional(&pool)
                 .await?;
         let payload = row.map(|(p,)| p).with_context(|| {
             format!(
-                "no aih_events row for workspace={} event_id={}",
+                "no heec_events row for workspace={} event_id={}",
                 args.workspace, args.event_id
             )
         })?;
 
         let value: serde_json::Value =
-            serde_json::from_str(&payload).context("aih_events.payload is not valid JSON")?;
+            serde_json::from_str(&payload).context("heec_events.payload is not valid JSON")?;
         validator()
             .validate(&value, Mode::Strict)
             .map_err(|e| anyhow::anyhow!("persisted event no longer matches schema: {e}"))?;
@@ -566,7 +566,7 @@ fn cmd_replay(args: &ReplayArgs) -> Result<()> {
             .map_err(|e| anyhow::anyhow!("scoring failed: {e}"))?;
 
         let prior: Option<(String, String)> = query_as(
-            "SELECT result_json, scoring_version FROM aih_scores
+            "SELECT result_json, scoring_version FROM heec_scores
              WHERE workspace_id = ?1 AND event_id = ?2
              ORDER BY created_at DESC LIMIT 1",
         )
@@ -583,7 +583,7 @@ fn cmd_replay(args: &ReplayArgs) -> Result<()> {
             None => writeln!(&mut out, "no prior score row; replay is read-only")?,
             Some((prior_json, prior_ver)) => {
                 let prior_value: serde_json::Value = serde_json::from_str(&prior_json)
-                    .context("aih_scores.result_json is not valid JSON")?;
+                    .context("heec_scores.result_json is not valid JSON")?;
                 let live_value = serde_json::to_value(&result)?;
                 if prior_value == live_value {
                     writeln!(&mut out, "match: live score equals prior {prior_ver} row")?;

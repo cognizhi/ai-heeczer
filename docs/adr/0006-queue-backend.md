@@ -8,7 +8,7 @@
 Image-mode ingestion needs a queue with at-least-once delivery, dedup by `event_id`, retries, DLQ, visibility into depth/age, and operability across self-hosted and managed deployments.
 
 ## Decision
-Default reference implementation: **PostgreSQL-backed work queue** using `SELECT ... FOR UPDATE SKIP LOCKED` against `aih_jobs`. Optional adapters: **Redis Streams** and **NATS JetStream** for higher-throughput deployments.
+Default reference implementation: **PostgreSQL-backed work queue** using `SELECT ... FOR UPDATE SKIP LOCKED` against `heec_jobs`. Optional adapters: **Redis Streams** and **NATS JetStream** for higher-throughput deployments.
 
 Rationale:
 - PostgreSQL is already a hard dependency for production storage; making the queue PG-native means zero additional infra for >90% of deployments.

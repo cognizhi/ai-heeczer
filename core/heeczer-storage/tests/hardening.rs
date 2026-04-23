@@ -1,12 +1,12 @@
 //! Storage hardening tests added by foundation-backlog burndown.
 //!
 //! Covers the gaps called out in /memories/repo/foundation-backlog.md:
-//! - aih_scores append-only triggers (symmetry with aih_events)
-//! - aih_audit_log append-only triggers (added in migration 0002)
+//! - heec_scores append-only triggers (symmetry with heec_events)
+//! - heec_audit_log append-only triggers (added in migration 0002)
 //! - Unique-with-COALESCE indexes for global (workspace_id IS NULL) rows
 //! - current_version matches the embedded migration count
 //! - Foreign keys are enforced (PRAGMA on every connection)
-//! - CHECK constraints reject invalid aih_jobs.state values
+//! - CHECK constraints reject invalid heec_jobs.state values
 //! - open_path round-trip through a filesystem path
 
 use heeczer_storage::sqlite::{current_version, migrate, open, open_path, MIGRATOR};
@@ -18,7 +18,7 @@ use tempfile::tempdir;
 async fn fresh_pool() -> SqlitePool {
     let pool = open("sqlite::memory:").await.expect("open in-memory");
     migrate(&pool).await.expect("migrate");
-    query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_t', 'T')")
+    query("INSERT INTO heec_workspaces (workspace_id, display_name) VALUES ('ws_t', 'T')")
         .execute(&pool)
         .await
         .expect("seed workspace");
@@ -26,17 +26,17 @@ async fn fresh_pool() -> SqlitePool {
 }
 
 #[tokio::test]
-async fn aih_scores_rejects_update_and_delete() {
+async fn heec_scores_rejects_update_and_delete() {
     let pool = fresh_pool().await;
     query(
-        "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
+        "INSERT INTO heec_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
          VALUES ('evt-1', 'ws_t', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
     )
     .execute(&pool)
     .await
     .unwrap();
     query(
-        "INSERT INTO aih_scores
+        "INSERT INTO heec_scores
             (workspace_id, event_id, scoring_version, scoring_profile_id, profile_version,
              tier_id, tier_version, rates_version, result_json, final_minutes, final_fec,
              confidence, confidence_band)
@@ -46,37 +46,37 @@ async fn aih_scores_rejects_update_and_delete() {
     .await
     .unwrap();
 
-    let upd = query("UPDATE aih_scores SET final_fec = '9.99' WHERE event_id = 'evt-1'")
+    let upd = query("UPDATE heec_scores SET final_fec = '9.99' WHERE event_id = 'evt-1'")
         .execute(&pool)
         .await;
-    assert!(upd.is_err(), "UPDATE on aih_scores must be rejected");
+    assert!(upd.is_err(), "UPDATE on heec_scores must be rejected");
 
-    let del = query("DELETE FROM aih_scores WHERE event_id = 'evt-1'")
+    let del = query("DELETE FROM heec_scores WHERE event_id = 'evt-1'")
         .execute(&pool)
         .await;
-    assert!(del.is_err(), "DELETE on aih_scores must be rejected");
+    assert!(del.is_err(), "DELETE on heec_scores must be rejected");
 }
 
 #[tokio::test]
-async fn aih_audit_log_is_append_only() {
+async fn heec_audit_log_is_append_only() {
     let pool = fresh_pool().await;
     query(
-        "INSERT INTO aih_audit_log (audit_id, workspace_id, actor, action)
+        "INSERT INTO heec_audit_log (audit_id, workspace_id, actor, action)
          VALUES ('a1','ws_t','tester','noop')",
     )
     .execute(&pool)
     .await
     .unwrap();
 
-    let upd = query("UPDATE aih_audit_log SET action = 'tampered' WHERE audit_id = 'a1'")
+    let upd = query("UPDATE heec_audit_log SET action = 'tampered' WHERE audit_id = 'a1'")
         .execute(&pool)
         .await;
-    assert!(upd.is_err(), "UPDATE on aih_audit_log must be rejected");
+    assert!(upd.is_err(), "UPDATE on heec_audit_log must be rejected");
 
-    let del = query("DELETE FROM aih_audit_log WHERE audit_id = 'a1'")
+    let del = query("DELETE FROM heec_audit_log WHERE audit_id = 'a1'")
         .execute(&pool)
         .await;
-    assert!(del.is_err(), "DELETE on aih_audit_log must be rejected");
+    assert!(del.is_err(), "DELETE on heec_audit_log must be rejected");
 }
 
 #[tokio::test]
@@ -87,7 +87,7 @@ async fn global_scoring_profile_rows_cannot_duplicate() {
         let pool = pool.clone();
         async move {
             query(
-                "INSERT INTO aih_scoring_profiles
+                "INSERT INTO heec_scoring_profiles
                     (scoring_profile_id, version, workspace_id, profile_json, effective_at)
                  VALUES ('default','1.0', NULL, ?, '2026-04-22T00:00:00Z')",
             )
@@ -124,24 +124,24 @@ async fn foreign_keys_are_enforced() {
     migrate(&pool).await.unwrap();
     // Insert an event for a workspace that doesn't exist — must be rejected.
     let res = query(
-        "INSERT INTO aih_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
+        "INSERT INTO heec_events (event_id, workspace_id, spec_version, framework_source, payload, received_at)
          VALUES ('evt-x', 'nope', '1.0', 'test', '{}', '2026-04-22T10:00:00Z')",
     )
     .execute(&pool)
     .await;
-    assert!(res.is_err(), "FK to aih_workspaces must be enforced");
+    assert!(res.is_err(), "FK to heec_workspaces must be enforced");
 }
 
 #[tokio::test]
-async fn aih_jobs_check_constraint_rejects_unknown_state() {
+async fn heec_jobs_check_constraint_rejects_unknown_state() {
     let pool = fresh_pool().await;
     let res =
-        query("INSERT INTO aih_jobs (job_id, workspace_id, state) VALUES ('j1','ws_t','bogus')")
+        query("INSERT INTO heec_jobs (job_id, workspace_id, state) VALUES ('j1','ws_t','bogus')")
             .execute(&pool)
             .await;
     assert!(
         res.is_err(),
-        "CHECK constraint on aih_jobs.state must reject unknown values"
+        "CHECK constraint on heec_jobs.state must reject unknown values"
     );
 }
 
@@ -152,7 +152,7 @@ async fn open_path_round_trips_to_disk() {
     {
         let pool = open_path(&path).await.unwrap();
         migrate(&pool).await.unwrap();
-        query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES ('ws_d','D')")
+        query("INSERT INTO heec_workspaces (workspace_id, display_name) VALUES ('ws_d','D')")
             .execute(&pool)
             .await
             .unwrap();
@@ -160,7 +160,7 @@ async fn open_path_round_trips_to_disk() {
     // Reopen — data must persist.
     let pool = open_path(&path).await.unwrap();
     let row: (String,) =
-        query_as("SELECT display_name FROM aih_workspaces WHERE workspace_id = 'ws_d'")
+        query_as("SELECT display_name FROM heec_workspaces WHERE workspace_id = 'ws_d'")
             .fetch_one(&pool)
             .await
             .unwrap();

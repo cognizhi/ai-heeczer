@@ -428,7 +428,7 @@ The ingestion service shall enforce:
 All ingestion endpoints shall honor `event_id` as the primary idempotency key per Section 19.4. Clients may additionally supply an `Idempotency-Key` HTTP header for batch endpoints; the response of a previously processed key shall be replayed verbatim within the configured idempotency retention window (default 24 hours).
 
 ### 12.20 Database Schema Migrations
-The project shall use a versioned, forward-only migration tool with one migration history table (`aih_schema_migrations`) shared across SQLite and PostgreSQL adapters. Migration choice is documented in ADR-0004. Every schema change shall ship with a migration script, a rollback note, and a migration test that runs on both backends in CI.
+The project shall use a versioned, forward-only migration tool with one migration history table (`heec_schema_migrations`) shared across SQLite and PostgreSQL adapters. Migration choice is documented in ADR-0004. Every schema change shall ship with a migration script, a rollback note, and a migration test that runs on both backends in CI.
 
 ### 12.21 Local Developer CLI (`heec`)
 The project shall ship a first-class command-line tool, `heec`, as the canonical local invocation surface for the Rust scoring core. It is the single tool a contributor uses to atomically test the analyzer without standing up the ingestion service or any SDK. Decision and rationale are recorded in ADR-0010.
@@ -438,7 +438,7 @@ Required MVP subcommands:
 - `heec score` — run the deterministic scoring engine and emit `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or human-readable table.
 - `heec fixtures list|show` — enumerate and emit shipped golden fixtures for use in downstream SDK and adapter test suites.
 - `heec diff` — diff two `ScoreResult`s for parity verification.
-- `heec migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the previously planned `heeczerctl` binary).
+- `heec migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the earlier separate migration CLI plan).
 - `heec version` — print CLI, `scoring_version`, `spec_version`, and core crate versions.
 
 Phase 2 subcommands (per ADR-0010 amendment, 2026-04-23):
@@ -794,18 +794,18 @@ The repository shall be structured as a monorepo with a single release control p
 ## 20. Storage and Data Model
 
 ### Core Tables
-- `aih_events`
-- `aih_scores`
-- `aih_jobs`
-- `aih_tiers`
-- `aih_rates`
-- `aih_scoring_profiles`
-- `aih_audit_log`
-- `aih_daily_aggregates`
-- `aih_workspaces`
-- `aih_api_keys`
-- `aih_tombstones`
-- `aih_schema_migrations`
+- `heec_events`
+- `heec_scores`
+- `heec_jobs`
+- `heec_tiers`
+- `heec_rates`
+- `heec_scoring_profiles`
+- `heec_audit_log`
+- `heec_daily_aggregates`
+- `heec_workspaces`
+- `heec_api_keys`
+- `heec_tombstones`
+- `heec_schema_migrations`
 
 ### Multi-Tenancy
 All tenant-scoped tables shall include a non-null `workspace_id` column with appropriate indexes. The query layer shall enforce workspace scoping for all read and write paths. Cross-workspace queries are an admin-only operation guarded by RBAC.
@@ -819,7 +819,7 @@ Raw normalized events and computed scores must be stored separately to enable sa
 
 Raw event records shall be immutable and append-only once accepted.
 
-`aih_scores` or an equivalent score store shall be append-only and versioned by scoring profile and scoring version so that re-scoring preserves historical outputs.
+`heec_scores` or an equivalent score store shall be append-only and versioned by scoring profile and scoring version so that re-scoring preserves historical outputs.
 
 ---
 
@@ -873,7 +873,7 @@ Required capabilities:
 
 Constraints:
 - view is RBAC-gated (`Tester`, `Admin`); test-orchestration endpoints sit behind a `features.test_orchestration` feature flag so production deployments can disable them
-- never mutates `aih_events` or `aih_scores` outside the append-only contract (§20)
+- never mutates `heec_events` or `heec_scores` outside the append-only contract (§20)
 - every test-orchestration call emits a structured audit-log entry (§22)
 
 ---

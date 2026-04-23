@@ -222,7 +222,7 @@ fn replay_missing_event_id_errors() {
         ])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("no aih_events row"));
+        .stderr(predicate::str::contains("no heec_events row"));
 }
 
 #[test]
@@ -269,14 +269,14 @@ fn seed_event(url: &str, workspace: &str, event_id: &str, payload: &str) {
     rt.block_on(async {
         let pool = heeczer_storage::sqlite::open(url).await.unwrap();
         pool.execute(
-            query("INSERT INTO aih_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
+            query("INSERT INTO heec_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
                 .bind(workspace),
         )
         .await
         .unwrap();
         pool.execute(
             query(
-                "INSERT INTO aih_events
+                "INSERT INTO heec_events
                  (event_id, workspace_id, spec_version, framework_source, payload, received_at)
                  VALUES (?1, ?2, '1.0', 'test', ?3, '2026-04-23T10:00:00Z')",
             )

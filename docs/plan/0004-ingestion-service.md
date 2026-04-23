@@ -17,7 +17,7 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 - [ ] Prometheus metrics endpoint via `axum-prometheus`.
 
 ### HTTP API (PRD §12.16)
-- [x] `POST /v1/events` — single event ingest, sync ack. (validates against canonical schema, scores, persists `aih_events` + `aih_scores` in a single transaction; dedupe via PK + `INSERT OR IGNORE`)
+- [x] `POST /v1/events` — single event ingest, sync ack. (validates against canonical schema, scores, persists `heec_events` + `heec_scores` in a single transaction; dedupe via PK + `INSERT OR IGNORE`)
 - [ ] `POST /v1/events:batch` — batch ingest with `Idempotency-Key` (PRD §12.19).
 - [ ] `GET /v1/events/{event_id}` — read.
 - [ ] `GET /v1/events/{event_id}/scores` — list score versions.
@@ -35,7 +35,7 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 
 ### Rate limiting and quotas (PRD §12.18)
 - [ ] Per-API-key token bucket via `tower-governor`.
-- [ ] Per-workspace daily quota check from `aih_workspaces`.
+- [ ] Per-workspace daily quota check from `heec_workspaces`.
 - [ ] Payload size limits enforced at the body extractor.
 - [ ] 429 responses include `Retry-After` and quota headers.
 
