@@ -36,11 +36,11 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 ### Local containers
 - [ ] `docker-compose.dev.yml` brings up ingestion service + PostgreSQL + dashboard for local dev.
 
-### Local CLI (`aih`, ADR-0010)
-- [x] `make cli-install` builds and installs `aih` into `~/.cargo/bin`. (PR #1)
-- [x] `make cli-smoke` runs `aih schema validate`, `aih score`, and `aih diff` against shipped fixtures and exits non-zero on any drift. (PR #1)
-- [x] `aih fixtures list` + `aih fixtures show <NAME>` walk the embedded fixture tree (`include_dir!`). (commit 13d75f1)
-- [ ] README quickstart includes `aih score examples/event.json` as the first thing a contributor runs.
+### Local CLI (`heec`, ADR-0010)
+- [x] `make cli-install` builds and installs `heec` into `~/.cargo/bin`. (PR #1)
+- [x] `make cli-smoke` runs `heec schema validate`, `heec score`, and `heec diff` against shipped fixtures and exits non-zero on any drift. (PR #1)
+- [x] `heec fixtures list` + `heec fixtures show <NAME>` walk the embedded fixture tree (`include_dir!`). (commit 13d75f1)
+- [ ] README quickstart includes `heec score examples/event.json` as the first thing a contributor runs.
 
 ### Editor configs
 - [ ] `.editorconfig`.

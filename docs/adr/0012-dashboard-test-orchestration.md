@@ -8,17 +8,17 @@
 ## Context
 Plan 0010 already scopes a dashboard for operational and analytical surfaces (PRD §21). The PRD's TDD discipline (§28.1) and the contributor request for a full back-to-back testing surface raise a separate need: a UI through which a developer or QA engineer can drive **the entire scoring pipeline end-to-end against shipped or user-supplied fixtures**, observe deterministic outputs, diff against golden expectations, and re-run the suite without leaving the browser.
 
-`aih` (ADR-0010) covers atomic local validation, but it is a CLI. A GUI complement makes the fixture suite, parity checks, and benchmark harness discoverable to non-Rust contributors and is the natural home for the "GUI dashboard for back-to-back testing" capability that the foundation slice asked for.
+`heec` (ADR-0010) covers atomic local validation, but it is a CLI. A GUI complement makes the fixture suite, parity checks, and benchmark harness discoverable to non-Rust contributors and is the natural home for the "GUI dashboard for back-to-back testing" capability that the foundation slice asked for.
 
 ## Decision
-Plan 0010 (Dashboard) ships a **Test Orchestration view** under an explicit, RBAC-gated `/test-orchestration` route, alongside the user dashboard and admin console. The view is the GUI counterpart to `aih` and the parity / golden-fixture CI jobs.
+Plan 0010 (Dashboard) ships a **Test Orchestration view** under an explicit, RBAC-gated `/test-orchestration` route, alongside the user dashboard and admin console. The view is the GUI counterpart to `heec` and the parity / golden-fixture CI jobs.
 
 ### Scope
 - **Fixture browser** — paginated list of every fixture under `core/schema/fixtures/` (events, scoring profiles, tier sets, golden ScoreResult JSONs), filterable by category and validity (`valid` / `invalid` / `edge`).
 - **Run pipeline** — pick an event fixture + profile + tier-set, post to a back-to-back endpoint exposed by the ingestion service (`POST /v1/test/score-pipeline`), render the resulting `ScoreResult` and explainability trace.
 - **Golden diff** — for any event fixture that has a corresponding `*.score_result.json` golden file, compute a structural JSON diff between the live result and the golden; surface mismatched paths inline.
 - **Suite runner** — kick off the full golden suite in one click; results render as a compact pass/fail matrix with collapsible per-failure detail. Suite progress streams via SSE.
-- **Benchmark stub** — invoke the future `aih bench` subcommand (or the equivalent benchmark endpoint) and chart p50/p95 of `score()` over N iterations.
+- **Benchmark stub** — invoke the future `heec bench` subcommand (or the equivalent benchmark endpoint) and chart p50/p95 of `score()` over N iterations.
 - **Replay** — given an `event_id` already persisted (PRD §20 `aih_events`), re-score it with the currently selected profile and surface any drift versus the persisted score row.
 
 ### Constraints
@@ -39,7 +39,7 @@ Plan 0010 (Dashboard) ships a **Test Orchestration view** under an explicit, RBA
 - **Hidden behind an admin-only flag.** Rejected: testing is a development concern, not strictly an admin one; RBAC + feature flag is sufficient gating.
 
 ## Consequences
-- Positive: fixture suite, parity checks, and benchmark surface are discoverable from a browser; non-Rust contributors get the same testing leverage that Rust contributors get from `aih`.
+- Positive: fixture suite, parity checks, and benchmark surface are discoverable from a browser; non-Rust contributors get the same testing leverage that Rust contributors get from `heec`.
 - Positive: the back-to-back endpoint (`/v1/test/score-pipeline`) doubles as a contract surface for SDK parity tests that prefer HTTP over FFI.
 - Negative: ingestion service grows a small, RBAC-gated test surface; we accept that and gate it behind a feature flag.
 - Follow-ups: plan 0010 gains a **Test Orchestration** section; ingestion-service plan (0004) gains the `/v1/test/*` endpoints with RBAC + feature flag; PRD §21 amended (see below).

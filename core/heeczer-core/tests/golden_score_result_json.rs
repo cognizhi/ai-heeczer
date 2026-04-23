@@ -4,7 +4,7 @@
 //! accidental serde rename, field reorder, or numeric-formatting change is
 //! caught at PR time. To intentionally update the golden, regenerate via:
 //!
-//!     ./target/debug/aih score \
+//!     ./target/debug/heec score \
 //!         core/schema/fixtures/events/valid/01-prd-canonical.json \
 //!         --format pretty \
 //!         > core/schema/fixtures/golden/01-prd-canonical.score_result.json
@@ -34,7 +34,7 @@ fn canonical_score_result_matches_golden_json() {
 
     let actual = serde_json::to_string_pretty(&result).unwrap();
     let expected = std::fs::read_to_string(manifest_relative(GOLDEN_PATH))
-        .expect("golden file missing — run aih score to regenerate");
+        .expect("golden file missing — run heec score to regenerate");
 
     // Normalise trailing whitespace/newlines so platform line-endings don't trip the test.
     assert_eq!(

@@ -430,22 +430,22 @@ All ingestion endpoints shall honor `event_id` as the primary idempotency key pe
 ### 12.20 Database Schema Migrations
 The project shall use a versioned, forward-only migration tool with one migration history table (`aih_schema_migrations`) shared across SQLite and PostgreSQL adapters. Migration choice is documented in ADR-0004. Every schema change shall ship with a migration script, a rollback note, and a migration test that runs on both backends in CI.
 
-### 12.21 Local Developer CLI (`aih`)
-The project shall ship a first-class command-line tool, `aih`, as the canonical local invocation surface for the Rust scoring core. It is the single tool a contributor uses to atomically test the analyzer without standing up the ingestion service or any SDK. Decision and rationale are recorded in ADR-0010.
+### 12.21 Local Developer CLI (`heec`)
+The project shall ship a first-class command-line tool, `heec`, as the canonical local invocation surface for the Rust scoring core. It is the single tool a contributor uses to atomically test the analyzer without standing up the ingestion service or any SDK. Decision and rationale are recorded in ADR-0010.
 
 Required MVP subcommands:
-- `aih schema validate` — validate a JSON event against the canonical schema in strict or compatibility mode.
-- `aih score` — run the deterministic scoring engine and emit `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or human-readable table.
-- `aih fixtures list|show` — enumerate and emit shipped golden fixtures for use in downstream SDK and adapter test suites.
-- `aih diff` — diff two `ScoreResult`s for parity verification.
-- `aih migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the previously planned `heeczerctl` binary).
-- `aih version` — print CLI, `scoring_version`, `spec_version`, and core crate versions.
+- `heec schema validate` — validate a JSON event against the canonical schema in strict or compatibility mode.
+- `heec score` — run the deterministic scoring engine and emit `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or human-readable table.
+- `heec fixtures list|show` — enumerate and emit shipped golden fixtures for use in downstream SDK and adapter test suites.
+- `heec diff` — diff two `ScoreResult`s for parity verification.
+- `heec migrate up|status|verify` — apply storage migrations against a configured SQLite or PostgreSQL URL (subsumes the previously planned `heeczerctl` binary).
+- `heec version` — print CLI, `scoring_version`, `spec_version`, and core crate versions.
 
 Phase 2 subcommands (per ADR-0010 amendment, 2026-04-23):
-- `aih score detail` — same scoring path as `aih score`, formatted explainability trace.
-- `aih validate profile|tier` — validate scoring-profile / tier-set JSONs against their schemas.
-- `aih replay <DB_URL> <event_id>` — read-only re-score of a persisted event; diffs against the latest persisted score row (does not insert a new row — that is reserved for the dashboard test-orchestration view per §21).
-- `aih bench [--iter N] [--fixture PATH] [--budget-ms M]` — p50/p95/p99 measurement of `score()`; non-zero exit on budget breach.
+- `heec score detail` — same scoring path as `heec score`, formatted explainability trace.
+- `heec validate profile|tier` — validate scoring-profile / tier-set JSONs against their schemas.
+- `heec replay <DB_URL> <event_id>` — read-only re-score of a persisted event; diffs against the latest persisted score row (does not insert a new row — that is reserved for the dashboard test-orchestration view per §21).
+- `heec bench [--iter N] [--fixture PATH] [--budget-ms M]` — p50/p95/p99 measurement of `score()`; non-zero exit on budget breach.
 
 The CLI's JSON output is part of the public contract (§12.15) and changes are versioned alongside `scoring_version` and `spec_version`. The CLI is published to crates.io and as signed prebuilt binaries on each GitHub Release per §27.4 and §27.5.
 
@@ -861,7 +861,7 @@ If the dashboard or admin console is in scope for a delivery, the implementation
 - test-orchestration view: fixture run, golden diff, suite runner, replay (see §21 Test Orchestration View)
 
 ### Test Orchestration View
-The dashboard must ship a `/test-orchestration` view that is the GUI counterpart to `aih` (§12.21) and provides back-to-back coverage of the scoring pipeline against shipped or user-supplied fixtures. Decision and scope are recorded in ADR-0012.
+The dashboard must ship a `/test-orchestration` view that is the GUI counterpart to `heec` (§12.21) and provides back-to-back coverage of the scoring pipeline against shipped or user-supplied fixtures. Decision and scope are recorded in ADR-0012.
 
 Required capabilities:
 - fixture browser over `core/schema/fixtures/` with category and validity filters

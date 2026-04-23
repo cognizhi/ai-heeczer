@@ -3,8 +3,8 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 
-fn aih() -> Command {
-    Command::cargo_bin("aih").expect("aih binary built")
+fn heec() -> Command {
+    Command::cargo_bin("heec").expect("heec binary built")
 }
 
 const CANONICAL: &str = "../schema/fixtures/events/valid/01-prd-canonical.json";
@@ -12,7 +12,7 @@ const INVALID_UUID: &str = "../schema/fixtures/events/invalid/05-invalid-uuid.js
 
 #[test]
 fn version_prints_scoring_and_spec_versions() {
-    aih()
+    heec()
         .arg("version")
         .assert()
         .success()
@@ -22,7 +22,7 @@ fn version_prints_scoring_and_spec_versions() {
 
 #[test]
 fn schema_validate_accepts_canonical_fixture() {
-    aih()
+    heec()
         .args(["schema", "validate", CANONICAL])
         .assert()
         .success()
@@ -31,7 +31,7 @@ fn schema_validate_accepts_canonical_fixture() {
 
 #[test]
 fn schema_validate_rejects_invalid_fixture() {
-    aih()
+    heec()
         .args(["schema", "validate", INVALID_UUID])
         .assert()
         .failure()
@@ -40,7 +40,7 @@ fn schema_validate_rejects_invalid_fixture() {
 
 #[test]
 fn score_emits_canonical_pretty_output() {
-    aih()
+    heec()
         .args(["score", CANONICAL, "--format", "pretty"])
         .assert()
         .success()
@@ -55,18 +55,18 @@ fn score_emits_canonical_pretty_output() {
 
 #[test]
 fn score_invalid_event_exits_nonzero() {
-    aih().args(["score", INVALID_UUID]).assert().failure();
+    heec().args(["score", INVALID_UUID]).assert().failure();
 }
 
 #[test]
 fn migrate_status_requires_database_url() {
-    aih().args(["migrate", "status"]).assert().failure();
+    heec().args(["migrate", "status"]).assert().failure();
 }
 
 #[test]
 fn migrate_up_then_status_reports_latest_version() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let db = dir.path().join("aih.sqlite");
+    let db = dir.path().join("heec.sqlite");
     let url = format!("sqlite://{}?mode=rwc", db.display());
 
     // Resolve the highest embedded migration version dynamically so the
@@ -78,13 +78,13 @@ fn migrate_up_then_status_reports_latest_version() {
         .max()
         .expect("at least one migration");
 
-    aih()
+    heec()
         .args(["migrate", "up", "--database-url", &url])
         .assert()
         .success()
         .stdout(predicate::str::contains(format!("migrated to {latest}")));
 
-    aih()
+    heec()
         .args(["migrate", "status", "--database-url", &url])
         .assert()
         .success()
@@ -93,7 +93,7 @@ fn migrate_up_then_status_reports_latest_version() {
 
 #[test]
 fn fixtures_list_includes_canonical_fixture() {
-    aih()
+    heec()
         .args(["fixtures", "list"])
         .assert()
         .success()
@@ -104,7 +104,7 @@ fn fixtures_list_includes_canonical_fixture() {
 
 #[test]
 fn fixtures_show_prints_embedded_body() {
-    aih()
+    heec()
         .args(["fixtures", "show", "events/valid/01-prd-canonical.json"])
         .assert()
         .success()
@@ -113,7 +113,7 @@ fn fixtures_show_prints_embedded_body() {
 
 #[test]
 fn fixtures_show_unknown_name_fails() {
-    aih()
+    heec()
         .args(["fixtures", "show", "events/valid/does-not-exist.json"])
         .assert()
         .failure()
@@ -122,7 +122,7 @@ fn fixtures_show_unknown_name_fails() {
 
 #[test]
 fn score_detail_emits_explainability_block() {
-    aih()
+    heec()
         .args(["score", CANONICAL, "--detail"])
         .assert()
         .success()
@@ -134,7 +134,7 @@ fn score_detail_emits_explainability_block() {
 
 #[test]
 fn validate_profile_accepts_default_profile() {
-    aih()
+    heec()
         .args(["validate", "profile", "../schema/profiles/default.v1.json"])
         .assert()
         .success()
@@ -143,7 +143,7 @@ fn validate_profile_accepts_default_profile() {
 
 #[test]
 fn validate_profile_rejects_event_payload() {
-    aih()
+    heec()
         .args(["validate", "profile", CANONICAL])
         .assert()
         .failure()
@@ -154,7 +154,7 @@ fn validate_profile_rejects_event_payload() {
 
 #[test]
 fn validate_tier_set_default_passes() {
-    aih()
+    heec()
         .args(["validate", "tier", "../schema/tiers/default.v1.json"])
         .assert()
         .success()
@@ -163,7 +163,7 @@ fn validate_tier_set_default_passes() {
 
 #[test]
 fn bench_runs_and_reports_percentiles() {
-    aih()
+    heec()
         .args(["bench", "--fixture", CANONICAL, "--iter", "32"])
         .assert()
         .success()
@@ -175,7 +175,7 @@ fn bench_runs_and_reports_percentiles() {
 
 #[test]
 fn bench_zero_iter_rejected() {
-    aih()
+    heec()
         .args(["bench", "--fixture", CANONICAL, "--iter", "0"])
         .assert()
         .failure()
@@ -184,7 +184,7 @@ fn bench_zero_iter_rejected() {
 
 #[test]
 fn bench_p95_budget_breach_exits_nonzero() {
-    aih()
+    heec()
         .args([
             "bench",
             "--fixture",
@@ -202,15 +202,15 @@ fn bench_p95_budget_breach_exits_nonzero() {
 #[test]
 fn replay_missing_event_id_errors() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let db = dir.path().join("aih.sqlite");
+    let db = dir.path().join("heec.sqlite");
     let url = format!("sqlite://{}?mode=rwc", db.display());
 
-    aih()
+    heec()
         .args(["migrate", "up", "--database-url", &url])
         .assert()
         .success();
 
-    aih()
+    heec()
         .args([
             "replay",
             "--database-url",
@@ -228,10 +228,10 @@ fn replay_missing_event_id_errors() {
 #[test]
 fn replay_persisted_event_emits_score_and_no_prior_row_marker() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let db = dir.path().join("aih.sqlite");
+    let db = dir.path().join("heec.sqlite");
     let url = format!("sqlite://{}?mode=rwc", db.display());
 
-    aih()
+    heec()
         .args(["migrate", "up", "--database-url", &url])
         .assert()
         .success();
@@ -242,7 +242,7 @@ fn replay_persisted_event_emits_score_and_no_prior_row_marker() {
     let workspace = "default";
     seed_event(&url, workspace, event_id, &payload);
 
-    aih()
+    heec()
         .args([
             "replay",
             "--database-url",

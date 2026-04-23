@@ -37,7 +37,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] Author `migrations-pg/0001_init.sql` — PostgreSQL dialect (PL/pgSQL triggers, `NOW()` defaults). (plan 0004)
 - [x] Author `migrations-pg/0002_append_only_audit_and_global_unique.sql` — PostgreSQL dialect. (plan 0004)
 - [x] Add `src/pg.rs` PostgreSQL backend module (`heeczer_storage::pg`). (plan 0004)
-- [x] Add `aih migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan). (PR #1)
+- [x] Add `heec migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan). (PR #1)
 - [ ] Document migration authoring guide in `docs/architecture/data-model.md`.
 
 ### Multi-tenancy

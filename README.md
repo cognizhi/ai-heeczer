@@ -22,7 +22,7 @@ It contains:
 | [`heeczer-core`](core/heeczer-core)             | Pure-Rust scoring engine, schema validation  |
 | [`heeczer-core-c`](core/heeczer-core-c)         | C ABI shim used by every non-Rust SDK        |
 | [`heeczer-storage`](core/heeczer-storage)       | SQLite/Postgres storage and migrations       |
-| [`heeczer-cli`](core/heeczer-cli) (`aih`)       | First-class local developer CLI (ADR-0010)  |
+| [`heeczer-cli`](core/heeczer-cli) (`heec`)       | First-class local developer CLI (ADR-0010)  |
 
 Plans 0004–0012, 0014, and 0015 are tracked under [`docs/plan/`](docs/plan/) and
 land iteratively on top of this foundation.
@@ -43,7 +43,7 @@ make cli-install
 make cli-smoke
 
 # score a single canonical event
-aih score core/schema/fixtures/events/valid/01-prd-canonical.json --format pretty
+heec score core/schema/fixtures/events/valid/01-prd-canonical.json --format pretty
 ```
 
 The full target catalogue is in the [`Makefile`](Makefile); run `make help`.

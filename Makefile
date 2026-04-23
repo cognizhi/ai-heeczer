@@ -89,16 +89,16 @@ release-dry-run: ## release-please manifest dry-run (lands with plan 0012)
 # ----- CLI (ADR-0010) --------------------------------------------------------
 
 .PHONY: cli-install
-cli-install: ## install the aih CLI to ~/.cargo/bin
+cli-install: ## install the heec CLI to ~/.cargo/bin
 	cargo install --path core/heeczer-cli --locked
 
 .PHONY: cli-smoke
-cli-smoke: build ## end-to-end smoke of the aih CLI against shipped fixtures
-	./target/release/aih version
-	./target/release/aih schema validate core/schema/fixtures/events/valid/01-prd-canonical.json
-	./target/release/aih score core/schema/fixtures/events/valid/01-prd-canonical.json --format json > /tmp/aih-score.json
-	./target/release/aih diff /tmp/aih-score.json /tmp/aih-score.json
-	./target/release/aih migrate up --database-url sqlite::memory:
+cli-smoke: build ## end-to-end smoke of the heec CLI against shipped fixtures
+	./target/release/heec version
+	./target/release/heec schema validate core/schema/fixtures/events/valid/01-prd-canonical.json
+	./target/release/heec score core/schema/fixtures/events/valid/01-prd-canonical.json --format json > /tmp/heec-score.json
+	./target/release/heec diff /tmp/heec-score.json /tmp/heec-score.json
+	./target/release/heec migrate up --database-url sqlite::memory:
 
 # ----- security --------------------------------------------------------------
 

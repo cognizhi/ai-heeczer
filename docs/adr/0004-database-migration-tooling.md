@@ -20,7 +20,7 @@ Use **`sqlx::migrate!`** (compile-time embedded SQL migrations) as the primary m
 We do **not** adopt Alembic for the production data path. Rationale:
 1. Per ADR-0005, the ingestion service is Rust. Adding Alembic would force a Python runtime into the production container purely for migrations, increasing image size, CVE surface, and operational complexity.
 2. `sqlx` is already required by the ingestion service for typed queries against both SQLite and PostgreSQL; reusing its migration support keeps tooling cohesive.
-3. Embedded migrations execute at service startup (or via `aih migrate`, see ADR-0010) without a separate orchestrator.
+3. Embedded migrations execute at service startup (or via `heec migrate`, see ADR-0010) without a separate orchestrator.
 
 Alembic remains an explicitly approved choice **only** for any optional future Python-based tooling (e.g., calibration scripts, data-science notebooks against a read replica). It must never be the production schema authority.
 
@@ -38,7 +38,7 @@ For complex online PostgreSQL migrations that exceed `sqlx`'s pure-SQL ergonomic
 - Positive: migration tests run against both SQLite and PostgreSQL in CI from the same fixture set.
 - Negative: no autogeneration — every migration is hand-written. We treat this as a feature for a contract-first product.
 - Negative: dialect divergences must be handled explicitly. We standardize on a small subset of portable SQL plus dialect-specific files when necessary.
-- Follow-ups: ship `aih migrate up|status|verify` CLI commands per ADR-0010 (delivered in the foundation slice); document the migration authoring guide in `docs/architecture/data-model.md`.
+- Follow-ups: ship `heec migrate up|status|verify` CLI commands per ADR-0010 (delivered in the foundation slice); document the migration authoring guide in `docs/architecture/data-model.md`.
 
 ## Amendment 2026-04-23 — `aih_schema_migrations` view
 

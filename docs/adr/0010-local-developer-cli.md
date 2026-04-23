@@ -1,4 +1,4 @@
-# ADR-0010: Local Developer CLI (`aih`)
+# ADR-0010: Local Developer CLI (`heec`)
 
 - **Status:** Accepted
 - **Date:** 2026-04-22
@@ -23,30 +23,30 @@ Without this surface, every contributor reinvents an ad hoc harness in their pre
 
 ## Decision
 
-Ship `aih`, a first-class Rust binary crate at `core/heeczer-cli/`, as part of the foundation deliverables. It is the **canonical reference invocation** of the Rust core (per ADR-0001) and is published to `crates.io` and as a prebuilt binary attached to GitHub Releases (PRD §27.4).
+Ship `heec`, a first-class Rust binary crate at `core/heeczer-cli/`, as part of the foundation deliverables. It is the **canonical reference invocation** of the Rust core (per ADR-0001) and is published to `crates.io` and as a prebuilt binary attached to GitHub Releases (PRD §27.4).
 
 ### Scope (MVP, Phase 1)
 
 The CLI exposes the following subcommands, all backed by the `heeczer-core` crate:
 
-- `aih schema validate <FILE|->` — validate a JSON event against `event.v1.json`. Exits non-zero with a human-readable error path on failure. Supports `--strict` (default) and `--compatibility` modes per PRD §13.
-- `aih score <FILE|->` — run the scoring engine and emit the full `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or pretty-printed table (`--format json|table`).
-- `aih score --profile <PATH>` — override the default scoring profile.
-- `aih score --tier <ID>` — pick a tier from the loaded tier set.
-- `aih fixtures list|show <NAME>` — enumerate and emit shipped golden fixtures (useful for SDK authors to copy into their language's test suites).
-- `aih diff <A.json> <B.json>` — diff two `ScoreResult`s and exit non-zero if they differ (parity helper).
-- `aih migrate up|status|verify` — apply storage migrations against a configured SQLite/PostgreSQL URL (plan 0003 already calls for this under `heeczerctl`; we collapse it into `aih` to give contributors a single tool — see "Naming" below).
-- `aih version` — print CLI, `scoring_version`, `spec_version`, and core crate versions for bug reports.
+- `heec schema validate <FILE|->` — validate a JSON event against `event.v1.json`. Exits non-zero with a human-readable error path on failure. Supports `--strict` (default) and `--compatibility` modes per PRD §13.
+- `heec score <FILE|->` — run the scoring engine and emit the full `ScoreResult` (HEE, FEC, confidence, explainability trace) as JSON or pretty-printed table (`--format json|table`).
+- `heec score --profile <PATH>` — override the default scoring profile.
+- `heec score --tier <ID>` — pick a tier from the loaded tier set.
+- `heec fixtures list|show <NAME>` — enumerate and emit shipped golden fixtures (useful for SDK authors to copy into their language's test suites).
+- `heec diff <A.json> <B.json>` — diff two `ScoreResult`s and exit non-zero if they differ (parity helper).
+- `heec migrate up|status|verify` — apply storage migrations against a configured SQLite/PostgreSQL URL (plan 0003 already calls for this under `heeczerctl`; we collapse it into `heec` to give contributors a single tool — see "Naming" below).
+- `heec version` — print CLI, `scoring_version`, `spec_version`, and core crate versions for bug reports.
 
 ### Scope (Phase 2 — added 2026-04-23)
 
 The following subcommands are added in the post-foundation slice; they remain inside the same binary and reuse the existing `heeczer-core` and `heeczer-storage` deps:
 
-- `aih score detail <FILE|->` — same scoring path as `aih score`, but emits the explainability trace (`heeczer-core::explain`) as a human-formatted, multi-line view (`--format text|json`). Shorthand for the most common debugging session.
-- `aih validate profile <FILE|->` — validate a candidate scoring-profile JSON against `scoring_profile.v1.json` (the new `ProfileValidator`); exits non-zero with the JSON Pointer of the first failure.
-- `aih validate tier <FILE|->` — validate a candidate tier-set JSON against the upcoming `tier_set.v1.json` schema (deferred until that schema is authored; the subcommand prints a clear "schema not yet shipped" error in the meantime so the surface is reserved).
-- `aih replay <DB_URL> <event_id>` — fetch the persisted normalized event from `aih_events`, re-score with the currently configured profile, and emit a `ScoreResult` diff against the latest persisted score row (read-only; **does not insert** a new score row — that is reserved for the dashboard test-orchestration view per ADR-0012).
-- `aih bench [--iter N] [--fixture PATH]` — measure `score()` p50/p95/p99 over N iterations of a fixture event; prints a single-line summary and exits non-zero if a `--budget-ms` flag is supplied and exceeded. Reuses Rust `Instant` (no external bench framework dependency).
+- `heec score detail <FILE|->` — same scoring path as `heec score`, but emits the explainability trace (`heeczer-core::explain`) as a human-formatted, multi-line view (`--format text|json`). Shorthand for the most common debugging session.
+- `heec validate profile <FILE|->` — validate a candidate scoring-profile JSON against `scoring_profile.v1.json` (the new `ProfileValidator`); exits non-zero with the JSON Pointer of the first failure.
+- `heec validate tier <FILE|->` — validate a candidate tier-set JSON against the upcoming `tier_set.v1.json` schema (deferred until that schema is authored; the subcommand prints a clear "schema not yet shipped" error in the meantime so the surface is reserved).
+- `heec replay <DB_URL> <event_id>` — fetch the persisted normalized event from `aih_events`, re-score with the currently configured profile, and emit a `ScoreResult` diff against the latest persisted score row (read-only; **does not insert** a new score row — that is reserved for the dashboard test-orchestration view per ADR-0012).
+- `heec bench [--iter N] [--fixture PATH]` — measure `score()` p50/p95/p99 over N iterations of a fixture event; prints a single-line summary and exits non-zero if a `--budget-ms` flag is supplied and exceeded. Reuses Rust `Instant` (no external bench framework dependency).
 
 These additions are reflected in PRD §12.21 (amended).
 
@@ -58,13 +58,13 @@ These additions are reflected in PRD §12.21 (amended).
 
 ### Naming
 
-We adopt `aih` as the user-facing binary name (short, matches the product slug). The previously planned `heeczerctl` name in plan 0003 §Migrations is deprecated in favor of `aih migrate …` to give contributors **one tool**, not two. Plan 0003 will be amended in the same PR.
+We adopt `heec` as the user-facing binary name (short, matches the product slug). The previously planned `heeczerctl` name in plan 0003 §Migrations is deprecated in favor of `heec migrate …` to give contributors **one tool**, not two. Plan 0003 will be amended in the same PR.
 
 ### Distribution
 
-- Crate: `aih` on crates.io (binary-only crate, depends on `heeczer-core`).
+- Crate: `heec` on crates.io (binary-only crate, depends on `heeczer-core`).
 - Prebuilt binaries: Linux/macOS/Windows on x86_64 and aarch64, attached to each GitHub Release, signed with cosign keyless OIDC (PRD §22 Security).
-- Container: `ghcr.io/<org>/aih:<version>` for use in CI of downstream framework adapter repos.
+- Container: `ghcr.io/<org>/heec:<version>` for use in CI of downstream framework adapter repos.
 - Homebrew tap and Scoop manifest are deferred to Phase 2.
 
 ## Alternatives Considered
@@ -82,8 +82,8 @@ The Rust binary wins on: (a) zero runtime dependency for end users (static-ish b
 
 - Single deterministic local harness for schema + scoring + storage, satisfying the "atomically test the analyzer" requirement raised during the foundation slice.
 - Removes `heeczerctl` as a separate binary; one tool, one set of subcommands.
-- Provides a stable contract surface (`aih score`'s JSON output) that framework adapter test suites in any language can shell out to.
-- Enables a "golden fixture parity" CI job that runs `aih score` on every fixture and compares against checked-in expected outputs without booting any SDK.
+- Provides a stable contract surface (`heec score`'s JSON output) that framework adapter test suites in any language can shell out to.
+- Enables a "golden fixture parity" CI job that runs `heec score` on every fixture and compares against checked-in expected outputs without booting any SDK.
 
 ### Negative
 
@@ -94,9 +94,9 @@ The Rust binary wins on: (a) zero runtime dependency for end users (static-ish b
 ### Follow-ups
 
 - Plan 0013 (Developer Experience) gains a checklist item: CLI quickstart in README and `make cli-install` Makefile target.
-- Plan 0003 (Storage) §Migrations is amended to use `aih migrate` instead of `heeczerctl migrate`.
+- Plan 0003 (Storage) §Migrations is amended to use `heec migrate` instead of `heeczerctl migrate`.
 - Plan 0012 (CI/CD) gains a `cli-build` job and a `cli-release-asset` step in the release workflow.
-- A new contract test suite, `core/heeczer-cli/tests/contract/`, asserts that `aih score`'s JSON output is byte-equal to the corresponding golden fixture's expected output.
+- A new contract test suite, `core/heeczer-cli/tests/contract/`, asserts that `heec score`'s JSON output is byte-equal to the corresponding golden fixture's expected output.
 
 ## References
 

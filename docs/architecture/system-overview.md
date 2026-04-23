@@ -13,7 +13,7 @@ the ingestion service produce **byte-identical** results from the same input.
 │ Surfaces                                                               │
 │   • SDKs (Rust / JS / Python / Go / Java)  ← plans 0005–0009          │
 │   • Ingestion service                       ← plan 0004                │
-│   • aih CLI                                 ← ADR-0010, this slice    │
+│   • heec CLI                                 ← ADR-0010, this slice    │
 │   • Dashboard                               ← plan 0010                │
 └────────────────────────────────────────────────────────────────────────┘
                               │

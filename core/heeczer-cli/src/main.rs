@@ -1,4 +1,4 @@
-//! `aih` — local developer CLI for the ai-heeczer scoring core. See ADR-0010.
+//! `heec` — local developer CLI for the ai-heeczer scoring core. See ADR-0010.
 
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -39,7 +39,7 @@ fn tier_set_validator() -> &'static TierSetValidator {
 }
 
 #[derive(Debug, Parser)]
-#[command(name = "aih", version, about = "ai-heeczer local developer CLI", long_about = None)]
+#[command(name = "heec", version, about = "ai-heeczer local developer CLI", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -103,7 +103,7 @@ enum FixturesCmd {
 enum MigrateCmd {
     /// Apply pending migrations.
     Up {
-        /// Database URL, e.g. `sqlite:///tmp/aih.sqlite?mode=rwc`.
+        /// Database URL, e.g. `sqlite:///tmp/heec.sqlite?mode=rwc`.
         #[arg(long, default_value = "sqlite::memory:")]
         database_url: String,
     },
@@ -136,7 +136,7 @@ struct ScoreArgs {
     #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
     format: OutputFormat,
     /// Print the explainability trace as a human-formatted, multi-line view
-    /// (PRD §16 / ADR-0010 Phase 2 `aih score --detail`).
+    /// (PRD §16 / ADR-0010 Phase 2 `heec score --detail`).
     #[arg(long)]
     detail: bool,
 }
@@ -165,7 +165,7 @@ struct BenchArgs {
 
 #[derive(Debug, Parser)]
 struct ReplayArgs {
-    /// Database URL, e.g. `sqlite:///tmp/aih.sqlite`.
+    /// Database URL, e.g. `sqlite:///tmp/heec.sqlite`.
     #[arg(long)]
     database_url: String,
     /// Workspace id (defaults to `default`).
@@ -321,7 +321,7 @@ fn cmd_fixtures_show(name: &str) -> Result<()> {
     let normalized = name.trim_start_matches("./").trim_start_matches('/');
     let file = FIXTURES
         .get_file(normalized)
-        .with_context(|| format!("fixture not found: {normalized} (try `aih fixtures list`)"))?;
+        .with_context(|| format!("fixture not found: {normalized} (try `heec fixtures list`)"))?;
     let body = file.contents_utf8().context("fixture is not valid UTF-8")?;
     let stdout = std::io::stdout();
     let mut out = stdout.lock();

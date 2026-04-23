@@ -146,7 +146,7 @@ async fn aih_jobs_check_constraint_rejects_unknown_state() {
 #[tokio::test]
 async fn open_path_round_trips_to_disk() {
     let dir = tempdir().unwrap();
-    let path = dir.path().join("aih.sqlite3");
+    let path = dir.path().join("heec.sqlite3");
     {
         let pool = open_path(&path).await.unwrap();
         migrate(&pool).await.unwrap();

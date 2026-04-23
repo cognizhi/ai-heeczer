@@ -6,10 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "aih: canonical local CLI for the ai-heeczer scoring core (ADR-0010)."
+description = "heec: canonical local CLI for the ai-heeczer scoring core (ADR-0010)."
 
 [[bin]]
-name = "aih"
+name = "heec"
 path = "src/main.rs"
 
 [dependencies]
