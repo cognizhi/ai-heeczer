@@ -30,11 +30,14 @@ land iteratively on top of this foundation.
 ## Quickstart
 
 ```bash
-# install rust toolchain (rust-toolchain.toml pins 1.88) then verify everything
+# install the latest stable Rust toolchain plus local security tooling
 make bootstrap
 
 # build & test the entire workspace
 make test
+
+# mirror the Rust security CI jobs, including fresh cargo-audit/cargo-deny installs
+make security-ci
 
 # install the developer CLI
 make cli-install

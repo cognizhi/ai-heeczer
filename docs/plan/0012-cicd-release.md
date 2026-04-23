@@ -20,13 +20,13 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 - [ ] `migration.yml` — fresh + incremental on SQLite + PostgreSQL.
 - [ ] `ui.yml` — Playwright E2E for dashboard.
 - [ ] `bench-smoke.yml` — `track()` p95, ack p95, enqueue throughput.
-- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`; Rust security checks are green locally after narrowing storage deps away from the unused `sqlx-mysql`/`rsa` path, switching the Rust SDK HTTP client to native cert roots, and codifying the remaining unavoidable duplicate-version exceptions in `deny.toml` so `cargo deny check` runs warning-free.
+- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`; Rust security checks are green locally after narrowing storage deps away from the unused `sqlx-mysql`/`rsa` path, switching the Rust SDK HTTP client to native cert roots, codifying the remaining unavoidable duplicate-version exceptions in `deny.toml` so `cargo deny check` runs warning-free, and routing the Rust security jobs through `make security-audit-ci` / `make security-licenses-ci` on an explicit stable toolchain so local repro exercises the same clean-install path as CI.
 - [ ] `docs.yml` — markdown lint, link check, OpenAPI lint.
 - [ ] `release-dry-run.yml` — release-please manifest computation, package dry-run on PRs.
 
 ### Release workflows
 - [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`.
-- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@heeczer/sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
+- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the Rust jobs install an explicit stable toolchain, the npm path installs/tests/builds `@heeczer/sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
 - [ ] `release-resume.yml` — workflow_dispatch to resume partial publish; same `release` concurrency group.
 
 ### Branch protection

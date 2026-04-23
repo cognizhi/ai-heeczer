@@ -2,6 +2,8 @@ SHELL := /usr/bin/env bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
+RUST_STABLE_TOOLCHAIN := stable
+
 # ai-heeczer Makefile. Single human-facing command surface (PRD §12.13, ADR-0007).
 # Every target listed here is documented and CI-invokable.
 
@@ -15,9 +17,13 @@ help: ## list every target with a one-line description
 
 .PHONY: bootstrap
 bootstrap: ## install/verify language toolchains and pre-commit hooks
-	@echo "» rust toolchain (rust-toolchain.toml drives rustup)"
+	@echo "» rust toolchain (track latest stable + required components)"
 	@command -v rustup >/dev/null || { echo "install rustup from https://rustup.rs"; exit 1; }
+	@rustup toolchain install $(RUST_STABLE_TOOLCHAIN) --profile minimal --component rustfmt --component clippy >/dev/null
 	@rustup show active-toolchain >/dev/null
+	@echo "» rust security tooling"
+	@command -v cargo-audit >/dev/null || cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-audit --locked
+	@command -v cargo-deny >/dev/null || cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-deny --locked
 	@echo "» node (.nvmrc)"
 	@command -v node >/dev/null || { echo "install Node 22 LTS"; exit 1; }
 	@command -v pnpm >/dev/null || { echo "install pnpm: corepack enable"; exit 1; }
@@ -107,13 +113,32 @@ security: security-audit security-licenses ## run all local security scans
 
 .PHONY: security-audit
 security-audit: ## cargo-audit dependency vulnerability scan
-	@command -v cargo-audit >/dev/null || cargo install cargo-audit --locked
-	cargo audit
+	@command -v cargo-audit >/dev/null || cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-audit --locked
+	cargo +$(RUST_STABLE_TOOLCHAIN) audit
+
+.PHONY: security-audit-ci
+security-audit-ci: ## mirror CI by fresh-installing cargo-audit on stable before scanning
+	@tool_root="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tool_root"' EXIT; \
+	rustup toolchain install $(RUST_STABLE_TOOLCHAIN) --profile minimal >/dev/null; \
+	cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-audit --locked --root "$$tool_root"; \
+	PATH="$$tool_root/bin:$$PATH" cargo +$(RUST_STABLE_TOOLCHAIN) audit
 
 .PHONY: security-licenses
 security-licenses: ## cargo-deny license + advisories
-	@command -v cargo-deny >/dev/null || cargo install cargo-deny --locked
-	cargo deny check
+	@command -v cargo-deny >/dev/null || cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-deny --locked
+	cargo +$(RUST_STABLE_TOOLCHAIN) deny check
+
+.PHONY: security-licenses-ci
+security-licenses-ci: ## mirror CI by fresh-installing cargo-deny on stable before scanning
+	@tool_root="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tool_root"' EXIT; \
+	rustup toolchain install $(RUST_STABLE_TOOLCHAIN) --profile minimal >/dev/null; \
+	cargo +$(RUST_STABLE_TOOLCHAIN) install cargo-deny --locked --root "$$tool_root"; \
+	PATH="$$tool_root/bin:$$PATH" cargo +$(RUST_STABLE_TOOLCHAIN) deny check
+
+.PHONY: security-ci
+security-ci: security-audit-ci security-licenses-ci ## mirror the Rust security CI jobs locally
 
 # ----- docs -----------------------------------------------------------------
 

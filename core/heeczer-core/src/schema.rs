@@ -18,17 +18,12 @@ pub const TIER_SET_SCHEMA_V1: &str = include_str!("../../schema/tier_set.v1.json
 /// allowlist of unknown top-level fields with a warning) is planned but is not
 /// implemented; we refuse to expose a no-op variant and silently mislead
 /// callers. See `docs/plan/0001-schema-and-contracts.md`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum Mode {
     /// Strict mode rejects every unknown top-level field outside `meta.extensions`.
+    #[default]
     Strict,
-}
-
-impl Default for Mode {
-    fn default() -> Self {
-        Self::Strict
-    }
 }
 
 /// Compile-once event-schema validator. Cheap to clone (`Arc`-backed internally).
