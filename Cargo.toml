@@ -30,7 +30,7 @@ serde_json = "1"
 thiserror = "2"
 
 # Schema
-jsonschema = { version = "0.30", default-features = false }
+jsonschema = { version = "0.46", default-features = false }
 
 # Time
 time = { version = "0.3", features = ["serde", "parsing", "formatting", "macros"] }
