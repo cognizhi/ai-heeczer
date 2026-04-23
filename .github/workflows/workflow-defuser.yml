@@ -275,8 +275,12 @@ jobs:
                   summary_lines.append(row)
                   pr_body_lines.append(row)
           else:
-              summary_lines.append('- No unpinned action references were found.')
-              pr_body_lines.append('- No unpinned action references were found.')
+              if skipped_changes:
+                  summary_lines.append(f'- No action refs were pinned. {len(skipped_changes)} action reference(s) were deferred by the age safeguard.')
+                  pr_body_lines.append(f'- No action refs were pinned. {len(skipped_changes)} action reference(s) were deferred by the age safeguard.')
+              else:
+                  summary_lines.append('- No unpinned action references were found.')
+                  pr_body_lines.append('- No unpinned action references were found.')
 
           if skipped_changes:
               summary_lines.extend(
