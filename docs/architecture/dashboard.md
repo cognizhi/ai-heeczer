@@ -6,13 +6,13 @@ workspace activity.
 
 ## Technology stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Framework | Next.js 15 App Router | React Server Components + `use client` islands |
-| Styling | Tailwind CSS | `tailwind.config.ts` |
-| Testing (unit) | Vitest | `vitest.config.ts`, runs in jsdom |
-| Testing (E2E) | Playwright | `playwright.config.ts`, requires a running Next.js server |
-| Package manager | pnpm | `pnpm-lock.yaml` |
+| Layer           | Technology            | Notes                                                     |
+| --------------- | --------------------- | --------------------------------------------------------- |
+| Framework       | Next.js 15 App Router | React Server Components + `use client` islands            |
+| Styling         | Tailwind CSS          | `tailwind.config.ts`                                      |
+| Testing (unit)  | Vitest                | `vitest.config.ts`, runs in jsdom                         |
+| Testing (E2E)   | Playwright            | `playwright.config.ts`, requires a running Next.js server |
+| Package manager | pnpm                  | `pnpm-lock.yaml`                                          |
 
 ## Data contract
 
@@ -25,7 +25,7 @@ The dashboard calls the ingestion service REST API. No separate BFF
 (Backend For Frontend) is planned; Next.js Server Components act as the
 data-fetching layer, keeping API keys out of the browser bundle.
 
-```text
+````text
 Browser (React)
   └── Next.js Server Component (RSC)
         └── fetch("http://ingest:8080/…", { next: { revalidate: 30 } })
@@ -92,3 +92,4 @@ The `integration` GitHub Actions workflow runs:
 3. Runs `pnpm exec playwright test` against it.
 
 See `.github/workflows/integration.yml`.
+````

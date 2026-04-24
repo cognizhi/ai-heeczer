@@ -2,14 +2,14 @@
 
 ai-heeczer supports two scoring deployment modes:
 
-| | **Native (in-process)** | **Image (HTTP)** |
-|---|---|---|
-| Latency | < 1 ms (no network hop) | < 10 ms (local LAN) |
-| Isolation | Same process as the caller | Separate container / service |
-| Persistence | None (caller-managed) | SQLite or PostgreSQL via heeczer-ingest |
-| Multi-tenant | No — single workspace per caller | Yes — `workspace_id` per request |
-| Auth | N/A | API-key middleware (plan 0004 §auth) |
-| Scaling | Vertical (thread pool) | Horizontal (replica set) |
+|              | **Native (in-process)**          | **Image (HTTP)**                        |
+| ------------ | -------------------------------- | --------------------------------------- |
+| Latency      | < 1 ms (no network hop)          | < 10 ms (local LAN)                     |
+| Isolation    | Same process as the caller       | Separate container / service            |
+| Persistence  | None (caller-managed)            | SQLite or PostgreSQL via heeczer-ingest |
+| Multi-tenant | No — single workspace per caller | Yes — `workspace_id` per request        |
+| Auth         | N/A                              | API-key middleware (plan 0004 §auth)    |
+| Scaling      | Vertical (thread pool)           | Horizontal (replica set)                |
 
 ---
 
@@ -27,7 +27,7 @@ Scoring runs synchronously in-process with zero network overhead.
 
 ### How it works
 
-```text
+````text
 caller binary
   └── heeczer SDK (native feature)
         └── heeczer-core::score()   ← pure CPU, Decimal arithmetic
@@ -117,3 +117,4 @@ SDK client → POST /v1/events → heeczer-ingest → queue → scoring worker �
 ```text
 The HTTP response returns immediately after enqueue; the score is
 delivered asynchronously via a webhook or polling endpoint.
+````

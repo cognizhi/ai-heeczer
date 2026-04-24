@@ -18,10 +18,10 @@ real-world effort data. Plan 0015 tracks the full calibration roadmap.
 
 ### Reference pack
 
-A *reference pack* is a JSON document that pairs canonical events with
+A _reference pack_ is a JSON document that pairs canonical events with
 ground-truth effort measurements:
 
-```json
+````json
 {
   "pack_id": "ref_v1_2024q4",
   "schema_version": "1",
@@ -111,3 +111,4 @@ canonical event schema in `core/schema/` once the calibration CLI lands
 | RMSE / MAE / R² report output | Planned |
 | Automated calibration CI job | Planned |
 | Sample reference pack for `01-prd-canonical` fixture | Planned |
+````

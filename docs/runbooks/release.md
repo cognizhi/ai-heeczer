@@ -13,14 +13,14 @@ for ai-heeczer. The CI/CD design is documented in ADR-0009 and
 2. **Merge the Release PR** — this pushes a version tag (e.g. `v0.3.0`)
    which triggers `release.yml`.
 3. **`release.yml` runs** in order:
-   1. `cargo publish` — publishes `heeczer-core`, `heeczer-core-c`,
-      `heeczer-storage`, `heeczer-cli`, `heeczer` to crates.io.
-   2. `npm publish --provenance` — publishes `@cognizhi/heeczer-sdk` to npm.
-   3. `pypa/gh-action-pypi-publish` — publishes `heeczer-py` to PyPI.
-   4. `mvn deploy` — publishes `heeczer-java` to Maven Central via Sonatype.
-   5. `git tag go/vX.Y.Z` — pushes the Go module tag.
-   6. `gh release create` — creates the GitHub Release with the SBOM,
-      SLSA provenance, and binary attachments.
+    1. `cargo publish` — publishes `heeczer-core`, `heeczer-core-c`,
+       `heeczer-storage`, `heeczer-cli`, `heeczer` to crates.io.
+    2. `npm publish --provenance` — publishes `@cognizhi/heeczer-sdk` to npm.
+    3. `pypa/gh-action-pypi-publish` — publishes `heeczer-py` to PyPI.
+    4. `mvn deploy` — publishes `heeczer-java` to Maven Central via Sonatype.
+    5. `git tag go/vX.Y.Z` — pushes the Go module tag.
+    6. `gh release create` — creates the GitHub Release with the SBOM,
+       SLSA provenance, and binary attachments.
 4. All steps run with `concurrency: { group: release, cancel-in-progress: false }`.
 
 ---
@@ -38,7 +38,7 @@ Check the failed run's logs in GitHub Actions. Each publish step prints a
 
 ### Step 2: trigger `release-resume.yml`
 
-```text
+````text
 GitHub UI → Actions → "Release resume" → Run workflow
 ```text
 Inputs:
@@ -123,3 +123,4 @@ Go module versions are immutable once tagged. Publish a patch release
 
 PyPI and npm also use OIDC trusted publishing — see ADR-0009 and
 `docs/architecture/cicd.md` for the publisher configuration.
+````

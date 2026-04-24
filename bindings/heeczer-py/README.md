@@ -7,8 +7,8 @@ Async Python client for the [ai-heeczer](https://github.com/cognizhi/ai-heeczer)
 
 ## Install
 
-> **Pre-release.** ``cognizhi-heeczer`` is not on PyPI yet (see plan 0012).
-> Until then, install from source: ``uv sync --project bindings/heeczer-py``.
+> **Pre-release.** `cognizhi-heeczer` is not on PyPI yet (see plan 0012).
+> Until then, install from source: `uv sync --project bindings/heeczer-py`.
 
 ```bash
 uv add cognizhi-heeczer
@@ -39,7 +39,7 @@ asyncio.run(main())
 ## Error handling
 
 Every client method raises :class:`heeczer.HeeczerApiError` on a non-2xx
-response. The error carries the closed ``kind`` enum from the ingestion
+response. The error carries the closed `kind` enum from the ingestion
 service's envelope:
 
 ```python
@@ -54,37 +54,37 @@ except HeeczerApiError as err:
 
 ## Configuration
 
-| Argument | Type | Default | Description |
-| --- | --- | --- | --- |
-| `base_url` | `str` | required | Base URL of the ingestion service. Trailing slash is stripped. |
-| `api_key` | `str \| None` | `None` | Sent as `x-heeczer-api-key`. |
-| `timeout` | `float` | `10.0` | Per-request timeout in seconds. |
-| `transport` | `httpx.AsyncBaseTransport \| None` | `None` | Inject a custom transport (e.g. `httpx.MockTransport` in tests). |
+| Argument    | Type                               | Default  | Description                                                      |
+| ----------- | ---------------------------------- | -------- | ---------------------------------------------------------------- |
+| `base_url`  | `str`                              | required | Base URL of the ingestion service. Trailing slash is stripped.   |
+| `api_key`   | `str \| None`                      | `None`   | Sent as `x-heeczer-api-key`.                                     |
+| `timeout`   | `float`                            | `10.0`   | Per-request timeout in seconds.                                  |
+| `transport` | `httpx.AsyncBaseTransport \| None` | `None`   | Inject a custom transport (e.g. `httpx.MockTransport` in tests). |
 
 ## Methods
 
-| Method | HTTP | Returns |
-| --- | --- | --- |
-| `healthz()` | `GET /healthz` | `bool` |
-| `version()` | `GET /v1/version` | `VersionResponse` |
-| `ingest_event(workspace_id, event)` | `POST /v1/events` | `IngestEventResponse` |
+| Method                                                               | HTTP                           | Returns                                                               |
+| -------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `healthz()`                                                          | `GET /healthz`                 | `bool`                                                                |
+| `version()`                                                          | `GET /v1/version`              | `VersionResponse`                                                     |
+| `ingest_event(workspace_id, event)`                                  | `POST /v1/events`              | `IngestEventResponse`                                                 |
 | `test_score_pipeline(event, profile=…, tier_set=…, tier_override=…)` | `POST /v1/test/score-pipeline` | `TestPipelineResponse` (gated by the test-orchestration feature flag) |
 
 ## Error kinds
 
-``HeeczerApiError.kind`` is a closed ``Literal`` mirroring the ingestion
+`HeeczerApiError.kind` is a closed `Literal` mirroring the ingestion
 service envelope:
 
-| Kind | When |
-| --- | --- |
-| ``schema`` | Event failed canonical schema validation. |
-| ``bad_request`` | Malformed JSON or missing top-level fields. |
-| ``scoring`` | Engine rejected a normalized event (e.g. unknown tier id). |
-| ``storage`` | Persistence layer error. |
-| ``not_found`` | Read endpoint did not find the resource. |
-| ``forbidden`` | Auth or RBAC denied the request. |
-| ``feature_disabled`` | Endpoint exists but the feature flag is off. |
-| ``unknown`` | Non-JSON 5xx body; the raw text is in ``api_message``. |
+| Kind               | When                                                       |
+| ------------------ | ---------------------------------------------------------- |
+| `schema`           | Event failed canonical schema validation.                  |
+| `bad_request`      | Malformed JSON or missing top-level fields.                |
+| `scoring`          | Engine rejected a normalized event (e.g. unknown tier id). |
+| `storage`          | Persistence layer error.                                   |
+| `not_found`        | Read endpoint did not find the resource.                   |
+| `forbidden`        | Auth or RBAC denied the request.                           |
+| `feature_disabled` | Endpoint exists but the feature flag is off.               |
+| `unknown`          | Non-JSON 5xx body; the raw text is in `api_message`.       |
 
 ## Runnable example
 
@@ -118,22 +118,22 @@ except HeeczerApiError as err:
         print("schema rejection:", err.api_message)
 ```
 
-**Batching note.** ``POST /v1/events:batch`` (single-transaction,
+**Batching note.** `POST /v1/events:batch` (single-transaction,
 partial-success semantics) is planned but not yet shipped — see
 [plan 0004](../../docs/plan/0004-ingestion-service.md). Until then,
-use ``asyncio.gather`` for concurrent sends.
+use `asyncio.gather` for concurrent sends.
 
 ## Contract
 
 The SDK speaks `envelope_version: "1"` to the ingestion service per
 [ADR-0011](../../docs/adr/0011-c-abi-envelope.md). Additive fields land
-without breaking the typed surface (``ScoreResult`` is a ``TypedDict``
-with ``total=False``).
+without breaking the typed surface (`ScoreResult` is a `TypedDict`
+with `total=False`).
 
 ## Synchronous client
 
 For scripts and notebooks where no event loop is running, use the
-``SyncHeeczerClient`` wrapper:
+`SyncHeeczerClient` wrapper:
 
 ```python
 from heeczer import SyncHeeczerClient
@@ -143,17 +143,17 @@ with SyncHeeczerClient(base_url="https://ingest.example.com", api_key="…") as 
     print(result["score"]["final_estimated_minutes"])
 ```
 
-``SyncHeeczerClient`` exposes the same methods as ``HeeczerClient``
-(``healthz``, ``version``, ``ingest_event``, ``test_score_pipeline``),
-all blocking. Internally it calls ``asyncio.get_event_loop().run_until_complete()``.
+`SyncHeeczerClient` exposes the same methods as `HeeczerClient`
+(`healthz`, `version`, `ingest_event`, `test_score_pipeline`),
+all blocking. Internally it calls `asyncio.get_event_loop().run_until_complete()`.
 Do **not** mix it with an already-running asyncio loop (e.g. inside
-``async def``); use ``HeeczerClient`` directly there instead.
+`async def`); use `HeeczerClient` directly there instead.
 
 ## Framework adapters
 
 ### LangGraph
 
-Wrap ``SyncHeeczerClient`` inside a custom LangGraph node to record each
+Wrap `SyncHeeczerClient` inside a custom LangGraph node to record each
 agent step's cost before passing control downstream:
 
 ```python
@@ -177,7 +177,7 @@ builder = StateGraph(AgentState)
 builder.add_node("heeczer", heeczer_node)
 ```
 
-In async LangGraph graphs call the ``async`` client instead:
+In async LangGraph graphs call the `async` client instead:
 
 ```python
 async def heeczer_node(state: AgentState) -> AgentState:
@@ -192,7 +192,7 @@ async def heeczer_node(state: AgentState) -> AgentState:
 ### Google ADK
 
 Google's Agent Development Kit (ADK) uses an async event-loop internally.
-Use ``HeeczerClient`` directly in ADK tool callbacks:
+Use `HeeczerClient` directly in ADK tool callbacks:
 
 ```python
 from google.adk.tools import FunctionTool
@@ -206,8 +206,8 @@ async def record_step(workspace_id: str, event: dict) -> dict:
 heeczer_tool = FunctionTool(record_step)
 ```
 
-Attach ``heeczer_tool`` to your ADK ``Agent`` via ``tools=[heeczer_tool]``.
-The return value of ``record_step`` is serialised by ADK and forwarded as
+Attach `heeczer_tool` to your ADK `Agent` via `tools=[heeczer_tool]`.
+The return value of `record_step` is serialised by ADK and forwarded as
 the tool response to the model.
 
 ## Development
