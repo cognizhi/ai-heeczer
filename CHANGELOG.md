@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/cognizhi/ai-heeczer/compare/v0.4.0...v0.4.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* change crates publishing order ([f957b51](https://github.com/cognizhi/ai-heeczer/commit/f957b51b348c5baf7f86e62f2f54054f1c3bccef))
+
 ## [0.4.0](https://github.com/cognizhi/ai-heeczer/compare/v0.3.0...v0.4.0) (2026-04-24)
 
 

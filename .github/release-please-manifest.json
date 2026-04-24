@@ -1,5 +1,5 @@
 {
-  ".": "0.4.0",
+  ".": "0.4.1",
   "bindings/heeczer-js": "0.2.0",
   "bindings/heeczer-py": "0.4.0",
   "bindings/heeczer-go": "0.4.0",
