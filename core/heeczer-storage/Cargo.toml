@@ -1,6 +1,6 @@
 [package]
 name = "heeczer-storage"
-version = "0.4.0"
+version = "0.4.1"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -9,7 +9,7 @@ authors.workspace = true
 description = "Storage layer for ai-heeczer (SQLite + PostgreSQL via sqlx)."
 
 [dependencies]
-heeczer-core = { path = "../heeczer-core", version = "0.4.0" }
+heeczer-core = { path = "../heeczer-core", version = "0.4.1" }
 sqlx-core = { workspace = true }
 sqlx-sqlite = { workspace = true }
 sqlx-postgres = { workspace = true }
