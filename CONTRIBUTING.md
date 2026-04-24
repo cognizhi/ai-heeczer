@@ -99,15 +99,15 @@ See PRD §35 for the canonical structure. Key directories:
 
 ## Coding standards
 
-| Language | Formatter | Linter | Notes |
-| --- | --- | --- | --- |
-| Rust | `cargo fmt` | `cargo clippy --all-targets --all-features -- -D warnings` | No `unwrap`/`panic` on untrusted input |
-| TypeScript | `prettier` | `eslint` | Strict mode; no `any` without justification |
-| Python | `ruff format` | `ruff check`, `mypy --strict` | abi3 wheels for the SDK |
-| Go | `gofmt` | `golangci-lint` | `go vet ./...` clean |
-| Java | `google-java-format` | `checkstyle`, `spotbugs` | JDK 22+ |
-| SQL | `sqlfluff` | — | Portable subset; dialect-specific files where divergent |
-| Markdown | `prettier` | `markdownlint` | Sentence-case headings |
+| Language   | Formatter            | Linter                                                     | Notes                                                   |
+| ---------- | -------------------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| Rust       | `cargo fmt`          | `cargo clippy --all-targets --all-features -- -D warnings` | No `unwrap`/`panic` on untrusted input                  |
+| TypeScript | `prettier`           | `eslint`                                                   | Strict mode; no `any` without justification             |
+| Python     | `ruff format`        | `ruff check`, `mypy --strict`                              | abi3 wheels for the SDK                                 |
+| Go         | `gofmt`              | `golangci-lint`                                            | `go vet ./...` clean                                    |
+| Java       | `google-java-format` | `checkstyle`, `spotbugs`                                   | JDK 22+                                                 |
+| SQL        | `sqlfluff`           | —                                                          | Portable subset; dialect-specific files where divergent |
+| Markdown   | `prettier`           | `markdownlint`                                             | Sentence-case headings                                  |
 
 All formatters and linters are wired into `make format` and `make lint`. CI rejects diffs that fail either.
 

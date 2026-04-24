@@ -55,10 +55,10 @@ event log itself.
 
 Two versions matter:
 
-| Constant          | Defined in                               | Bumps when                                    |
-| ----------------- | ---------------------------------------- | --------------------------------------------- |
-| `SPEC_VERSION`    | `core/heeczer-core/src/version.rs`       | Schema shape changes; currently `"1.0"` (PRD `spec_version` field) |
-| `SCORING_VERSION` | `core/heeczer-core/src/version.rs`       | Any math, rounding, or default change (semver)|
+| Constant          | Defined in                         | Bumps when                                                         |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| `SPEC_VERSION`    | `core/heeczer-core/src/version.rs` | Schema shape changes; currently `"1.0"` (PRD `spec_version` field) |
+| `SCORING_VERSION` | `core/heeczer-core/src/version.rs` | Any math, rounding, or default change (semver)                     |
 
 Both are baked into `ScoreResult` so every persisted score is reproducible.
 

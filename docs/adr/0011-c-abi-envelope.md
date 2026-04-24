@@ -49,12 +49,12 @@ The C ABI surface is governed by the **stable JSON envelope** described below. T
 
 ```json
 {
-  "ok": false,
-  "envelope_version": "1",
-  "error": {
-    "kind": "schema|deserialise|score|panic|nul-input|invalid-utf8",
-    "message": "<human-readable, redacted; no event payload echoed>"
-  }
+    "ok": false,
+    "envelope_version": "1",
+    "error": {
+        "kind": "schema|deserialise|score|panic|nul-input|invalid-utf8",
+        "message": "<human-readable, redacted; no event payload echoed>"
+    }
 }
 ```
 

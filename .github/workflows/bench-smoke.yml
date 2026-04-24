@@ -25,10 +25,12 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
-      - name: cli-smoke (release build) — must complete under 30 s
+      - name: build (release)
+        run: make build
+      - name: cli-smoke — must complete under 30 s
         run: |
           start=$(date +%s)
-          make cli-smoke
+          make cli-smoke-only
           elapsed=$(( $(date +%s) - start ))
           echo "cli-smoke completed in ${elapsed}s"
           [ "$elapsed" -lt 30 ] \

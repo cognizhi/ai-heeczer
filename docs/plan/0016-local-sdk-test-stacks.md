@@ -12,7 +12,7 @@
 ## 1. Goal
 
 Give a contributor — or a curious user — a one-command path to a fully working,
-opinionated, isolated, *language-specific* sandbox where they can poke at a real
+opinionated, isolated, _language-specific_ sandbox where they can poke at a real
 agent that emits real ai-heeczer events and watch them scored in a real
 dashboard, against a real persisted database. Per SDK, plus a PydanticAI variant.
 
@@ -88,28 +88,28 @@ Each stack:
 
 Components:
 
-| Service | Image source | Purpose |
-|---|---|---|
-| `chatbot-ui` | per-SDK `Dockerfile` | Minimal browser UI (or curlable HTTP) for chatting. |
-| `chatbot-api` | per-SDK `Dockerfile` | Calls chosen LLM provider, wraps each turn with the SDK. |
-| `heeczer-ingest` | built from `services/heeczer-ingest` | Validates + scores + persists events. |
-| `dashboard` | built from `dashboard/` | Read-only Next.js dashboard. |
-| `postgres` | upstream `postgres:16-alpine` | Persistent event store. |
-| `ollama` | upstream `ollama/ollama` (profile-gated) | Local model host. Off by default. |
+| Service          | Image source                             | Purpose                                                  |
+| ---------------- | ---------------------------------------- | -------------------------------------------------------- |
+| `chatbot-ui`     | per-SDK `Dockerfile`                     | Minimal browser UI (or curlable HTTP) for chatting.      |
+| `chatbot-api`    | per-SDK `Dockerfile`                     | Calls chosen LLM provider, wraps each turn with the SDK. |
+| `heeczer-ingest` | built from `services/heeczer-ingest`     | Validates + scores + persists events.                    |
+| `dashboard`      | built from `dashboard/`                  | Read-only Next.js dashboard.                             |
+| `postgres`       | upstream `postgres:16-alpine`            | Persistent event store.                                  |
+| `ollama`         | upstream `ollama/ollama` (profile-gated) | Local model host. Off by default.                        |
 
 ### 4.2 Port allocation matrix
 
 Each SDK gets a **100-port band** starting at `18000`. Within a band, offsets are
 identical across stacks so docs and scripts can use a single mental model.
 
-| Offset | Service       | JS     | Py     | Go     | Java   | Rust   | PydAI  |
-|-------:|---------------|-------:|-------:|-------:|-------:|-------:|-------:|
-|    +00 | chatbot-ui    | 18000  | 18100  | 18200  | 18300  | 18400  | 18500  |
-|    +01 | chatbot-api   | 18001  | 18101  | 18201  | 18301  | 18401  | 18501  |
-|    +10 | heeczer-ingest| 18010  | 18110  | 18210  | 18310  | 18410  | 18510  |
-|    +20 | dashboard     | 18020  | 18120  | 18220  | 18320  | 18420  | 18520  |
-|    +32 | postgres      | 18032  | 18132  | 18232  | 18332  | 18432  | 18532  |
-|    +79 | ollama        | 18079  | 18179  | 18279  | 18379  | 18479  | 18579  |
+| Offset | Service        |    JS |    Py |    Go |  Java |  Rust | PydAI |
+| -----: | -------------- | ----: | ----: | ----: | ----: | ----: | ----: |
+|    +00 | chatbot-ui     | 18000 | 18100 | 18200 | 18300 | 18400 | 18500 |
+|    +01 | chatbot-api    | 18001 | 18101 | 18201 | 18301 | 18401 | 18501 |
+|    +10 | heeczer-ingest | 18010 | 18110 | 18210 | 18310 | 18410 | 18510 |
+|    +20 | dashboard      | 18020 | 18120 | 18220 | 18320 | 18420 | 18520 |
+|    +32 | postgres       | 18032 | 18132 | 18232 | 18332 | 18432 | 18532 |
+|    +79 | ollama         | 18079 | 18179 | 18279 | 18379 | 18479 | 18579 |
 
 The ingest port `18010` deliberately differs from the dev default `8080`
 (see [`services/heeczer-ingest/README.md`](../../services/heeczer-ingest/README.md))
@@ -183,11 +183,11 @@ from `services/` (production code paths). Each chatbot app is intentionally a
 
 Each chatbot app must support three providers, selected by `LLM_PROVIDER`:
 
-| `LLM_PROVIDER` | Required env | Notes |
-|---|---|---|
-| `openrouter` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | HTTP to `https://openrouter.ai/api/v1/chat/completions`. |
-| `gemini` | `GEMINI_API_KEY`, `GEMINI_MODEL` | Google `generativelanguage` v1beta, OpenAI-compatible endpoint preferred. |
-| `local` | `LOCAL_MODEL_BASE_URL` (default `http://ollama:11434`), `LOCAL_MODEL` | Activates the `ollama` compose profile; pulls model on first run. |
+| `LLM_PROVIDER` | Required env                                                          | Notes                                                                     |
+| -------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `openrouter`   | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`                              | HTTP to `https://openrouter.ai/api/v1/chat/completions`.                  |
+| `gemini`       | `GEMINI_API_KEY`, `GEMINI_MODEL`                                      | Google `generativelanguage` v1beta, OpenAI-compatible endpoint preferred. |
+| `local`        | `LOCAL_MODEL_BASE_URL` (default `http://ollama:11434`), `LOCAL_MODEL` | Activates the `ollama` compose profile; pulls model on first run.         |
 
 Provider clients are thin (no SDK lock-in) so the chatbot stays a faithful
 SDK-integration demo, not a framework demo. **Use `mcp_context7_get-library-docs`
@@ -237,16 +237,16 @@ increment or set** when the LLM invokes that tool. These are the signals heeczer
 uses for effort-cost calculation (token divisors, tool weight, step weight,
 artifact weight, risk/HiL multipliers — see `scoring_profile.v1.json`).
 
-| Tool name | Function signature (summary) | `metrics.*` contribution | `context.*` side-effect |
-|---|---|---|---|
-| `web_search` | `(query: str) → SearchResult` | `tool_call_count +1`, `workflow_steps +1`, `tokens_prompt ~+500` | — |
-| `code_executor` | `(language: str, code: str) → ExecutionResult` | `tool_call_count +1`, `workflow_steps +1`, `artifact_count +1`, `output_size_proxy ~+0.5` | — |
-| `document_reader` | `(source: str) → DocumentChunks` | `tool_call_count +1`, `workflow_steps +1`, `tokens_prompt ~+2000` | — |
-| `data_analyst` | `(data: str, query: str) → AnalysisResult` | `tool_call_count +1`, `artifact_count +1`, `tokens_completion ~+800`, `output_size_proxy ~+1.0` | — |
-| `plan_reviewer` | `(plan_text: str) → ReviewNotes` | `tool_call_count +1`, `workflow_steps +1` | `review_required = true` |
-| `risk_checker` | `(action: str) → RiskAssessment` | `tool_call_count +1` | elevates `risk_class` to `high` when score ≥ 0.7, else `medium` |
-| `summarizer` | `(content: str, max_words: int) → Summary` | `tool_call_count +1`, `artifact_count +1`, `output_size_proxy ~+0.8` | — |
-| `diff_generator` | `(before: str, after: str) → UnifiedDiff` | `tool_call_count +1`, `artifact_count +1`, `output_size_proxy ~+0.3` | — |
+| Tool name         | Function signature (summary)                   | `metrics.*` contribution                                                                        | `context.*` side-effect                                         |
+| ----------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `web_search`      | `(query: str) → SearchResult`                  | `tool_call_count +1`, `workflow_steps +1`, `tokens_prompt ~+500`                                | —                                                               |
+| `code_executor`   | `(language: str, code: str) → ExecutionResult` | `tool_call_count +1`, `workflow_steps +1`, `artifact_count +1`, `output_size_proxy ~+0.5`       | —                                                               |
+| `document_reader` | `(source: str) → DocumentChunks`               | `tool_call_count +1`, `workflow_steps +1`, `tokens_prompt ~+2000`                               | —                                                               |
+| `data_analyst`    | `(data: str, query: str) → AnalysisResult`     | `tool_call_count +1`, `artifact_count +1`, `tokens_completion ~+800`, `output_size_proxy ~+1.0` | —                                                               |
+| `plan_reviewer`   | `(plan_text: str) → ReviewNotes`               | `tool_call_count +1`, `workflow_steps +1`                                                       | `review_required = true`                                        |
+| `risk_checker`    | `(action: str) → RiskAssessment`               | `tool_call_count +1`                                                                            | elevates `risk_class` to `high` when score ≥ 0.7, else `medium` |
+| `summarizer`      | `(content: str, max_words: int) → Summary`     | `tool_call_count +1`, `artifact_count +1`, `output_size_proxy ~+0.8`                            | —                                                               |
+| `diff_generator`  | `(before: str, after: str) → UnifiedDiff`      | `tool_call_count +1`, `artifact_count +1`, `output_size_proxy ~+0.3`                            | —                                                               |
 
 Implementation notes:
 
@@ -278,21 +278,21 @@ A **skill** is a pre-wired scenario the user selects from the chat UI via a
 
 The six built-in skills span the full range of heeczer's scoring dimensions:
 
-| Skill key | UI command | `task.category` | `task.sub_category` | Active tools | Default context flags | FEC signal band |
-|---|---|---|---|---|---|---|
-| `code_gen` | `/skill code-gen` | `code_generation` | `api_design` | `code_executor`, `diff_generator`, `summarizer` | `risk_class=medium` | medium–high |
-| `rca` | `/skill rca` | `debugging` | `root_cause_analysis` | `web_search`, `code_executor`, `diff_generator` | `risk_class=high`, `review_required=true`, `human_in_loop=true` | high |
-| `doc_summary` | `/skill doc-summary` | `summarization` | `document_review` | `document_reader`, `summarizer`, `plan_reviewer` | `human_in_loop=true`, `review_required=true` | medium |
-| `compliance` | `/skill compliance` | `regulated_decision_support` | `compliance_briefing` | `document_reader`, `risk_checker`, `plan_reviewer`, `summarizer` | `risk_class=high`, `human_in_loop=true`, `review_required=true`, `temperature=0.0` | high (regulated multiplier) |
-| `ci_triage` | `/skill ci-triage` | `code_generation` | `ci_triage` | `web_search`, `code_executor`, `diff_generator`, `risk_checker` | `risk_class=low` | medium |
-| `architecture` | `/skill architecture` | `planning` | `architecture_review` | `web_search`, `plan_reviewer`, `data_analyst`, `summarizer` | `risk_class=medium`, `review_required=true` | medium–high (multi-step) |
+| Skill key      | UI command            | `task.category`              | `task.sub_category`   | Active tools                                                     | Default context flags                                                              | FEC signal band             |
+| -------------- | --------------------- | ---------------------------- | --------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------- |
+| `code_gen`     | `/skill code-gen`     | `code_generation`            | `api_design`          | `code_executor`, `diff_generator`, `summarizer`                  | `risk_class=medium`                                                                | medium–high                 |
+| `rca`          | `/skill rca`          | `debugging`                  | `root_cause_analysis` | `web_search`, `code_executor`, `diff_generator`                  | `risk_class=high`, `review_required=true`, `human_in_loop=true`                    | high                        |
+| `doc_summary`  | `/skill doc-summary`  | `summarization`              | `document_review`     | `document_reader`, `summarizer`, `plan_reviewer`                 | `human_in_loop=true`, `review_required=true`                                       | medium                      |
+| `compliance`   | `/skill compliance`   | `regulated_decision_support` | `compliance_briefing` | `document_reader`, `risk_checker`, `plan_reviewer`, `summarizer` | `risk_class=high`, `human_in_loop=true`, `review_required=true`, `temperature=0.0` | high (regulated multiplier) |
+| `ci_triage`    | `/skill ci-triage`    | `code_generation`            | `ci_triage`           | `web_search`, `code_executor`, `diff_generator`, `risk_checker`  | `risk_class=low`                                                                   | medium                      |
+| `architecture` | `/skill architecture` | `planning`                   | `architecture_review` | `web_search`, `plan_reviewer`, `data_analyst`, `summarizer`      | `risk_class=medium`, `review_required=true`                                        | medium–high (multi-step)    |
 
 Each skill also ships a **mock script** (`testing/tests/fixtures/skills/<skill>.json`)
 that specifies the exact tool call sequence the mock driver replays, enabling
 deterministic smoke tests (see §4.10 and §6).
 
 Scoring range intent: the six skills are chosen so that, with the default scoring
-profile (`scoring_profile.v1.json`), they produce meaningfully *different*
+profile (`scoring_profile.v1.json`), they produce meaningfully _different_
 `fec` (Fractional Effort Cost) values in the dashboard. This lets a contributor
 immediately see heeczer's scoring variation without needing a real workload.
 
@@ -384,54 +384,74 @@ Order of operations for every stack slice (mirrors AGENT_HARNESS §2):
 1. **Contract first — skill fixtures.** Before writing any app code, author the
    six skill fixture files under `testing/tests/fixtures/skills/`. Each file has
    two sections:
-   - `mock_script`: the ordered list of tool calls the mock driver will replay
-     (tool name + stub output shape). This defines deterministic LLM behaviour
-     for smoke tests.
-   - `expected_event`: the canonical event shape that *must* be submitted to
-     heeczer when the mock script is replayed. All `metrics.*` fields that the
-     tool catalogue (§4.8) contributes must be present and within expected bounds.
-     `task.category`, `task.sub_category`, and relevant `context.*` fields must
-     match the skill definition (§4.9). The expected `score_result` is **not**
-     pinned — scoring is the engine's job — but `score_result.scoring_version`
-     must match the engine.
-   - Example structure:
+    - `mock_script`: the ordered list of tool calls the mock driver will replay
+      (tool name + stub output shape). This defines deterministic LLM behaviour
+      for smoke tests.
+    - `expected_event`: the canonical event shape that _must_ be submitted to
+      heeczer when the mock script is replayed. All `metrics.*` fields that the
+      tool catalogue (§4.8) contributes must be present and within expected bounds.
+      `task.category`, `task.sub_category`, and relevant `context.*` fields must
+      match the skill definition (§4.9). The expected `score_result` is **not**
+      pinned — scoring is the engine's job — but `score_result.scoring_version`
+      must match the engine.
+    - Example structure:
 
-     ```json
-     {
-       "skill": "compliance",
-       "mock_script": [
-         { "tool": "document_reader", "stub_output": { "chunks": 3, "tokens": 2000 } },
-         { "tool": "risk_checker",    "stub_output": { "risk_score": 0.85 } },
-         { "tool": "plan_reviewer",   "stub_output": { "notes": ["item1"] } },
-         { "tool": "summarizer",      "stub_output": { "word_count": 320 } }
-       ],
-       "expected_event": {
-         "task": { "category": "regulated_decision_support",
-                   "sub_category": "compliance_briefing", "outcome": "success" },
-         "metrics": { "tool_call_count": 4, "workflow_steps": 3,
-                      "artifact_count": 2, "tokens_prompt_min": 2000 },
-         "context": { "risk_class": "high", "human_in_loop": true,
-                      "review_required": true, "temperature": 0.0 }
-       }
-     }
-     ```
+        ```json
+        {
+            "skill": "compliance",
+            "mock_script": [
+                {
+                    "tool": "document_reader",
+                    "stub_output": { "chunks": 3, "tokens": 2000 }
+                },
+                {
+                    "tool": "risk_checker",
+                    "stub_output": { "risk_score": 0.85 }
+                },
+                {
+                    "tool": "plan_reviewer",
+                    "stub_output": { "notes": ["item1"] }
+                },
+                { "tool": "summarizer", "stub_output": { "word_count": 320 } }
+            ],
+            "expected_event": {
+                "task": {
+                    "category": "regulated_decision_support",
+                    "sub_category": "compliance_briefing",
+                    "outcome": "success"
+                },
+                "metrics": {
+                    "tool_call_count": 4,
+                    "workflow_steps": 3,
+                    "artifact_count": 2,
+                    "tokens_prompt_min": 2000
+                },
+                "context": {
+                    "risk_class": "high",
+                    "human_in_loop": true,
+                    "review_required": true,
+                    "temperature": 0.0
+                }
+            }
+        }
+        ```
 
 2. **Failing smoke tests.** Add `testing/tests/smoke/test_<sdk>_stack.py`. Each
    test function maps to one skill and must fail before the chatbot app exists:
-   - Skips with a clear message if `docker compose ps` shows the stack down.
-   - Posts `/chat` with `{ "skill": "<key>", "prompt": "…" }` against the mock
-     provider.
-   - Polls `heeczer-ingest` `/v1/events` until an event with
-     `meta.extensions["chatbot.skill"] == skill_key` appears.
-   - Asserts the event shape against the fixture (tool_call_count, artifact_count,
-     category, sub_category, context flags, and the absence of fabricated nulls
-     on required fields).
-   - Asserts `score_result` is present and `score_result.scoring_version` matches
-     `/v1/version`.
-   - For `compliance` and `rca` skills, additionally asserts that
-     `score_result.fec` is strictly greater than `score_result.fec` for the
-     `ci_triage` skill run in the same test session — confirming the scoring
-     engine reflects effort complexity.
+    - Skips with a clear message if `docker compose ps` shows the stack down.
+    - Posts `/chat` with `{ "skill": "<key>", "prompt": "…" }` against the mock
+      provider.
+    - Polls `heeczer-ingest` `/v1/events` until an event with
+      `meta.extensions["chatbot.skill"] == skill_key` appears.
+    - Asserts the event shape against the fixture (tool_call_count, artifact_count,
+      category, sub_category, context flags, and the absence of fabricated nulls
+      on required fields).
+    - Asserts `score_result` is present and `score_result.scoring_version` matches
+      `/v1/version`.
+    - For `compliance` and `rca` skills, additionally asserts that
+      `score_result.fec` is strictly greater than `score_result.fec` for the
+      `ci_triage` skill run in the same test session — confirming the scoring
+      engine reflects effort complexity.
 3. **Implement** the tool catalogue + skill router + chatbot app + compose file +
    Make targets to make all six skill tests pass.
 4. **Make `smoke-test-<sdk>` green** locally with all six skills covered, then
@@ -502,7 +522,7 @@ keeps assertions consistent across SDKs.
 
 - [ ] Failing smoke tests `test_pydanticai_stack.py` — one per skill (6 total).
 - [ ] `testing/compose/pydanticai/chatbot/tools/catalogue.py` — tools declared as `pydantic-ai` `Tool` objects (§4.8).
-  **Use `mcp_context7_get-library-docs` for `pydantic-ai` to confirm current `Tool` / `Agent` hook surface before implementing.**
+      **Use `mcp_context7_get-library-docs` for `pydantic-ai` to confirm current `Tool` / `Agent` hook surface before implementing.**
 - [ ] `testing/compose/pydanticai/chatbot/skills/catalogue.py` — six skill definitions + mock driver (§4.9).
 - [ ] `testing/compose/pydanticai/chatbot/` PydanticAI agent emitting events through the adapter, not raw SDK calls.
 - [ ] Chat UI exposes `/skill <key>` command and tool-call trace panel.

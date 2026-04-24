@@ -1,8 +1,8 @@
 # From Tokens to Labor-Equivalent Value: A Mathematical Framework for Translating Agentic AI Telemetry into Human Equivalent Effort and Financial Equivalent Cost
 
-**Author:** @cyyeong  
-**Date:** April 23, 2026  
-**Document Status:** Research Paper — Draft v1.0  
+**Author:** @cyyeong
+**Date:** April 23, 2026
+**Document Status:** Research Paper — Draft v1.0
 
 ---
 
@@ -192,33 +192,33 @@ settings without altering the core scoring inputs.
 
 ```json
 {
-  "spec_version": "1.0",
-  "event_id":     "<uuid-v4>",
-  "timestamp":    "2026-04-22T09:46:00Z",
-  "task": {
-    "name":     "generate_api_spec",
-    "category": "code_generation",
-    "outcome":  "success"
-  },
-  "metrics": {
-    "duration_ms":         14500,
-    "tokens_prompt":        1200,
-    "tokens_completion":    4000,
-    "tool_call_count":         3,
-    "workflow_steps":          5,
-    "retries":                 1,
-    "artifact_count":          4,
-    "output_size_proxy":     2.5
-  },
-  "context": {
-    "human_in_loop":    false,
-    "review_required":  true,
-    "temperature":       0.2,
-    "risk_class":      "medium"
-  },
-  "identity": {
-    "tier_id": "mid_level_engineer"
-  }
+    "spec_version": "1.0",
+    "event_id": "<uuid-v4>",
+    "timestamp": "2026-04-22T09:46:00Z",
+    "task": {
+        "name": "generate_api_spec",
+        "category": "code_generation",
+        "outcome": "success"
+    },
+    "metrics": {
+        "duration_ms": 14500,
+        "tokens_prompt": 1200,
+        "tokens_completion": 4000,
+        "tool_call_count": 3,
+        "workflow_steps": 5,
+        "retries": 1,
+        "artifact_count": 4,
+        "output_size_proxy": 2.5
+    },
+    "context": {
+        "human_in_loop": false,
+        "review_required": true,
+        "temperature": 0.2,
+        "risk_class": "medium"
+    },
+    "identity": {
+        "tier_id": "mid_level_engineer"
+    }
 }
 ```
 
@@ -230,20 +230,20 @@ framework-source, and extension metadata) are omitted here for brevity.
 Before scoring, the event is normalized according to a strict deterministic
 contract proposed for any implementation of the model:
 
-| Field | Missing value rule |
-|---|---|
-| `task.category` | → `"uncategorized"`; incurs confidence penalty |
-| `tokens_prompt`, `tokens_completion` | → `0`; incurs confidence penalty |
-| `workflow_steps` | → `0`; incurs confidence penalty |
-| `tool_call_count` | → `0`; incurs confidence penalty |
-| `retries` | → `0` |
-| `artifact_count` | → `0` |
-| `output_size_proxy` | → `0.0` |
-| `review_required` | → `false` |
-| `human_in_loop` | → `false` |
-| `temperature` | → `0.0` |
-| `risk_class` | → `Medium` |
-| Required missing fields | → Validation error; no score produced |
+| Field                                | Missing value rule                             |
+| ------------------------------------ | ---------------------------------------------- |
+| `task.category`                      | → `"uncategorized"`; incurs confidence penalty |
+| `tokens_prompt`, `tokens_completion` | → `0`; incurs confidence penalty               |
+| `workflow_steps`                     | → `0`; incurs confidence penalty               |
+| `tool_call_count`                    | → `0`; incurs confidence penalty               |
+| `retries`                            | → `0`                                          |
+| `artifact_count`                     | → `0`                                          |
+| `output_size_proxy`                  | → `0.0`                                        |
+| `review_required`                    | → `false`                                      |
+| `human_in_loop`                      | → `false`                                      |
+| `temperature`                        | → `0.0`                                        |
+| `risk_class`                         | → `Medium`                                     |
+| Required missing fields              | → Validation error; no score produced          |
 
 Required fields that may not be inferred include `event_id`, `timestamp`,
 `task.name`, `task.outcome`, and `metrics.duration_ms`. Their absence fails
@@ -274,15 +274,15 @@ when interactions are unknown.
 
 Let the normalized event produce the following scalar values (all non-negative):
 
-| Symbol | Source |
-|---|---|
-| $T$ | `tokens_prompt + tokens_completion` |
-| $D$ | `duration_ms / 1000` (seconds) |
-| $W$ | `workflow_steps` |
-| $U$ | `tool_call_count` |
-| $A$ | `min(artifact_count, artifact_cap)` |
-| $P$ | `output_size_proxy` |
-| $R$ | `review_required` (boolean → weight if true, else 0) |
+| Symbol | Source                                               |
+| ------ | ---------------------------------------------------- |
+| $T$    | `tokens_prompt + tokens_completion`                  |
+| $D$    | `duration_ms / 1000` (seconds)                       |
+| $W$    | `workflow_steps`                                     |
+| $U$    | `tool_call_count`                                    |
+| $A$    | `min(artifact_count, artifact_cap)`                  |
+| $P$    | `output_size_proxy`                                  |
+| $R$    | `review_required` (boolean → weight if true, else 0) |
 
 The BCU is computed as:
 
@@ -368,15 +368,15 @@ $$\text{BCU}_\text{adjusted} = \text{BCU} \cdot \mu_\kappa$$
 
 Default category multipliers (v1.0):
 
-| Category | $\mu_\kappa$ | Justification |
-|---|---|---|
-| `summarization` | 0.9 | Largely extraction; lower cognitive density than generation |
-| `drafting` | 1.0 | Reference level; open-ended but bounded |
-| `code_generation` | 1.2 | Requires precision, correctness constraints, integration awareness |
-| `root_cause_analysis` | 1.4 | Hypothesis generation, causal reasoning, evidence synthesis |
-| `planning_architecture` | 1.5 | Design decisions with long-horizon consequences |
-| `regulated_decision_support` | 1.6 | Compliance constraints, interpretability requirements, audit trails |
-| `uncategorized` | 1.0 | Neutral fallback; incurs confidence penalty |
+| Category                     | $\mu_\kappa$ | Justification                                                       |
+| ---------------------------- | ------------ | ------------------------------------------------------------------- |
+| `summarization`              | 0.9          | Largely extraction; lower cognitive density than generation         |
+| `drafting`                   | 1.0          | Reference level; open-ended but bounded                             |
+| `code_generation`            | 1.2          | Requires precision, correctness constraints, integration awareness  |
+| `root_cause_analysis`        | 1.4          | Hypothesis generation, causal reasoning, evidence synthesis         |
+| `planning_architecture`      | 1.5          | Design decisions with long-horizon consequences                     |
+| `regulated_decision_support` | 1.6          | Compliance constraints, interpretability requirements, audit trails |
+| `uncategorized`              | 1.0          | Neutral fallback; incurs confidence penalty                         |
 
 The category multiplier design draws on the concept of cost-driver multipliers
 from COCOMO [1], where each cost driver reflects a structural property of the work
@@ -461,12 +461,12 @@ $$H_t = \frac{H_0}{\pi_t}$$
 
 Default tier definitions:
 
-| Tier | $\pi_t$ | Hourly Rate (USD) |
-|---|---|---|
-| Principal Engineer | 3.0 | 200 |
-| Senior Engineer | 2.0 | 125 |
-| Mid-Level Engineer | 1.0 | 75 |
-| Junior Engineer | 0.5 | 45 |
+| Tier               | $\pi_t$ | Hourly Rate (USD) |
+| ------------------ | ------- | ----------------- |
+| Principal Engineer | 3.0     | 200               |
+| Senior Engineer    | 2.0     | 125               |
+| Mid-Level Engineer | 1.0     | 75                |
+| Junior Engineer    | 0.5     | 45                |
 
 The productivity multiplier represents a relative multiplier normalized to the
 mid-level as the reference. $\pi = 2.0$ for a senior engineer means that a senior
@@ -550,25 +550,25 @@ $$c = \text{clamp}(c_{risk}, c_\text{min}, c_\text{max})$$
 
 where:
 
-| Symbol | Condition | Default penalty |
-|---|---|---|
-| $\pi_\kappa$ | `task.category` was missing | −0.10 |
-| $\pi_T$ | both token fields were missing | −0.15 |
-| $\pi_W$ | `workflow_steps` was missing | −0.05 |
-| $\pi_U$ | `tool_call_count` was missing | −0.05 |
-| $\pi_r$ | per-retry penalty, capped at $P_\text{cap}$ | $\min(r \cdot 0.05,\ 0.20)$ |
-| $\text{cap}_{HR}$ | high-risk cap | if `risk_class = High` and the pre-clamp score exceeds 0.85, cap it at 0.85 |
+| Symbol            | Condition                                   | Default penalty                                                             |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------------------------- |
+| $\pi_\kappa$      | `task.category` was missing                 | −0.10                                                                       |
+| $\pi_T$           | both token fields were missing              | −0.15                                                                       |
+| $\pi_W$           | `workflow_steps` was missing                | −0.05                                                                       |
+| $\pi_U$           | `tool_call_count` was missing               | −0.05                                                                       |
+| $\pi_r$           | per-retry penalty, capped at $P_\text{cap}$ | $\min(r \cdot 0.05,\ 0.20)$                                                 |
+| $\text{cap}_{HR}$ | high-risk cap                               | if `risk_class = High` and the pre-clamp score exceeds 0.85, cap it at 0.85 |
 
 The clamp enforces $c \in [0.0, 1.0]$.
 The high-risk term is therefore an upper bound, not an additive subtraction.
 
 **Confidence bands** map the raw score to an ordinal label:
 
-| Band | Range |
-|---|---|
-| High | $[0.85, 1.00]$ |
-| Medium | $[0.60, 0.84]$ |
-| Low | $[0.40, 0.59]$ |
+| Band     | Range          |
+| -------- | -------------- |
+| High     | $[0.85, 1.00]$ |
+| Medium   | $[0.60, 0.84]$ |
+| Low      | $[0.40, 0.59]$ |
 | Very Low | $[0.00, 0.39]$ |
 
 The band derivation uses the _unrounded_ confidence score, consistent with the
@@ -584,13 +584,13 @@ least 4 fractional digits for intermediate steps. This prevents floating-point
 accumulation errors from diverging across implementations. The final rounding rule
 is **round half away from zero** applied to:
 
-| Output | Decimal places |
-|---|---|
-| `final_estimated_minutes` | 2 |
-| `estimated_hours` | 2 |
-| `estimated_days` | 2 |
-| `financial_equivalent_cost` | 2 |
-| `confidence_score` | 4 |
+| Output                      | Decimal places |
+| --------------------------- | -------------- |
+| `final_estimated_minutes`   | 2              |
+| `estimated_hours`           | 2              |
+| `estimated_days`            | 2              |
+| `financial_equivalent_cost` | 2              |
+| `confidence_score`          | 4              |
 
 The `confidence_band` is derived from the unrounded intermediate value before the
 `confidence_score` field is rounded.
@@ -717,39 +717,39 @@ reference scenario:
 
 ```json
 {
-  "spec_version":    "1.0",
-  "bcu_breakdown": {
-    "tokens":   "10.40",
-    "duration": "7.25",
-    "steps":    "10",
-    "tools":    "9",
-    "artifacts":"6.0",
-    "output":   "3.00",
-    "review":   "5"
-  },
-  "category":              "code_generation",
-  "category_multiplier":   "1.2",
-  "context_multiplier": {
-    "retry":        "1.25",
-    "ambiguity":    "1",
-    "risk":         "1.0",
-    "human_in_loop":"1",
-    "outcome":      "1.0"
-  },
-  "baseline_human_minutes":    "75.98",
-  "tier": {
-    "name":        "Mid-Level Engineer",
-    "multiplier":  "1.0",
-    "hourly_rate": "75",
-    "currency":    "USD"
-  },
-  "final_estimated_minutes":   "75.98",
-  "estimated_hours":           "1.27",
-  "estimated_days":            "0.16",
-  "financial_equivalent_cost": "94.97",
-  "confidence_score":          "0.9000",
-  "confidence_band":           "High",
-  "human_summary": "Estimated 75.98 Mid-Level Engineer-equivalent minutes (~94.97 cost) for `code_generation`; confidence high."
+    "spec_version": "1.0",
+    "bcu_breakdown": {
+        "tokens": "10.40",
+        "duration": "7.25",
+        "steps": "10",
+        "tools": "9",
+        "artifacts": "6.0",
+        "output": "3.00",
+        "review": "5"
+    },
+    "category": "code_generation",
+    "category_multiplier": "1.2",
+    "context_multiplier": {
+        "retry": "1.25",
+        "ambiguity": "1",
+        "risk": "1.0",
+        "human_in_loop": "1",
+        "outcome": "1.0"
+    },
+    "baseline_human_minutes": "75.98",
+    "tier": {
+        "name": "Mid-Level Engineer",
+        "multiplier": "1.0",
+        "hourly_rate": "75",
+        "currency": "USD"
+    },
+    "final_estimated_minutes": "75.98",
+    "estimated_hours": "1.27",
+    "estimated_days": "0.16",
+    "financial_equivalent_cost": "94.97",
+    "confidence_score": "0.9000",
+    "confidence_band": "High",
+    "human_summary": "Estimated 75.98 Mid-Level Engineer-equivalent minutes (~94.97 cost) for `code_generation`; confidence high."
 }
 ```
 
@@ -837,17 +837,17 @@ baseline profile as a starting point and calibrate using the following methodolo
 1. **Select a reference task set.** Choose 10–50 tasks with known human effort
    (measured from time-tracking systems, sprint logs, or retrospective estimates).
 2. **Submit equivalent AI executions** through the proposed telemetry translation
-  pipeline and record the HEE
+   pipeline and record the HEE
    output for each task.
 3. **Compute calibration residuals.** For each task, measure
    $\epsilon_i = H_\text{HEE,i} - H_\text{human,i}$.
 4. **Adjust profile parameters** to minimize $\sum_i \epsilon_i^2$ subject to the
    constraint that no parameter violates its documented safety bounds.
 5. **Publish and version the calibrated parameter set** so downstream reporting
-  can be reproduced against a known profile revision.
+   can be reproduced against a known profile revision.
 6. **Recompute the reference examples and parity cases** to confirm that the
-  calibrated profile preserves deterministic arithmetic and documented rounding
-  behavior.
+   calibrated profile preserves deterministic arithmetic and documented rounding
+   behavior.
 
 A credible calibration study should also reserve a hold-out validation subset and
 report absolute error and signed bias by category and tier, so tuned coefficients
@@ -924,7 +924,7 @@ a principled analytics framework from an ad hoc metric.
 ## References
 
 **[1]** Boehm, B. W. (1981). _Software Engineering Economics_. Prentice-Hall,
-Englewood Cliffs, NJ. ISBN 0-13-822122-7.  
+Englewood Cliffs, NJ. ISBN 0-13-822122-7.
 The foundational treatise on constructive cost modeling. Introduced the COCOMO
 model family and the use of multiplicative cost drivers to adjust a base effort
 estimate. The structure of the HEE model's contextual multiplier system is directly
@@ -932,13 +932,13 @@ inspired by COCOMO's cost-driver product.
 
 **[2]** Albrecht, A. J. (1979). Measuring application development productivity. In
 _Proceedings of the IBM Application Development Symposium_, Monterey, CA, October
-1979 (pp. 83–92). IBM Corporation.  
+1979 (pp. 83–92). IBM Corporation.
 Introduced Function Point Analysis, establishing the principle that software work
 can be quantified from its functional scope and user-visible complexity rather than
 from implementation size. Justifies the per-component weighting approach in BCU.
 
 **[3]** Halstead, M. H. (1977). _Elements of Software Science_. Elsevier North-
-Holland, New York. ISBN 0-444-00205-7.  
+Holland, New York. ISBN 0-444-00205-7.
 Proposed the first information-theoretic software complexity metrics, including
 program volume $V = N \log_2 \eta$. The analogy between operator/operand counts as
 a proxy for cognitive burden and token counts as a proxy for information processing
@@ -946,50 +946,54 @@ is a direct conceptual descendant of Halstead's framework.
 
 **[4]** Peng, S., Kalliamvakou, E., Cihon, P., and Demirer, M. (2023). The Impact
 of AI on Developer Productivity: Evidence from GitHub Copilot. _arXiv preprint_
-arXiv:2302.06590. [https://arxiv.org/abs/2302.06590](https://arxiv.org/abs/2302.06590)  
+arXiv:2302.06590. [https://arxiv.org/abs/2302.06590](https://arxiv.org/abs/2302.06590)
+
 > "The treatment group, with access to the AI pair programmer, completed the task
-> 55.8% faster than the control group."  
-Provides the primary controlled experimental evidence that AI assistance produces
-measurable, large productivity gains on bounded software development tasks.
+> 55.8% faster than the control group."
+> Provides the primary controlled experimental evidence that AI assistance produces
+> measurable, large productivity gains on bounded software development tasks.
 
 **[5]** Eloundou, T., Manning, S., Mishkin, P., and Rock, D. (2023). GPTs are GPTs:
 An Early Look at the Labor Market Impact Potential of Large Language Models.
-_arXiv preprint_ arXiv:2303.10130. [https://arxiv.org/abs/2303.10130](https://arxiv.org/abs/2303.10130)  
+_arXiv preprint_ arXiv:2303.10130. [https://arxiv.org/abs/2303.10130](https://arxiv.org/abs/2303.10130)
+
 > "Around 80% of the U.S. workforce could have at least 10% of their work tasks
 > affected by the introduction of LLMs, while approximately 19% of workers may
-> see at least 50% of their tasks impacted."  
+> see at least 50% of their tasks impacted."
 > "With access to an LLM, about 15% of all worker tasks in the US could be
-> completed significantly faster at the same level of quality."  
-Provides macro-level labor market exposure estimates for LLM capabilities, with
-specific findings on skill-level exposure that motivate the tiered productivity
-multiplier structure in HEE.
+> completed significantly faster at the same level of quality."
+> Provides macro-level labor market exposure estimates for LLM capabilities, with
+> specific findings on skill-level exposure that motivate the tiered productivity
+> multiplier structure in HEE.
 
 **[6]** Brynjolfsson, E., Li, D., and Raymond, L. (2023). Generative AI at Work.
-_arXiv preprint_ arXiv:2304.11771. [https://arxiv.org/abs/2304.11771](https://arxiv.org/abs/2304.11771)  
+_arXiv preprint_ arXiv:2304.11771. [https://arxiv.org/abs/2304.11771](https://arxiv.org/abs/2304.11771)
+
 > "Access to AI assistance increases worker productivity, as measured by issues
 > resolved per hour, by 15% on average, with substantial heterogeneity across
 > workers. Less experienced and lower-skilled workers improve both the speed and
 > quality of their output while the most experienced and highest-skilled workers
-> see small gains in speed and small declines in quality."  
-Provides the strongest direct empirical evidence for the heterogeneous productivity
-effect that motivates the HEE tier-adjustment step: the same AI-executed task
-represents different amounts of labor-equivalent savings for different skill levels.
+> see small gains in speed and small declines in quality."
+> Provides the strongest direct empirical evidence for the heterogeneous productivity
+> effect that motivates the HEE tier-adjustment step: the same AI-executed task
+> represents different amounts of labor-equivalent savings for different skill levels.
 
 **[7]** Yang, J., Jimenez, C. E., Wettig, A., Lieret, K., Yao, S., Narasimhan, K.,
 and Press, O. (2024). SWE-agent: Agent-Computer Interfaces Enable Automated
 Software Engineering. _arXiv preprint_ arXiv:2405.15793.
-[https://arxiv.org/abs/2405.15793](https://arxiv.org/abs/2405.15793)  
+[https://arxiv.org/abs/2405.15793](https://arxiv.org/abs/2405.15793)
+
 > "LM agents represent a new category of end users with their own needs and
 > abilities, and would benefit from specially-built interfaces to the software
-> they use."  
-Establishes the multi-step agentic execution model as the operative unit of analysis
-and demonstrates that tool use and interface design are primary determinants of
-AI task completion quality — justifying their inclusion as BCU components.
+> they use."
+> Establishes the multi-step agentic execution model as the operative unit of analysis
+> and demonstrates that tool use and interface design are primary determinants of
+> AI task completion quality — justifying their inclusion as BCU components.
 
 **[8]** Jin, H., Huang, L., Cai, H., Yan, J., Li, B., and Chen, H. (2024). From
 LLMs to LLM-based Agents for Software Engineering: A Survey of Current, Challenges
 and Future. _arXiv preprint_ arXiv:2408.02479.
-[https://arxiv.org/abs/2408.02479](https://arxiv.org/abs/2408.02479)  
+[https://arxiv.org/abs/2408.02479](https://arxiv.org/abs/2408.02479)
 Surveys the LLM-agent literature across requirement engineering, code generation,
 autonomous decision-making, software design, test generation, and maintenance —
 providing the task taxonomy that informed the HEE category multiplier design.
@@ -997,17 +1001,18 @@ providing the task taxonomy that informed the HEE category multiplier design.
 **[9]** Wang, X., Wang, Z., Liu, J., Chen, Y., Yuan, L., Peng, H., and Ji, H.
 (2023). MINT: Evaluating LLMs in Multi-turn Interaction with Tools and Language
 Feedback. _arXiv preprint_ arXiv:2309.10691. ICLR 2024.
-[https://arxiv.org/abs/2309.10691](https://arxiv.org/abs/2309.10691)  
+[https://arxiv.org/abs/2309.10691](https://arxiv.org/abs/2309.10691)
+
 > "LLMs generally benefit from tools and language feedback, with performance gains
 > (absolute) of 1–8% for each turn of tool use and 2–17% with natural language
-> feedback."  
-Provides empirical evidence that tool use count and multi-turn interaction are
-reliable signals of task complexity, justifying the tool call count as an
-independent BCU component.
+> feedback."
+> Provides empirical evidence that tool use count and multi-turn interaction are
+> reliable signals of task complexity, justifying the tool call count as an
+> independent BCU component.
 
 **[10]** Drucker, P. F. (1999). Knowledge-Worker Productivity: The Biggest
 Challenge. _California Management Review_, 41(2), 79–94.
-[https://doi.org/10.2307/41165987](https://doi.org/10.2307/41165987)  
+[https://doi.org/10.2307/41165987](https://doi.org/10.2307/41165987)
 The foundational management paper on knowledge work productivity. Drucker's central
 claim — that knowledge work must be defined by task output and its quality, not
 by hours of input — is the conceptual foundation of the HEE model's outcome
@@ -1016,16 +1021,17 @@ multiplier and task-category structure.
 **[11]** Drori, I., Zhang, S. J., Shuttleworth, R., et al. (2022). From Human Days
 to Machine Seconds: Automatically Answering and Generating Machine Learning Final
 Exams. _arXiv preprint_ arXiv:2206.05442.
-[https://arxiv.org/abs/2206.05442](https://arxiv.org/abs/2206.05442)  
+[https://arxiv.org/abs/2206.05442](https://arxiv.org/abs/2206.05442)
+
 > "A final exam in machine learning at a top institution typically takes faculty
 > days to write, and students hours to solve. We demonstrate that large language
-> models pass machine learning finals at a human level ... in seconds."  
-Demonstrates the orders-of-magnitude time translation between human and AI
-execution of the same cognitive task — the core phenomenon that HEE quantifies.
+> models pass machine learning finals at a human level ... in seconds."
+> Demonstrates the orders-of-magnitude time translation between human and AI
+> execution of the same cognitive task — the core phenomenon that HEE quantifies.
 
 **[12]** Bloom, B. S., Engelhart, M. D., Furst, E. J., Hill, W. H., and Krathwohl,
 D. R. (1956). _Taxonomy of Educational Objectives: The Classification of
-Educational Goals. Handbook I: Cognitive Domain_. David McKay Company, New York.  
+Educational Goals. Handbook I: Cognitive Domain_. David McKay Company, New York.
 The foundational cognitive taxonomy, organizing cognitive operations from
 remembering through understanding, applying, analyzing, evaluating, and creating.
 The ordering of HEE category multipliers (summarization → regulated decision
@@ -1034,7 +1040,7 @@ support) follows this cognitive hierarchy.
 **[13]** Zhang, Z., Yao, Y., Zhang, A., Tang, X., Ma, X., He, Z., Wang, Y.,
 Gerstein, M., and Wang, R. (2023). Igniting Language Intelligence: The Hitchhiker's
 Guide From Chain-of-Thought Reasoning to Language Agents. _arXiv preprint_
-arXiv:2311.11797. [https://arxiv.org/abs/2311.11797](https://arxiv.org/abs/2311.11797)  
+arXiv:2311.11797. [https://arxiv.org/abs/2311.11797](https://arxiv.org/abs/2311.11797)
 Survey of the language agent literature from chain-of-thought reasoning through
 multi-step planning and tool use. Provides theoretical grounding for treating
 workflow step count as a measure of agentic task complexity.
@@ -1042,7 +1048,7 @@ workflow step count as a measure of agentic task complexity.
 **[14]** Sackman, H., Erickson, W. J., and Grant, E. E. (1968). Exploratory
 experimental studies comparing online and offline programming performance.
 _Communications of the ACM_, 11(1), 3–11.
-[https://doi.org/10.1145/362851.362858](https://doi.org/10.1145/362851.362858)  
+[https://doi.org/10.1145/362851.362858](https://doi.org/10.1145/362851.362858)
 The earliest published large-scale measurement study of programmer productivity
 variance. Observed factor-10 differences between best and worst performers.
 Motivates the use of a 6:1 productivity ratio (principal vs. junior) in the HEE
@@ -1054,79 +1060,79 @@ tier model, which is a conservative calibration relative to this empirical range
 
 ```json
 {
-  "model_version": "1.0",
-  "components": {
-    "token_divisor":              500,
-    "duration_seconds_divisor":     2,
-    "step_weight":                  2,
-    "tool_weight":                  3,
-    "artifact_weight":            1.5,
-    "artifact_cap":                20,
-    "output_default_weight":        1,
-    "review_weight":                4
-  },
-  "category_multipliers": {
-    "uncategorized":              1.0,
-    "summarization":              0.9,
-    "drafting":                   1.0,
-    "code_generation":            1.2,
-    "root_cause_analysis":        1.4,
-    "planning_architecture":      1.5,
-    "regulated_decision_support": 1.6
-  },
-  "category_output_weights": {
-    "uncategorized":              1.0,
-    "summarization":              0.8,
-    "drafting":                   1.0,
-    "code_generation":            1.2,
-    "root_cause_analysis":        1.0,
-    "planning_architecture":      1.4,
-    "regulated_decision_support": 1.4
-  },
-  "category_review_weights": {
-    "uncategorized":               4,
-    "summarization":               2,
-    "drafting":                    3,
-    "code_generation":             5,
-    "root_cause_analysis":         6,
-    "planning_architecture":       8,
-    "regulated_decision_support": 10
-  },
-  "context_multipliers": {
-    "retry_per_unit":              0.25,
-    "retry_cap":                   2.0,
-    "ambiguity_high_temp":         1.1,
-    "ambiguity_temp_threshold":    0.7,
-    "risk_high":                   1.2,
-    "risk_medium":                 1.0,
-    "risk_low":                    1.0,
-    "human_in_loop":               0.7,
-    "outcome": {
-      "success":         1.0,
-      "partial_success": 0.6,
-      "failure":         0.25,
-      "timeout":         0.2
+    "model_version": "1.0",
+    "components": {
+        "token_divisor": 500,
+        "duration_seconds_divisor": 2,
+        "step_weight": 2,
+        "tool_weight": 3,
+        "artifact_weight": 1.5,
+        "artifact_cap": 20,
+        "output_default_weight": 1,
+        "review_weight": 4
+    },
+    "category_multipliers": {
+        "uncategorized": 1.0,
+        "summarization": 0.9,
+        "drafting": 1.0,
+        "code_generation": 1.2,
+        "root_cause_analysis": 1.4,
+        "planning_architecture": 1.5,
+        "regulated_decision_support": 1.6
+    },
+    "category_output_weights": {
+        "uncategorized": 1.0,
+        "summarization": 0.8,
+        "drafting": 1.0,
+        "code_generation": 1.2,
+        "root_cause_analysis": 1.0,
+        "planning_architecture": 1.4,
+        "regulated_decision_support": 1.4
+    },
+    "category_review_weights": {
+        "uncategorized": 4,
+        "summarization": 2,
+        "drafting": 3,
+        "code_generation": 5,
+        "root_cause_analysis": 6,
+        "planning_architecture": 8,
+        "regulated_decision_support": 10
+    },
+    "context_multipliers": {
+        "retry_per_unit": 0.25,
+        "retry_cap": 2.0,
+        "ambiguity_high_temp": 1.1,
+        "ambiguity_temp_threshold": 0.7,
+        "risk_high": 1.2,
+        "risk_medium": 1.0,
+        "risk_low": 1.0,
+        "human_in_loop": 0.7,
+        "outcome": {
+            "success": 1.0,
+            "partial_success": 0.6,
+            "failure": 0.25,
+            "timeout": 0.2
+        }
+    },
+    "confidence": {
+        "base": 0.95,
+        "missing_category_penalty": 0.1,
+        "missing_tokens_penalty": 0.15,
+        "missing_steps_penalty": 0.05,
+        "missing_tools_penalty": 0.05,
+        "retry_penalty_per_unit": 0.05,
+        "retry_penalty_cap": 0.2,
+        "high_risk_cap": 0.85,
+        "min": 0.0,
+        "max": 1.0
+    },
+    "rounding": {
+        "minutes_dp": 2,
+        "hours_dp": 2,
+        "days_dp": 2,
+        "fec_dp": 2,
+        "confidence_dp": 4
     }
-  },
-  "confidence": {
-    "base":                       0.95,
-    "missing_category_penalty":   0.10,
-    "missing_tokens_penalty":     0.15,
-    "missing_steps_penalty":      0.05,
-    "missing_tools_penalty":      0.05,
-    "retry_penalty_per_unit":     0.05,
-    "retry_penalty_cap":          0.20,
-    "high_risk_cap":              0.85,
-    "min":                        0.0,
-    "max":                        1.0
-  },
-  "rounding": {
-    "minutes_dp":    2,
-    "hours_dp":      2,
-    "days_dp":       2,
-    "fec_dp":        2,
-    "confidence_dp": 4
-  }
 }
 ```
 
@@ -1134,22 +1140,22 @@ tier model, which is a conservative calibration relative to this empirical range
 
 ## Appendix B: Notation Summary
 
-| Symbol | Meaning |
-|---|---|
-| BCU | Base Cognitive Unit |
-| $C_T, C_D, C_W, C_U, C_A, C_P, C_R$ | BCU components: tokens, duration, steps, tools, artifacts, output, review |
-| $\delta_T, \delta_D$ | Divisors for token and duration components |
-| $w_W, w_U, w_A$ | Weights for steps, tool calls, artifacts |
-| $\omega_{P,\kappa}$ | Per-category output weight |
-| $\rho_\kappa$ | Per-category review weight |
-| $\mu_\kappa$ | Category multiplier |
-| $\Gamma$ | Contextual multiplier product |
-| $\gamma_r, \gamma_a, \gamma_k, \gamma_h, \gamma_o$ | Context sub-multipliers |
-| $H_0$ | Baseline human minutes |
-| $\pi_t$ | Tier productivity multiplier |
-| $H_t$ | Tier-adjusted human minutes |
-| $\lambda_t$ | Tier hourly rate |
-| FEC | Financial Equivalent Cost |
-| $\beta$ | Base confidence value |
-| $c$ | Computed confidence score |
-| $\kappa$ | Task category |
+| Symbol                                             | Meaning                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| BCU                                                | Base Cognitive Unit                                                       |
+| $C_T, C_D, C_W, C_U, C_A, C_P, C_R$                | BCU components: tokens, duration, steps, tools, artifacts, output, review |
+| $\delta_T, \delta_D$                               | Divisors for token and duration components                                |
+| $w_W, w_U, w_A$                                    | Weights for steps, tool calls, artifacts                                  |
+| $\omega_{P,\kappa}$                                | Per-category output weight                                                |
+| $\rho_\kappa$                                      | Per-category review weight                                                |
+| $\mu_\kappa$                                       | Category multiplier                                                       |
+| $\Gamma$                                           | Contextual multiplier product                                             |
+| $\gamma_r, \gamma_a, \gamma_k, \gamma_h, \gamma_o$ | Context sub-multipliers                                                   |
+| $H_0$                                              | Baseline human minutes                                                    |
+| $\pi_t$                                            | Tier productivity multiplier                                              |
+| $H_t$                                              | Tier-adjusted human minutes                                               |
+| $\lambda_t$                                        | Tier hourly rate                                                          |
+| FEC                                                | Financial Equivalent Cost                                                 |
+| $\beta$                                            | Base confidence value                                                     |
+| $c$                                                | Computed confidence score                                                 |
+| $\kappa$                                           | Task category                                                             |

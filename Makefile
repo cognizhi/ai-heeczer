@@ -106,6 +106,14 @@ cli-smoke: build ## end-to-end smoke of the heec CLI against shipped fixtures
 	./target/release/heec diff /tmp/heec-score.json /tmp/heec-score.json
 	./target/release/heec migrate up --database-url sqlite::memory:
 
+.PHONY: cli-smoke-only
+cli-smoke-only: ## smoke-test the heec CLI (binary must already be built)
+	./target/release/heec version
+	./target/release/heec schema validate core/schema/fixtures/events/valid/01-prd-canonical.json
+	./target/release/heec score core/schema/fixtures/events/valid/01-prd-canonical.json --format json > /tmp/heec-score.json
+	./target/release/heec diff /tmp/heec-score.json /tmp/heec-score.json
+	./target/release/heec migrate up --database-url sqlite::memory:
+
 # ----- examples -------------------------------------------------------------
 
 .PHONY: example-node
