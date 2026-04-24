@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/cognizhi/ai-heeczer/compare/heeczer-go-v0.2.0...heeczer-go-v0.3.0) (2026-04-24)
+
+
+### Features
+
+* implement Category 3 — sync wrapper, http scaffold, govulncheck… ([#7](https://github.com/cognizhi/ai-heeczer/issues/7)) ([057d5dc](https://github.com/cognizhi/ai-heeczer/commit/057d5dca0679f3dd1ef4d0613fa269f81e56dd77))
+
 ## [0.2.0](https://github.com/cognizhi/ai-heeczer/compare/heeczer-go-v0.1.0...heeczer-go-v0.2.0) (2026-04-23)
 
 
