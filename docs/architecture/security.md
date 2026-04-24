@@ -26,7 +26,7 @@ No raw key material appears in any log, audit entry, or error response.
 - TLS 1.2 or higher is required on all endpoints. TLS 1.0 and 1.1 are
   disabled.
 - The dashboard sets `Strict-Transport-Security: max-age=63072000;
-  includeSubDomains; preload` (HSTS) on all responses.
+includeSubDomains; preload` (HSTS) on all responses.
 - Mutual TLS (mTLS) is supported as an opt-in for ingestion endpoints.
   Configure the server CA bundle in `HEECZER_TLS_CLIENT_CA_PATH`. When mTLS
   is enabled, API key auth is still required in addition to the client cert.
@@ -41,12 +41,12 @@ allowlist is stored in workspace settings and is editable only by `admin` or
 
 ## Role-based access control (RBAC)
 
-| Role       | Scope                                                                 |
-| ---------- | --------------------------------------------------------------------- |
-| `viewer`   | Read-only access to scores, aggregates, and dashboard pages           |
-| `analyst`  | All viewer permissions plus export and calibration run triggers       |
-| `admin`    | All analyst permissions plus workspace settings, API keys, and RBAC   |
-| `owner`    | All admin permissions plus workspace deletion and billing             |
+| Role      | Scope                                                               |
+| --------- | ------------------------------------------------------------------- |
+| `viewer`  | Read-only access to scores, aggregates, and dashboard pages         |
+| `analyst` | All viewer permissions plus export and calibration run triggers     |
+| `admin`   | All analyst permissions plus workspace settings, API keys, and RBAC |
+| `owner`   | All admin permissions plus workspace deletion and billing           |
 
 Admin-only endpoints (workspace settings, key management, RBAC mutations) are
 gated at the router layer. A middleware check rejects any request from a
@@ -58,18 +58,18 @@ in the audit log when changed.
 Rate limiting uses a token-bucket algorithm implemented via
 [`tower-governor`](https://crates.io/crates/tower-governor).
 
-| Scope              | Default limit                              |
-| ------------------ | ------------------------------------------ |
-| Per API key        | 1,000 requests/minute (burst: 200)         |
-| Per workspace/day  | 5,000,000 events/day (configurable)        |
+| Scope             | Default limit                       |
+| ----------------- | ----------------------------------- |
+| Per API key       | 1,000 requests/minute (burst: 200)  |
+| Per workspace/day | 5,000,000 events/day (configurable) |
 
 When a limit is exceeded the server responds with:
 
 ```json
 {
-  "error": "rate_limit_exceeded",
-  "message": "Request rate exceeded. Retry after the indicated interval.",
-  "retry_after_seconds": 42
+    "error": "rate_limit_exceeded",
+    "message": "Request rate exceeded. Retry after the indicated interval.",
+    "retry_after_seconds": 42
 }
 ```
 
@@ -96,18 +96,18 @@ verifies the stored row count and response body are identical.
 
 ## Supply-chain integrity
 
-| Tool                  | Scope                      | Trigger                          |
-| --------------------- | -------------------------- | -------------------------------- |
-| CodeQL                | Rust, JS/TS, Python, Go, Java | Push and PR to `main`          |
-| `cargo-audit`         | Rust dependencies          | CI on every push                 |
-| `cargo-deny`          | Rust licenses + advisories | CI on every push                 |
-| `pnpm audit`          | JS/TS dependencies         | CI on every push                 |
-| `pip-audit`           | Python dependencies        | CI on every push                 |
-| `govulncheck`         | Go dependencies            | CI on every push                 |
-| Trivy                 | Container images           | On release image build           |
-| gitleaks              | Secrets in source          | On every PR                      |
-| cosign (keyless)      | Release artifacts          | On every GitHub Release          |
-| CycloneDX SBOM        | All languages              | Generated per GitHub Release     |
+| Tool             | Scope                         | Trigger                      |
+| ---------------- | ----------------------------- | ---------------------------- |
+| CodeQL           | Rust, JS/TS, Python, Go, Java | Push and PR to `main`        |
+| `cargo-audit`    | Rust dependencies             | CI on every push             |
+| `cargo-deny`     | Rust licenses + advisories    | CI on every push             |
+| `pnpm audit`     | JS/TS dependencies            | CI on every push             |
+| `pip-audit`      | Python dependencies           | CI on every push             |
+| `govulncheck`    | Go dependencies               | CI on every push             |
+| Trivy            | Container images              | On release image build       |
+| gitleaks         | Secrets in source             | On every PR                  |
+| cosign (keyless) | Release artifacts             | On every GitHub Release      |
+| CycloneDX SBOM   | All languages                 | Generated per GitHub Release |
 
 ### SLSA provenance
 
@@ -123,17 +123,17 @@ signing and provenance design.
 
 The following OWASP Top 10 risks are in scope and have explicit mitigations:
 
-| OWASP risk                          | Mitigation                                                      |
-| ----------------------------------- | --------------------------------------------------------------- |
-| A01 — Broken access control         | RBAC middleware; workspace-scoped queries; unit-tested          |
-| A02 — Cryptographic failures        | TLS 1.2+; SHA-256 key hashing; cosign keyless signing           |
-| A03 — Injection                     | sqlx parameterized queries; JSON schema validation on ingest    |
-| A05 — Security misconfiguration     | CORS deny-by-default; HSTS; mTLS option                         |
-| A06 — Vulnerable components         | cargo-audit, cargo-deny, pip-audit, govulncheck, pnpm audit     |
-| A07 — Auth failures                 | API key required; rotation with audit log; no key in logs       |
-| A08 — Software integrity failures   | cosign keyless + SLSA provenance; SBOM on every release         |
-| A09 — Logging failures              | Structured logs; payload bodies never logged; audit trail       |
-| A10 — SSRF                          | Outbound HTTP disabled in core; no user-supplied URL evaluation |
+| OWASP risk                        | Mitigation                                                      |
+| --------------------------------- | --------------------------------------------------------------- |
+| A01 — Broken access control       | RBAC middleware; workspace-scoped queries; unit-tested          |
+| A02 — Cryptographic failures      | TLS 1.2+; SHA-256 key hashing; cosign keyless signing           |
+| A03 — Injection                   | sqlx parameterized queries; JSON schema validation on ingest    |
+| A05 — Security misconfiguration   | CORS deny-by-default; HSTS; mTLS option                         |
+| A06 — Vulnerable components       | cargo-audit, cargo-deny, pip-audit, govulncheck, pnpm audit     |
+| A07 — Auth failures               | API key required; rotation with audit log; no key in logs       |
+| A08 — Software integrity failures | cosign keyless + SLSA provenance; SBOM on every release         |
+| A09 — Logging failures            | Structured logs; payload bodies never logged; audit trail       |
+| A10 — SSRF                        | Outbound HTTP disabled in core; no user-supplied URL evaluation |
 
 A fuller threat model is tracked in `docs/architecture/threat-model.md`
 (plan 0014 deliverable).

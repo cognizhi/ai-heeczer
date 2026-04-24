@@ -305,6 +305,7 @@ $$C_P = P \cdot \omega_{P,\kappa}$$
 $$C_R = \begin{cases} \rho_\kappa & \text{if } review\_required \\ 0 & \text{otherwise} \end{cases}$$
 
 where:
+
 - $\delta_T$ = token divisor (default: 500)
 - $\delta_D$ = duration-seconds divisor (default: 2)
 - $w_W$ = step weight (default: 2)
@@ -604,7 +605,7 @@ engineering tier.
 
 ### 8.1 Input
 
-```
+```text
 tokens_prompt     = 1,200
 tokens_completion = 4,000
 duration_ms       = 14,500
@@ -624,7 +625,7 @@ tier              = Mid-Level Engineer  (π = 1.0, λ = $75/hr)
 
 ### 8.2 Normalization
 
-```
+```text
 total_tokens     = 1,200 + 4,000 = 5,200
 duration_seconds = 14,500 / 1,000 = 14.5
 ```
@@ -696,6 +697,7 @@ $$\text{FEC} = 1.26625 \times 75 = 94.969\ldots \approx \mathbf{\$94.97}$$
 ### 8.9 Confidence Score
 
 Starting from base $\beta = 0.95$:
+
 - No missing category → no penalty
 - No missing tokens → no penalty
 - No missing steps → no penalty
@@ -823,6 +825,7 @@ produce the same rounded results regardless of runtime.
 The baseline profile parameters (token divisor, component weights, category
 multipliers, tier multipliers, confidence penalties) are initial calibration values
 derived from:
+
 1. The foundational effort estimation literature [1, 2, 3]
 2. Published AI productivity studies [4, 5, 6]
 3. Domain knowledge of software engineering and knowledge work norms
@@ -920,7 +923,7 @@ a principled analytics framework from an ad hoc metric.
 
 ## References
 
-**[1]** Boehm, B. W. (1981). *Software Engineering Economics*. Prentice-Hall,
+**[1]** Boehm, B. W. (1981). _Software Engineering Economics_. Prentice-Hall,
 Englewood Cliffs, NJ. ISBN 0-13-822122-7.  
 The foundational treatise on constructive cost modeling. Introduced the COCOMO
 model family and the use of multiplicative cost drivers to adjust a base effort
@@ -928,13 +931,13 @@ estimate. The structure of the HEE model's contextual multiplier system is direc
 inspired by COCOMO's cost-driver product.
 
 **[2]** Albrecht, A. J. (1979). Measuring application development productivity. In
-*Proceedings of the IBM Application Development Symposium*, Monterey, CA, October
+_Proceedings of the IBM Application Development Symposium_, Monterey, CA, October
 1979 (pp. 83–92). IBM Corporation.  
 Introduced Function Point Analysis, establishing the principle that software work
 can be quantified from its functional scope and user-visible complexity rather than
 from implementation size. Justifies the per-component weighting approach in BCU.
 
-**[3]** Halstead, M. H. (1977). *Elements of Software Science*. Elsevier North-
+**[3]** Halstead, M. H. (1977). _Elements of Software Science_. Elsevier North-
 Holland, New York. ISBN 0-444-00205-7.  
 Proposed the first information-theoretic software complexity metrics, including
 program volume $V = N \log_2 \eta$. The analogy between operator/operand counts as
@@ -942,7 +945,7 @@ a proxy for cognitive burden and token counts as a proxy for information process
 is a direct conceptual descendant of Halstead's framework.
 
 **[4]** Peng, S., Kalliamvakou, E., Cihon, P., and Demirer, M. (2023). The Impact
-of AI on Developer Productivity: Evidence from GitHub Copilot. *arXiv preprint*
+of AI on Developer Productivity: Evidence from GitHub Copilot. _arXiv preprint_
 arXiv:2302.06590. [https://arxiv.org/abs/2302.06590](https://arxiv.org/abs/2302.06590)  
 > "The treatment group, with access to the AI pair programmer, completed the task
 > 55.8% faster than the control group."  
@@ -951,7 +954,7 @@ measurable, large productivity gains on bounded software development tasks.
 
 **[5]** Eloundou, T., Manning, S., Mishkin, P., and Rock, D. (2023). GPTs are GPTs:
 An Early Look at the Labor Market Impact Potential of Large Language Models.
-*arXiv preprint* arXiv:2303.10130. [https://arxiv.org/abs/2303.10130](https://arxiv.org/abs/2303.10130)  
+_arXiv preprint_ arXiv:2303.10130. [https://arxiv.org/abs/2303.10130](https://arxiv.org/abs/2303.10130)  
 > "Around 80% of the U.S. workforce could have at least 10% of their work tasks
 > affected by the introduction of LLMs, while approximately 19% of workers may
 > see at least 50% of their tasks impacted."  
@@ -962,7 +965,7 @@ specific findings on skill-level exposure that motivate the tiered productivity
 multiplier structure in HEE.
 
 **[6]** Brynjolfsson, E., Li, D., and Raymond, L. (2023). Generative AI at Work.
-*arXiv preprint* arXiv:2304.11771. [https://arxiv.org/abs/2304.11771](https://arxiv.org/abs/2304.11771)  
+_arXiv preprint_ arXiv:2304.11771. [https://arxiv.org/abs/2304.11771](https://arxiv.org/abs/2304.11771)  
 > "Access to AI assistance increases worker productivity, as measured by issues
 > resolved per hour, by 15% on average, with substantial heterogeneity across
 > workers. Less experienced and lower-skilled workers improve both the speed and
@@ -974,7 +977,7 @@ represents different amounts of labor-equivalent savings for different skill lev
 
 **[7]** Yang, J., Jimenez, C. E., Wettig, A., Lieret, K., Yao, S., Narasimhan, K.,
 and Press, O. (2024). SWE-agent: Agent-Computer Interfaces Enable Automated
-Software Engineering. *arXiv preprint* arXiv:2405.15793.
+Software Engineering. _arXiv preprint_ arXiv:2405.15793.
 [https://arxiv.org/abs/2405.15793](https://arxiv.org/abs/2405.15793)  
 > "LM agents represent a new category of end users with their own needs and
 > abilities, and would benefit from specially-built interfaces to the software
@@ -985,7 +988,7 @@ AI task completion quality — justifying their inclusion as BCU components.
 
 **[8]** Jin, H., Huang, L., Cai, H., Yan, J., Li, B., and Chen, H. (2024). From
 LLMs to LLM-based Agents for Software Engineering: A Survey of Current, Challenges
-and Future. *arXiv preprint* arXiv:2408.02479.
+and Future. _arXiv preprint_ arXiv:2408.02479.
 [https://arxiv.org/abs/2408.02479](https://arxiv.org/abs/2408.02479)  
 Surveys the LLM-agent literature across requirement engineering, code generation,
 autonomous decision-making, software design, test generation, and maintenance —
@@ -993,7 +996,7 @@ providing the task taxonomy that informed the HEE category multiplier design.
 
 **[9]** Wang, X., Wang, Z., Liu, J., Chen, Y., Yuan, L., Peng, H., and Ji, H.
 (2023). MINT: Evaluating LLMs in Multi-turn Interaction with Tools and Language
-Feedback. *arXiv preprint* arXiv:2309.10691. ICLR 2024.
+Feedback. _arXiv preprint_ arXiv:2309.10691. ICLR 2024.
 [https://arxiv.org/abs/2309.10691](https://arxiv.org/abs/2309.10691)  
 > "LLMs generally benefit from tools and language feedback, with performance gains
 > (absolute) of 1–8% for each turn of tool use and 2–17% with natural language
@@ -1003,7 +1006,7 @@ reliable signals of task complexity, justifying the tool call count as an
 independent BCU component.
 
 **[10]** Drucker, P. F. (1999). Knowledge-Worker Productivity: The Biggest
-Challenge. *California Management Review*, 41(2), 79–94.
+Challenge. _California Management Review_, 41(2), 79–94.
 [https://doi.org/10.2307/41165987](https://doi.org/10.2307/41165987)  
 The foundational management paper on knowledge work productivity. Drucker's central
 claim — that knowledge work must be defined by task output and its quality, not
@@ -1012,7 +1015,7 @@ multiplier and task-category structure.
 
 **[11]** Drori, I., Zhang, S. J., Shuttleworth, R., et al. (2022). From Human Days
 to Machine Seconds: Automatically Answering and Generating Machine Learning Final
-Exams. *arXiv preprint* arXiv:2206.05442.
+Exams. _arXiv preprint_ arXiv:2206.05442.
 [https://arxiv.org/abs/2206.05442](https://arxiv.org/abs/2206.05442)  
 > "A final exam in machine learning at a top institution typically takes faculty
 > days to write, and students hours to solve. We demonstrate that large language
@@ -1021,8 +1024,8 @@ Demonstrates the orders-of-magnitude time translation between human and AI
 execution of the same cognitive task — the core phenomenon that HEE quantifies.
 
 **[12]** Bloom, B. S., Engelhart, M. D., Furst, E. J., Hill, W. H., and Krathwohl,
-D. R. (1956). *Taxonomy of Educational Objectives: The Classification of
-Educational Goals. Handbook I: Cognitive Domain*. David McKay Company, New York.  
+D. R. (1956). _Taxonomy of Educational Objectives: The Classification of
+Educational Goals. Handbook I: Cognitive Domain_. David McKay Company, New York.  
 The foundational cognitive taxonomy, organizing cognitive operations from
 remembering through understanding, applying, analyzing, evaluating, and creating.
 The ordering of HEE category multipliers (summarization → regulated decision
@@ -1030,7 +1033,7 @@ support) follows this cognitive hierarchy.
 
 **[13]** Zhang, Z., Yao, Y., Zhang, A., Tang, X., Ma, X., He, Z., Wang, Y.,
 Gerstein, M., and Wang, R. (2023). Igniting Language Intelligence: The Hitchhiker's
-Guide From Chain-of-Thought Reasoning to Language Agents. *arXiv preprint*
+Guide From Chain-of-Thought Reasoning to Language Agents. _arXiv preprint_
 arXiv:2311.11797. [https://arxiv.org/abs/2311.11797](https://arxiv.org/abs/2311.11797)  
 Survey of the language agent literature from chain-of-thought reasoning through
 multi-step planning and tool use. Provides theoretical grounding for treating
@@ -1038,7 +1041,7 @@ workflow step count as a measure of agentic task complexity.
 
 **[14]** Sackman, H., Erickson, W. J., and Grant, E. E. (1968). Exploratory
 experimental studies comparing online and offline programming performance.
-*Communications of the ACM*, 11(1), 3–11.
+_Communications of the ACM_, 11(1), 3–11.
 [https://doi.org/10.1145/362851.362858](https://doi.org/10.1145/362851.362858)  
 The earliest published large-scale measurement study of programmer productivity
 variance. Observed factor-10 differences between best and worst performers.

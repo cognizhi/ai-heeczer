@@ -36,6 +36,7 @@ make example-quickstart # run a sample event end-to-end
 If `make bootstrap` is not green on a fresh clone, that is a P1 bug — please open an issue.
 
 Toolchains we pin:
+
 - Rust (see `rust-toolchain.toml`)
 - Node.js (see `.nvmrc`)
 - Python (see `.python-version`)
@@ -149,14 +150,16 @@ The Tech Writer subagent (`.github/agents/tech-writer.md`) reviews every doc PR.
 ## Commit, branch, and PR conventions
 
 ### Branches
+
 - `main` is protected; direct pushes are not allowed.
 - Feature branches: `feat/<short-slug>` or `fix/<short-slug>`.
 - Release branches are managed by `release-please` (do not hand-create).
 
 ### Commits
+
 Conventional Commits are required:
 
-```
+```text
 feat(scoring): add risk-class capping for high-risk telemetry
 fix(server): correct retry backoff for transient PG conflicts
 docs(adr): add ADR-0010 for OTel bridge
@@ -166,6 +169,7 @@ chore(deps): bump axum to 0.7.5
 Allowed types: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`. Add `!` (e.g., `feat!:`) or a `BREAKING CHANGE:` footer for breaking changes — these drive a major version bump (PRD §27.3).
 
 ### PRs
+
 PR description must include:
 
 1. **What and why** in two or three sentences.

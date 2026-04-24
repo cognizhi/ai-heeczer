@@ -31,4 +31,4 @@ jobs:
       - name: integration tests (SQLite)
         run: cargo test -p heeczer-ingest --tests
         env:
-          DATABASE_URL: sqlite::memory:
+          DATABASE_URL: "sqlite::memory:"

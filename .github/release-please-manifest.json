@@ -3,6 +3,6 @@
   "bindings/heeczer-js": "0.2.0",
   "bindings/heeczer-py": "0.2.0",
   "bindings/heeczer-go": "0.2.0",
-  "bindings/heeczer-java": "0.1.0",
+  "bindings/heeczer-java": "0.2.0",
   "dashboard": "0.2.0"
 }

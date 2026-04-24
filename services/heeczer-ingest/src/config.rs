@@ -3,7 +3,10 @@
 //! Resolution order (last wins): defaults → `heeczer.toml` → env vars.
 //! All env vars are prefixed `HEECZER_`.
 
-use figment::{providers::{Env, Format, Serialized, Toml}, Figment};
+use figment::{
+    providers::{Env, Format, Serialized, Toml},
+    Figment,
+};
 use serde::{Deserialize, Serialize};
 
 /// Top-level service configuration.

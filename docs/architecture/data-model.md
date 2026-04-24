@@ -11,10 +11,10 @@ the immutability of the raw event log.
 
 Two storage backends share one migration history:
 
-| Backend    | Use case              | Dialect notes                                    |
-| ---------- | --------------------- | ------------------------------------------------ |
-| SQLite     | Local development, CLI | `strftime` timestamps, trigger-based guards      |
-| PostgreSQL | Production             | `NOW()` defaults, PL/pgSQL trigger functions     |
+| Backend    | Use case               | Dialect notes                                |
+| ---------- | ---------------------- | -------------------------------------------- |
+| SQLite     | Local development, CLI | `strftime` timestamps, trigger-based guards  |
+| PostgreSQL | Production             | `NOW()` defaults, PL/pgSQL trigger functions |
 
 References: [ADR-0004](../adr/0004-database-migration-tooling.md), [plan 0003](../plan/0003-storage-and-migrations.md)
 
@@ -24,20 +24,20 @@ References: [ADR-0004](../adr/0004-database-migration-tooling.md), [plan 0003](.
 
 All table names carry the `heec_` prefix (the implementation prefix; plan 0003 and PRD §20 use the `aih_` logical name — these map 1-to-1).
 
-| Table                      | Purpose                                                  |
-| -------------------------- | -------------------------------------------------------- |
-| `heec_workspaces`          | Tenant root; every other table FK's to this              |
-| `heec_api_keys`            | Per-workspace hashed API keys with revocation            |
-| `heec_events`              | Append-only normalized events, keyed by `(workspace_id, event_id)` |
-| `heec_scores`              | Append-only scored results, versioned per scoring config |
-| `heec_jobs`                | Queue rows for async/image-mode workers (ADR-0006)       |
-| `heec_tiers`               | Append-only tier sets with `effective_at` ranges         |
-| `heec_rates`               | Append-only rate tables with `effective_at` ranges       |
-| `heec_scoring_profiles`    | Append-only profiles with `effective_at` ranges          |
-| `heec_audit_log`           | Every config change and re-scoring event (PRD §22.5)     |
-| `heec_daily_aggregates`    | Derived rollups (workspace, day, project, category)      |
-| `heec_tombstones`          | Hard-deletion records (PRD §12.17); raw event survives   |
-| `heec_schema_migrations`   | View over `_sqlx_migrations`; stable public contract     |
+| Table                    | Purpose                                                            |
+| ------------------------ | ------------------------------------------------------------------ |
+| `heec_workspaces`        | Tenant root; every other table FK's to this                        |
+| `heec_api_keys`          | Per-workspace hashed API keys with revocation                      |
+| `heec_events`            | Append-only normalized events, keyed by `(workspace_id, event_id)` |
+| `heec_scores`            | Append-only scored results, versioned per scoring config           |
+| `heec_jobs`              | Queue rows for async/image-mode workers (ADR-0006)                 |
+| `heec_tiers`             | Append-only tier sets with `effective_at` ranges                   |
+| `heec_rates`             | Append-only rate tables with `effective_at` ranges                 |
+| `heec_scoring_profiles`  | Append-only profiles with `effective_at` ranges                    |
+| `heec_audit_log`         | Every config change and re-scoring event (PRD §22.5)               |
+| `heec_daily_aggregates`  | Derived rollups (workspace, day, project, category)                |
+| `heec_tombstones`        | Hard-deletion records (PRD §12.17); raw event survives             |
+| `heec_schema_migrations` | View over `_sqlx_migrations`; stable public contract               |
 
 ---
 
@@ -185,19 +185,19 @@ or `scoring_profile_id` — it never touches the prior row.
 
 ### Composite primary key for scores
 
-```
+```sql
 PRIMARY KEY (workspace_id, event_id, scoring_version, scoring_profile_id, profile_version)
 ```
 
 Each component of the key answers a distinct reproducibility question:
 
-| Column               | Question answered                                    |
-| -------------------- | ---------------------------------------------------- |
-| `workspace_id`       | Which tenant produced this score?                    |
-| `event_id`           | Which event was scored?                              |
-| `scoring_version`    | Which engine version ran?                            |
-| `scoring_profile_id` | Which profile (component weights, multipliers) ran?  |
-| `profile_version`    | Which revision of that profile was active?           |
+| Column               | Question answered                                   |
+| -------------------- | --------------------------------------------------- |
+| `workspace_id`       | Which tenant produced this score?                   |
+| `event_id`           | Which event was scored?                             |
+| `scoring_version`    | Which engine version ran?                           |
+| `scoring_profile_id` | Which profile (component weights, multipliers) ran? |
+| `profile_version`    | Which revision of that profile was active?          |
 
 ### Nullable `workspace_id` on config tables
 
@@ -249,7 +249,7 @@ Tenant isolation checklist for new queries:
 
 Migrations are **forward-only, sequentially numbered**:
 
-```
+```text
 core/heeczer-storage/migrations/          ← SQLite dialect
     0001_init.sql
     0002_append_only_audit_and_global_unique.sql
@@ -267,13 +267,13 @@ The `<NNNN>` counter must match between the two trees. Gaps are not allowed.
 
 1. Pick the next integer (e.g., `0003`).
 2. Author `migrations/0003_<slug>.sql` for SQLite. Use:
-   - `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')` for timestamps (not `CURRENT_TIMESTAMP`)
-   - `TEXT` for all temporal columns (ISO-8601 strings)
-   - `RAISE(ABORT, '...')` in `BEFORE UPDATE/DELETE` triggers
+    - `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')` for timestamps (not `CURRENT_TIMESTAMP`)
+    - `TEXT` for all temporal columns (ISO-8601 strings)
+    - `RAISE(ABORT, '...')` in `BEFORE UPDATE/DELETE` triggers
 3. Author `migrations-pg/0003_<slug>.sql` for PostgreSQL. Use:
-   - `NOW()` for timestamps
-   - `TIMESTAMPTZ` for temporal columns
-   - PL/pgSQL `CREATE FUNCTION` + `CREATE TRIGGER` for append-only guards
+    - `NOW()` for timestamps
+    - `TIMESTAMPTZ` for temporal columns
+    - PL/pgSQL `CREATE FUNCTION` + `CREATE TRIGGER` for append-only guards
 4. Run `heec migrate up` locally against both backends.
 5. Add or update tests in `core/heeczer-storage/tests/` to cover new tables.
 6. The `migration.yml` CI workflow validates fresh-install and incremental-upgrade on both backends.

@@ -68,7 +68,7 @@ Each stack:
 
 ### 4.1 Topology (per stack)
 
-```
+```text
                 ┌────────────────────────────────────────────────────┐
                 │  docker compose project: heeczer-test-<sdk>        │
                 │                                                    │
@@ -117,7 +117,7 @@ to make it obvious which stack a contributor is hitting.
 
 ### 4.3 Filesystem layout
 
-```
+```text
 testing/
 ├── README.md                       # index of all stacks, how to use, troubleshooting
 ├── compose/
@@ -301,7 +301,7 @@ immediately see heeczer's scoring variation without needing a real workload.
 The chatbot builds one canonical event per completed chat turn. Every field must
 be derivable from the turn's execution data without accessing heeczer internals:
 
-```
+```text
 event_id          ← UUID generated fresh per turn
 correlation_id    ← session_id + ":" + turn_counter  (stable across a session)
 timestamp         ← turn end time (UTC RFC 3339)
@@ -395,6 +395,7 @@ Order of operations for every stack slice (mirrors AGENT_HARNESS §2):
      pinned — scoring is the engine's job — but `score_result.scoring_version`
      must match the engine.
    - Example structure:
+
      ```json
      {
        "skill": "compliance",
@@ -414,6 +415,7 @@ Order of operations for every stack slice (mirrors AGENT_HARNESS §2):
        }
      }
      ```
+
 2. **Failing smoke tests.** Add `testing/tests/smoke/test_<sdk>_stack.py`. Each
    test function maps to one skill and must fail before the chatbot app exists:
    - Skips with a clear message if `docker compose ps` shows the stack down.

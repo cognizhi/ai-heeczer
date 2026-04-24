@@ -14,7 +14,7 @@ We take security seriously. Thank you for helping keep ai-heeczer and its users 
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email **security@cognizhi.ai** (replace with the project's actual address) with:
+Email **<security@cognizhi.ai>** (replace with the project's actual address) with:
 
 1. A description of the issue and its impact.
 2. Steps to reproduce, ideally with a minimal proof of concept.

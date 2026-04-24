@@ -2,7 +2,6 @@
 
 ## [0.2.0](https://github.com/cognizhi/ai-heeczer/compare/v0.1.0...v0.2.0) (2026-04-23)
 
-
 ### Features
 
 * **cli:** embed fixtures via include_dir, add `aih fixtures show` ([13d75f1](https://github.com/cognizhi/ai-heeczer/commit/13d75f13f9860449ba029f956e353d6b11a9fe94))
@@ -26,7 +25,6 @@
 * **storage:** PostgreSQL migration parity + pg module (plan 0004) ([3ea94aa](https://github.com/cognizhi/ai-heeczer/commit/3ea94aac1b7738f5943f615fc754048f20a7c32f))
 * **storage:** SQLite layer with sqlx migrations and append-only triggers ([8ff8a26](https://github.com/cognizhi/ai-heeczer/commit/8ff8a26ba921db997e13846180f879689c304a1f))
 
-
 ### Bug Fixes
 
 * align Rust security CI with stable toolchain and local bootstrap ([3ada3d0](https://github.com/cognizhi/ai-heeczer/commit/3ada3d0b903061a76e318fe3189dfb268ddab152))
@@ -36,7 +34,6 @@
 * correct release-please action SHA pin ([7d74495](https://github.com/cognizhi/ai-heeczer/commit/7d74495ca1cbf276b6567183a027d79bb96b2f1f))
 * **foundation:** apply subagent review consensus ([6a62c8a](https://github.com/cognizhi/ai-heeczer/commit/6a62c8a1956b9a9eb6a511b24ac573f5103062c4))
 * harden rust dependency checks ([e9fca72](https://github.com/cognizhi/ai-heeczer/commit/e9fca72bd8323a9d0160095c29fac57934693564))
-
 
 ### Documentation
 

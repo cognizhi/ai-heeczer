@@ -56,15 +56,15 @@ flowchart TD
 The Behavioural Complexity Unit (BCU) is the intermediate measure before tier and rate adjustments.
 Each component maps one normalized field to a weighted scalar:
 
-| Component   | Formula                                                       | Notes                                        |
-| ----------- | ------------------------------------------------------------- | -------------------------------------------- |
-| `tokens`    | `total_tokens / token_divisor`                                | `total_tokens = tokens_prompt + tokens_completion` |
-| `duration`  | `duration_seconds / duration_seconds_divisor`                 |                                              |
-| `steps`     | `workflow_steps × step_weight`                                |                                              |
-| `tools`     | `tool_call_count × tool_weight`                               |                                              |
-| `artifacts` | `min(artifact_count, artifact_cap) × artifact_weight`         | Cap prevents outliers from dominating        |
-| `output`    | `output_size_proxy × output_weight`                           | `output_weight` is category-specific; fallback to `output_default_weight` |
-| `review`    | `review_weight` if `review_required`, else `0`                | `review_weight` is category-specific         |
+| Component   | Formula                                               | Notes                                                                     |
+| ----------- | ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| `tokens`    | `total_tokens / token_divisor`                        | `total_tokens = tokens_prompt + tokens_completion`                        |
+| `duration`  | `duration_seconds / duration_seconds_divisor`         |                                                                           |
+| `steps`     | `workflow_steps × step_weight`                        |                                                                           |
+| `tools`     | `tool_call_count × tool_weight`                       |                                                                           |
+| `artifacts` | `min(artifact_count, artifact_cap) × artifact_weight` | Cap prevents outliers from dominating                                     |
+| `output`    | `output_size_proxy × output_weight`                   | `output_weight` is category-specific; fallback to `output_default_weight` |
+| `review`    | `review_weight` if `review_required`, else `0`        | `review_weight` is category-specific                                      |
 
 All divisors and weights are read from the active `ScoringProfile`; they are not hard-coded in the engine.
 
@@ -95,13 +95,13 @@ $$
 
 Five independent factors are multiplied together to form the context multiplier:
 
-| Factor        | Formula                                                              | Behavior                                       |
-| ------------- | -------------------------------------------------------------------- | ---------------------------------------------- |
-| `retry`       | `clamp(1 + retries × retry_per_unit, 1, retry_cap)`                | Increases with retry count, bounded by cap     |
-| `ambiguity`   | `ambiguity_high_temp` if `temperature > ambiguity_temp_threshold`, else `1` | Step function on temperature               |
-| `risk`        | `risk_high \| risk_medium \| risk_low` depending on `risk_class`    | Three-tier lookup                              |
-| `human_in_loop` | `human_in_loop` if HIL, else `1`                                  | Binary                                         |
-| `outcome`     | `outcome.success \| outcome.partial_success \| outcome.failure \| outcome.timeout` | Four-outcome lookup             |
+| Factor          | Formula                                                                            | Behavior                                   |
+| --------------- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
+| `retry`         | `clamp(1 + retries × retry_per_unit, 1, retry_cap)`                                | Increases with retry count, bounded by cap |
+| `ambiguity`     | `ambiguity_high_temp` if `temperature > ambiguity_temp_threshold`, else `1`        | Step function on temperature               |
+| `risk`          | `risk_high \| risk_medium \| risk_low` depending on `risk_class`                   | Three-tier lookup                          |
+| `human_in_loop` | `human_in_loop` if HIL, else `1`                                                   | Binary                                     |
+| `outcome`       | `outcome.success \| outcome.partial_success \| outcome.failure \| outcome.timeout` | Four-outcome lookup                        |
 
 $$
 \text{context\_mult} = \text{retry} \times \text{ambiguity} \times \text{risk} \times \text{human\_in\_loop} \times \text{outcome}
@@ -113,12 +113,12 @@ $$
 
 After `baseline_minutes` is computed, tier resolution maps the event to a specific labor tier:
 
-```
+```text
 requested_tier = tier_override ?? event.identity.tier_id ?? "tier_mid_eng"
 tier = tiers.resolve(requested_tier, "tier_mid_eng")
 ```
 
-```
+```text
 raw_minutes = baseline_minutes / productivity_multiplier   (treat 0 as 1)
 raw_hours   = raw_minutes / 60
 raw_days    = raw_hours / working_hours_per_day            (treat 0 as 8)
@@ -145,13 +145,13 @@ fn round(v: Decimal, dp: u32) -> Decimal {
 
 Rounding settings per `ScoringProfile.rounding`:
 
-| Field            | Default DPs | Stored as     |
-| ---------------- | ----------- | ------------- |
-| `minutes_dp`     | 4           | Decimal TEXT  |
-| `hours_dp`       | 4           | Decimal TEXT  |
-| `days_dp`        | 4           | Decimal TEXT  |
-| `fec_dp`         | 4           | Decimal TEXT  |
-| `confidence_dp`  | 4           | Decimal TEXT  |
+| Field           | Default DPs | Stored as    |
+| --------------- | ----------- | ------------ |
+| `minutes_dp`    | 4           | Decimal TEXT |
+| `hours_dp`      | 4           | Decimal TEXT |
+| `days_dp`       | 4           | Decimal TEXT |
+| `fec_dp`        | 4           | Decimal TEXT |
+| `confidence_dp` | 4           | Decimal TEXT |
 
 No intermediate result is rounded. Only the five output fields carry the rounding boundary.
 
@@ -165,13 +165,13 @@ No intermediate result is rounded. Only the five output fields carry the roundin
 
 Starting from `params.base`:
 
-| Condition                      | Adjustment                                             |
-| ------------------------------ | ------------------------------------------------------ |
-| `category_was_missing`         | `− missing_category_penalty`                           |
-| `tokens_were_missing`          | `− missing_tokens_penalty`                             |
-| `steps_were_missing`           | `− missing_steps_penalty`                              |
-| `tools_were_missing`           | `− missing_tools_penalty`                              |
-| Retry count > 0                | `− min(retries × retry_penalty_per_unit, retry_penalty_cap)` |
+| Condition              | Adjustment                                                   |
+| ---------------------- | ------------------------------------------------------------ |
+| `category_was_missing` | `− missing_category_penalty`                                 |
+| `tokens_were_missing`  | `− missing_tokens_penalty`                                   |
+| `steps_were_missing`   | `− missing_steps_penalty`                                    |
+| `tools_were_missing`   | `− missing_tools_penalty`                                    |
+| Retry count > 0        | `− min(retries × retry_penalty_per_unit, retry_penalty_cap)` |
 
 ### Risk cap
 
@@ -182,12 +182,12 @@ the score is clamped to `high_risk_cap`. The cap is applied after all penalties.
 
 Bands are derived from the **unrounded** score:
 
-| Band       | Score range          |
-| ---------- | -------------------- |
-| `High`     | `[0.85, 1.00]`       |
-| `Medium`   | `[0.60, 0.84]`       |
-| `Low`      | `[0.40, 0.59]`       |
-| `VeryLow`  | `[0.00, 0.39]`       |
+| Band      | Score range    |
+| --------- | -------------- |
+| `High`    | `[0.85, 1.00]` |
+| `Medium`  | `[0.60, 0.84]` |
+| `Low`     | `[0.40, 0.59]` |
+| `VeryLow` | `[0.00, 0.39]` |
 
 ---
 
@@ -196,7 +196,7 @@ Bands are derived from the **unrounded** score:
 `ScoreResult` is the explainability trace. Every field that contributed to the
 final number is present:
 
-```
+```rust
 ScoreResult {
     scoring_version,          // "1.0.0"
     spec_version,             // "1.0"

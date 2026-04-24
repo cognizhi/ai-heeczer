@@ -19,31 +19,31 @@ conversation.
 
 ## Data classification
 
-| Tier         | Label        | Example fields                                                      | Handling                                      |
-| ------------ | ------------ | ------------------------------------------------------------------- | --------------------------------------------- |
-| 1            | Restricted   | raw prompt text, model response text, user PII beyond identifiers   | Not stored; schema validation rejects on ingest |
-| 2            | Confidential | `workspace_id`, `user_id`, API keys (hashed), audit log entries     | Encrypted at rest; access gated by RBAC admin |
-| 3            | Internal     | `event_id`, `task.category`, `scoring_version`, score breakdowns    | Stored in append-only tables; workspace-scoped |
-| 4            | Public       | aggregate statistics, benchmark reference payloads, schema JSON     | Published openly; no workspace attribution    |
+| Tier | Label        | Example fields                                                    | Handling                                        |
+| ---- | ------------ | ----------------------------------------------------------------- | ----------------------------------------------- |
+| 1    | Restricted   | raw prompt text, model response text, user PII beyond identifiers | Not stored; schema validation rejects on ingest |
+| 2    | Confidential | `workspace_id`, `user_id`, API keys (hashed), audit log entries   | Encrypted at rest; access gated by RBAC admin   |
+| 3    | Internal     | `event_id`, `task.category`, `scoring_version`, score breakdowns  | Stored in append-only tables; workspace-scoped  |
+| 4    | Public       | aggregate statistics, benchmark reference payloads, schema JSON   | Published openly; no workspace attribution      |
 
 ## What is collected
 
 The following fields are recorded per ingested event:
 
-| Field                     | Type      | Notes                                                  |
-| ------------------------- | --------- | ------------------------------------------------------ |
-| `event_id`                | UUID      | Idempotency key; deduplicates on ingest                |
-| `workspace_id`            | UUID      | All queries scoped by this value                       |
-| `user_id`                 | string    | Workspace-local identifier; no external PII lookup     |
-| `spec_version`            | string    | Schema version (e.g., `"1.0"`)                         |
-| `task.category`           | string    | Enum or `uncategorized`; no free-form user text        |
-| `task.outcome`            | string    | `success`, `failure`, `partial`, `timeout`             |
-| `metrics.tokens_prompt`   | integer   | Token count only; no prompt content                    |
-| `metrics.tokens_completion` | integer | Token count only; no completion content                |
-| `metrics.duration_ms`     | integer   | Wall-clock milliseconds                                |
-| `metrics.tool_calls`      | integer   | Count of tool invocations                              |
-| `metrics.retry_count`     | integer   | Number of retries                                      |
-| `created_at`              | timestamp | Server-assigned ingest time                            |
+| Field                       | Type      | Notes                                              |
+| --------------------------- | --------- | -------------------------------------------------- |
+| `event_id`                  | UUID      | Idempotency key; deduplicates on ingest            |
+| `workspace_id`              | UUID      | All queries scoped by this value                   |
+| `user_id`                   | string    | Workspace-local identifier; no external PII lookup |
+| `spec_version`              | string    | Schema version (e.g., `"1.0"`)                     |
+| `task.category`             | string    | Enum or `uncategorized`; no free-form user text    |
+| `task.outcome`              | string    | `success`, `failure`, `partial`, `timeout`         |
+| `metrics.tokens_prompt`     | integer   | Token count only; no prompt content                |
+| `metrics.tokens_completion` | integer   | Token count only; no completion content            |
+| `metrics.duration_ms`       | integer   | Wall-clock milliseconds                            |
+| `metrics.tool_calls`        | integer   | Count of tool invocations                          |
+| `metrics.retry_count`       | integer   | Number of retries                                  |
+| `created_at`                | timestamp | Server-assigned ingest time                        |
 
 ## What is NOT collected
 
@@ -110,11 +110,11 @@ sets are workspace-scoped; there are no global mutable records.
 
 ## Data residency
 
-| Deployment mode      | Storage location                                        |
-| -------------------- | ------------------------------------------------------- |
-| Local (`heec` CLI)   | SQLite file on the developer's local disk               |
-| Self-hosted server   | PostgreSQL instance under the operator's control        |
-| Cloud (future)       | Region-pinned per workspace; no cross-region replication without explicit opt-in |
+| Deployment mode    | Storage location                                                                 |
+| ------------------ | -------------------------------------------------------------------------------- |
+| Local (`heec` CLI) | SQLite file on the developer's local disk                                        |
+| Self-hosted server | PostgreSQL instance under the operator's control                                 |
+| Cloud (future)     | Region-pinned per workspace; no cross-region replication without explicit opt-in |
 
 SQLite deployments store data only where the CLI is run. PostgreSQL
 deployments are operator-controlled; ai-heeczer does not prescribe a

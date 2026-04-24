@@ -23,12 +23,12 @@ requirements.
 This is the **foundation slice** of the project (plans 0001–0003, 0013).
 It contains:
 
-| Crate                                           | Purpose                                      |
-| ----------------------------------------------- | -------------------------------------------- |
-| [`heeczer-core`](core/heeczer-core)             | Pure-Rust scoring engine, schema validation  |
-| [`heeczer-core-c`](core/heeczer-core-c)         | C ABI shim used by every non-Rust SDK        |
-| [`heeczer-storage`](core/heeczer-storage)       | SQLite/Postgres storage and migrations       |
-| [`heeczer-cli`](core/heeczer-cli) (`heec`)       | First-class local developer CLI (ADR-0010)  |
+| Crate                                      | Purpose                                     |
+| ------------------------------------------ | ------------------------------------------- |
+| [`heeczer-core`](core/heeczer-core)        | Pure-Rust scoring engine, schema validation |
+| [`heeczer-core-c`](core/heeczer-core-c)    | C ABI shim used by every non-Rust SDK       |
+| [`heeczer-storage`](core/heeczer-storage)  | SQLite/Postgres storage and migrations      |
+| [`heeczer-cli`](core/heeczer-cli) (`heec`) | First-class local developer CLI (ADR-0010)  |
 
 Plans 0004–0012, 0014, and 0015 are tracked under [`docs/plan/`](docs/plan/) and
 land iteratively on top of this foundation.
@@ -66,13 +66,13 @@ The full target catalogue is in the [`Makefile`](Makefile); run `make help`.
 
 ## Language SDKs
 
-| Language   | Package                                        | Install                                      | Status      |
-| ---------- | ---------------------------------------------- | -------------------------------------------- | ----------- |
-| Rust       | [`heeczer-rs`](bindings/heeczer-rs)            | `cargo add heeczer`                          | In progress |
-| JS / TS    | [`heeczer-js`](bindings/heeczer-js)            | `pnpm add @cognizhi/heeczer`                 | In progress |
-| Python     | [`heeczer-py`](bindings/heeczer-py)            | `pip install heeczer`                        | In progress |
-| Go         | [`heeczer-go`](bindings/heeczer-go)            | `go get github.com/cognizhi/heeczer-go`      | In progress |
-| Java       | [`heeczer-java`](bindings/heeczer-java)        | Maven / Gradle — see SDK README              | In progress |
+| Language | Package                                 | Install                                 | Status      |
+| -------- | --------------------------------------- | --------------------------------------- | ----------- |
+| Rust     | [`heeczer-rs`](bindings/heeczer-rs)     | `cargo add heeczer`                     | In progress |
+| JS / TS  | [`heeczer-js`](bindings/heeczer-js)     | `pnpm add @cognizhi/heeczer`            | In progress |
+| Python   | [`heeczer-py`](bindings/heeczer-py)     | `pip install heeczer`                   | In progress |
+| Go       | [`heeczer-go`](bindings/heeczer-go)     | `go get github.com/cognizhi/heeczer-go` | In progress |
+| Java     | [`heeczer-java`](bindings/heeczer-java) | Maven / Gradle — see SDK README         | In progress |
 
 All SDKs call into `heeczer-core` (directly for Rust; via `heeczer-core-c` for
 everyone else) and produce **byte-identical** scoring output for the same event,
@@ -82,7 +82,7 @@ See [`examples/`](examples/) for per-language usage.
 
 ## Architecture at a glance
 
-```
+```text
                 ┌──────────────────────┐
    adapters ──▶ │  ingestion (Plan 04) │ ──▶ queue ──▶ scorer ──▶ storage ──▶ dashboard
                 └──────────────────────┘                  │
@@ -104,15 +104,15 @@ starting with [`docs/architecture/system-overview.md`](docs/architecture/system-
 
 ## Repository layout
 
-| Path                  | Owner                            |
-| --------------------- | -------------------------------- |
-| `core/`               | Rust core, C ABI, storage, CLI   |
-| `core/schema/`        | JSON schemas + golden fixtures   |
-| `docs/prd/`           | Product requirements             |
-| `docs/adr/`           | Architecture Decision Records    |
-| `docs/plan/`          | Implementation plans 0000–0015   |
-| `docs/agents/`        | Agent harness and operating rules |
-| `.github/`            | CI workflows + agent role files  |
+| Path           | Owner                             |
+| -------------- | --------------------------------- |
+| `core/`        | Rust core, C ABI, storage, CLI    |
+| `core/schema/` | JSON schemas + golden fixtures    |
+| `docs/prd/`    | Product requirements              |
+| `docs/adr/`    | Architecture Decision Records     |
+| `docs/plan/`   | Implementation plans 0000–0015    |
+| `docs/agents/` | Agent harness and operating rules |
+| `.github/`     | CI workflows + agent role files   |
 
 ## Contributing
 

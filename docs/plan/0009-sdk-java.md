@@ -7,6 +7,7 @@
 - **ADR:** ADR-0001
 
 ## Goal
+
 Ship the Java SDK on Maven Central using the Foreign Function & Memory API (JDK 22+); JNI fallback only if the support matrix demands earlier JDKs.
 
 ## Checklist
@@ -21,5 +22,6 @@ Ship the Java SDK on Maven Central using the Foreign Function & Memory API (JDK 
 - [x] Example under `examples/java/Quickstart.java` (cross-language index in `examples/README.md`).
 
 ## Acceptance
+
 - Parity job green.
 - Maven Central staging close clean in release dry-run.

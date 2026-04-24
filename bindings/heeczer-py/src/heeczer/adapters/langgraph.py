@@ -20,6 +20,7 @@ Usage::
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -137,8 +138,6 @@ class HeeczerLangGraphCallback:
 
     def _submit(self, ctx: NodeRunContext) -> None:
         """Build and asynchronously submit a canonical event. Fire-and-forget."""
-        import asyncio
-
         duration_ms = int((time.monotonic() - ctx.start_time) * 1000)
         event_id = str(uuid.uuid4())
 

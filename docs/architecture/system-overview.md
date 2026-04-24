@@ -8,7 +8,7 @@ the ingestion service produce **byte-identical** results from the same input.
 
 ## Layered responsibilities
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │ Surfaces                                                               │
 │   • SDKs (Rust / JS / Python / Go / Java)  ← plans 0005–0009          │

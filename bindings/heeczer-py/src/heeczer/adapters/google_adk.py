@@ -20,14 +20,15 @@ from __future__ import annotations
 import functools
 import time
 import uuid
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from heeczer.client import HeeczerClient
 
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def heeczer_adk_wrapper(
+def heeczer_adk_wrapper(  # noqa: PLR0913
     client: HeeczerClient,
     workspace_id: str,
     task_name: str,

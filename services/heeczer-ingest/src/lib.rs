@@ -37,7 +37,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/v1/version", get(handlers::version))
         .route("/v1/events", post(handlers::ingest_event))
         .route("/v1/events:batch", post(handlers::ingest_batch))
-        .route("/v1/events/{event_id}", axum::routing::get(handlers::get_event))
+        .route(
+            "/v1/events/{event_id}",
+            axum::routing::get(handlers::get_event),
+        )
         .route(
             "/v1/events/{event_id}/scores",
             axum::routing::get(handlers::get_event_scores),

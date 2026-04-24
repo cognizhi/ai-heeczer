@@ -6,11 +6,11 @@
 
 ## Performance targets (PRD §29)
 
-| Metric                                         | Target           | Measurement point                          |
-| ---------------------------------------------- | ---------------- | ------------------------------------------ |
-| Native mode `track()` latency (p95)            | < 2 ms           | In-process call on reference hardware      |
-| Image mode async ack latency (p95)             | < 50 ms          | Same-region ingest endpoint to 200/202 ack |
-| Ingest throughput per node                     | ≥ 10,000 accepted enqueues/s | Single node, queue backend: none |
+| Metric                              | Target                       | Measurement point                          |
+| ----------------------------------- | ---------------------------- | ------------------------------------------ |
+| Native mode `track()` latency (p95) | < 2 ms                       | In-process call on reference hardware      |
+| Image mode async ack latency (p95)  | < 50 ms                      | Same-region ingest endpoint to 200/202 ack |
+| Ingest throughput per node          | ≥ 10,000 accepted enqueues/s | Single node, queue backend: none           |
 
 "Native mode" means the scoring engine is called in-process without network
 hops. "Image mode" means the Docker-packaged ingestion service receiving HTTP
@@ -46,11 +46,11 @@ throughput measurements.
 The table below will be filled in automatically once the bench-smoke workflow
 has executed. Until then, all cells contain `-`.
 
-| Metric                          | p50    | p95    | p99    | CI run |
-| ------------------------------- | ------ | ------ | ------ | ------ |
-| `score()` wall-clock latency    | -      | -      | -      | -      |
-| Ingest HTTP ack latency         | -      | -      | -      | -      |
-| Throughput (enqueues/s/node)    | -      | -      | -      | -      |
+| Metric                       | p50 | p95 | p99 | CI run |
+| ---------------------------- | --- | --- | --- | ------ |
+| `score()` wall-clock latency | -   | -   | -   | -      |
+| Ingest HTTP ack latency      | -   | -   | -   | -      |
+| Throughput (enqueues/s/node) | -   | -   | -   | -      |
 
 ## How to run locally
 

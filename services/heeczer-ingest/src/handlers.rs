@@ -404,7 +404,9 @@ pub async fn ingest_batch(
         ));
     }
     if body.events.is_empty() {
-        return Err(ApiError::BadRequest("events array must not be empty".into()));
+        return Err(ApiError::BadRequest(
+            "events array must not be empty".into(),
+        ));
     }
     if body.events.len() > MAX_BATCH {
         return Err(ApiError::BadRequest(format!(
@@ -472,13 +474,11 @@ pub async fn ingest_batch(
             .await
             .map_err(|e| ApiError::Storage(e.to_string()))?;
 
-        query(
-            "INSERT OR IGNORE INTO heec_workspaces (workspace_id, display_name) VALUES (?1, ?1)",
-        )
-        .bind(&body.workspace_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| ApiError::Storage(e.to_string()))?;
+        query("INSERT OR IGNORE INTO heec_workspaces (workspace_id, display_name) VALUES (?1, ?1)")
+            .bind(&body.workspace_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| ApiError::Storage(e.to_string()))?;
 
         for (event_id, raw, event, result) in &to_persist {
             let payload =

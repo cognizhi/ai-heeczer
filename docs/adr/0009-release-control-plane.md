@@ -5,9 +5,11 @@
 - **Related:** PRD §27, §12.10–§12.11
 
 ## Context
+
 The repo must publish synchronized releases to npm, PyPI, crates.io, Maven Central, Go module tags, container registries, and GitHub Releases (PRD §27.4). All artifacts share one product version.
 
 ## Decision
+
 - **`release-please` in manifest mode** is the release control plane (per PRD §27.1).
 - One release PR per cycle aggregates conventional-commit-derived changelogs across all components and computes the next semver.
 - Merging the release PR triggers a release workflow that:
@@ -21,13 +23,16 @@ The repo must publish synchronized releases to npm, PyPI, crates.io, Maven Centr
 - Failed targets enter a partial-publish state. Resume is operator-driven via a `release-resume` workflow_dispatch and never mints a new version.
 
 ## Alternatives Considered
+
 - **`semantic-release`** — JS-centric, weaker multi-language story.
 - **Custom shell pipeline** — maximum flexibility, maximum maintenance.
 
 ## Consequences
+
 - Positive: a single declarative release manifest; one source of truth for what's in a release.
 - Negative: release-please's release notes need careful templating to read well across components.
 - Follow-ups: document partial-publish recovery runbook.
 
 ## References
+
 - PRD §27 CI/CD and Release Requirements
