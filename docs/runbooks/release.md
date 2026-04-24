@@ -23,6 +23,11 @@ for ai-heeczer. The CI/CD design is documented in ADR-0009 and
        SLSA provenance, and binary attachments.
 4. All steps run with `concurrency: { group: release, cancel-in-progress: false }`.
 
+The PyPI publish step uses a container action backed by GHCR. Pin it to an
+official action release tag or to the commit behind that release tag; an
+arbitrary SHA can fail before publish starts with `manifest unknown` because no
+matching container image tag exists.
+
 ---
 
 ## Partial-publish recovery
@@ -45,15 +50,12 @@ Inputs:
 
 | Input | Example | Description |
 |---|---|---|
-| `tag` | `v0.3.0` | The version tag that was partially released. |
-| `skip_crates` | `true` | Set `true` if `cargo publish` already succeeded. |
-| `skip_npm` | `true` | Set `true` if `npm publish` already succeeded. |
-| `skip_pypi` | `true` | Set `true` if PyPI publish already succeeded. |
-| `skip_maven` | `false` | Set `false` to re-run Maven Central deploy. |
-| `skip_go_tag` | `false` | Set `false` to re-push the Go tag. |
+| `target` | `pypi` | Which publish target to resume: `rust`, `npm`, `pypi`, `go`, `java`, or `all`. |
+| `tag` | `heeczer-py-v0.3.0` | The exact release tag to resume from, such as `v0.3.0` for the Rust release or `heeczer-py-v0.3.0` for the Python SDK release. |
 
-The workflow checkouts the tag, skips already-published steps, and
-completes the remainder.
+The workflow checks out the requested tag and reruns only the selected target.
+Use `all` only when the failed run was a root Rust release tag and multiple
+downstream targets still need recovery.
 
 ### Step 3: verify
 
@@ -116,9 +118,10 @@ Go module versions are immutable once tagged. Publish a patch release
 
 | Secret | Registry | Notes |
 |---|---|---|
-| `CRATES_IO_TOKEN` | crates.io | Scoped to `publish` only. |
-| `NPM_TOKEN` | npm | OIDC provenance enabled; token is an automation token. |
-| `SONATYPE_USERNAME` / `SONATYPE_PASSWORD` | Maven Central | Repository-level credentials. |
+| `CARGO_REGISTRY_TOKEN` | crates.io | Scoped to `publish` only. |
+| `NODE_AUTH_TOKEN` | npm | Automation token used by `npm publish --provenance`. |
+| `CENTRAL_TOKEN_USERNAME` / `CENTRAL_TOKEN_PASSWORD` | Maven Central | Repository-level Sonatype Central credentials. |
+| `GPG_PRIVATE_KEY` / `GPG_PASSPHRASE` | Maven Central | Required for artifact signing during `mvn deploy`. |
 | `GITHUB_TOKEN` | GitHub | Provided automatically; needs `contents: write`, `id-token: write`. |
 
 PyPI and npm also use OIDC trusted publishing — see ADR-0009 and

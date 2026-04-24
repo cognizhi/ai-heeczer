@@ -41,7 +41,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 
 ### Trusted publishing
 
-- [x] PyPI OIDC trusted publisher configured. (workflow uses `pypa/gh-action-pypi-publish` with `id-token: write`; publisher configured on PyPI side, session Apr-2026)
+- [x] PyPI OIDC trusted publisher configured. (workflow uses `pypa/gh-action-pypi-publish` with `id-token: write` and pins the action to an official release commit so the backing GHCR image resolves correctly; publisher configured on PyPI side, session Apr-2026)
 - [x] npm OIDC provenance configured. (`npm publish --provenance` in `release.yml`, session Apr-2026)
 - [x] Sonatype token in GitHub secrets for Maven Central until OIDC support matures. (credentials confirmed set up in GitHub, session Apr-2026)
 
