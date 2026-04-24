@@ -22,16 +22,30 @@ pub use state::{AppState, Features};
 
 use axum::routing::{get, post};
 use axum::Router;
+use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
+use axum_prometheus::PrometheusMetricLayer;
+use std::sync::OnceLock;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::TraceLayer;
 
 /// Maximum request body size (1 MiB) — mirrors the CLI's `MAX_INPUT_BYTES`.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024;
 
+/// Prometheus metric layer and handle, initialized exactly once per process.
+/// `PrometheusMetricLayer::pair()` installs a global metrics recorder; calling
+/// it more than once panics, so we guard the call with a `OnceLock`.
+static PROMETHEUS: OnceLock<(PrometheusMetricLayer<'static>, PrometheusHandle)> = OnceLock::new();
+
+fn prometheus_pair() -> (PrometheusMetricLayer<'static>, PrometheusHandle) {
+    let (layer, handle) = PROMETHEUS.get_or_init(PrometheusMetricLayer::pair);
+    (layer.clone(), handle.clone())
+}
+
 /// Build the application router. Kept as a free function so integration tests
 /// can construct an in-memory database, build a Router, and exercise it via
 /// `tower::ServiceExt::oneshot` with no network listener.
 pub fn build_router(state: AppState) -> Router {
+    let (prometheus_layer, metric_handle) = prometheus_pair();
     Router::new()
         .route("/healthz", get(handlers::healthz))
         .route("/v1/version", get(handlers::version))
@@ -49,6 +63,11 @@ pub fn build_router(state: AppState) -> Router {
             "/v1/test/score-pipeline",
             post(handlers::test_score_pipeline),
         )
+        .route(
+            "/metrics",
+            get(move || async move { metric_handle.render() }),
+        )
+        .layer(prometheus_layer)
         .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
         .layer(TraceLayer::new_for_http())
         .with_state(state)

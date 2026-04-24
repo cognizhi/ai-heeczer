@@ -65,7 +65,7 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 - [x] Add a `scoring_version_check` script wired into CI. (`scripts/check-scoring-version.sh` SCORING_VERSION guard script created, session Apr-2026)
 - [x] Define `ScoringProfile` JSON schema under `core/schema/scoring_profile.v1.json`; profiles are append-only with `effective_at` and `superseded_at` columns; `superseded_at` is the only mutable field. (PR #1)
 - [x] Property test: rounding idempotence, scale preservation, score purity, JSON round-trip stability, confidence-band bounds, token-BCU linearity. (foundation hardening, commit cb06b1f)
-- [ ] Property test: `Decimal` operations cannot overflow on PRD §29 maximum payload sizes.
+- [x] Property test: `Decimal` operations cannot overflow on PRD §29 maximum payload sizes. (session Cat-3)
 
 ### C ABI
 
@@ -80,8 +80,8 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 - [x] Unit tests for every component. (PR #1 — determinism, golden fixture, and C ABI integration tests)
 - [ ] Golden fixtures: minimum input, maximum input, every category, every outcome, every confidence band. (partial: now 12 fixtures covering minimum payload, every outcome, both confidence bands, 7 categories; only "maximum input" / any remaining category permutations still missing)
 - [x] Byte-stable golden ScoreResult JSON file under `core/schema/fixtures/golden/`. (foundation hardening, commit cb06b1f)
-- [ ] Property tests with `proptest` for monotonicity (more tokens → ≥ same BCU).
-- [ ] Benchmark: `score()` p50/p95 on a reference event.
+- [x] Property tests with `proptest` for monotonicity (more tokens → ≥ same BCU). (session Cat-3)
+- [x] Benchmark: `score()` p50/p95 on a reference event. (criterion bench `score_bench`, session Cat-3)
 
 ### Docs
 

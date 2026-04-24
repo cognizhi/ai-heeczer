@@ -12,6 +12,7 @@ All five SDK bindings (JS, Python, Go, Java, Rust) talk to this service.
 | `GET` | `/healthz` | Liveness probe — always returns `200 {"ok":true}` |
 | `GET` | `/v1/version` | Engine + spec versions |
 | `POST` | `/v1/events` | Validate + score + persist a single event |
+| `GET` | `/metrics` | Prometheus metrics scrape endpoint |
 | `POST` | `/v1/test/score-pipeline` | Score-without-persist, for the test-orchestration dashboard view (gated) |
 
 ## Request body — `POST /v1/events`
@@ -77,3 +78,48 @@ cargo test -p heeczer-ingest
 ```
 
 Integration tests construct a real in-memory SQLite pool and drive the router via `tower::ServiceExt::oneshot` with no network listener.
+
+## Deploy
+
+### Docker (single container)
+
+```dockerfile
+FROM rust:1.88-slim AS builder
+WORKDIR /src
+COPY . .
+RUN cargo build -p heeczer-ingest --release
+
+FROM debian:bookworm-slim
+COPY --from=builder /src/target/release/heeczer-ingest /usr/local/bin/
+EXPOSE 8080
+CMD ["heeczer-ingest"]
+```
+
+### Docker Compose (with PostgreSQL)
+
+```yaml
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: heeczer
+      POSTGRES_USER: heeczer
+      POSTGRES_PASSWORD: heeczer
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  ingest:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      HEECZER_DATABASE_URL: "postgres://heeczer:heeczer@db:5432/heeczer"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+```
+
+See [docs/architecture/deployment-modes.md](../../docs/architecture/deployment-modes.md)
+for the native vs image deployment trade-offs.

@@ -130,6 +130,86 @@ The SDK speaks `envelope_version: "1"` to the ingestion service per
 without breaking the typed surface (``ScoreResult`` is a ``TypedDict``
 with ``total=False``).
 
+## Synchronous client
+
+For scripts and notebooks where no event loop is running, use the
+``SyncHeeczerClient`` wrapper:
+
+```python
+from heeczer import SyncHeeczerClient
+
+with SyncHeeczerClient(base_url="https://ingest.example.com", api_key="…") as client:
+    result = client.ingest_event(workspace_id="ws_default", event=my_event)
+    print(result["score"]["final_estimated_minutes"])
+```
+
+``SyncHeeczerClient`` exposes the same methods as ``HeeczerClient``
+(``healthz``, ``version``, ``ingest_event``, ``test_score_pipeline``),
+all blocking. Internally it calls ``asyncio.get_event_loop().run_until_complete()``.
+Do **not** mix it with an already-running asyncio loop (e.g. inside
+``async def``); use ``HeeczerClient`` directly there instead.
+
+## Framework adapters
+
+### LangGraph
+
+Wrap ``SyncHeeczerClient`` inside a custom LangGraph node to record each
+agent step's cost before passing control downstream:
+
+```python
+from langgraph.graph import StateGraph
+from heeczer import SyncHeeczerClient
+from typing import TypedDict
+
+class AgentState(TypedDict):
+    event: dict
+    score: dict | None
+
+def heeczer_node(state: AgentState) -> AgentState:
+    with SyncHeeczerClient(base_url="http://localhost:3000") as client:
+        resp = client.ingest_event(
+            workspace_id="ws_default",
+            event=state["event"],
+        )
+    return {**state, "score": resp["score"]}
+
+builder = StateGraph(AgentState)
+builder.add_node("heeczer", heeczer_node)
+```
+
+In async LangGraph graphs call the ``async`` client instead:
+
+```python
+async def heeczer_node(state: AgentState) -> AgentState:
+    async with HeeczerClient(base_url="http://localhost:3000") as client:
+        resp = await client.ingest_event(
+            workspace_id="ws_default",
+            event=state["event"],
+        )
+    return {**state, "score": resp["score"]}
+```
+
+### Google ADK
+
+Google's Agent Development Kit (ADK) uses an async event-loop internally.
+Use ``HeeczerClient`` directly in ADK tool callbacks:
+
+```python
+from google.adk.tools import FunctionTool
+from heeczer import HeeczerClient
+
+async def record_step(workspace_id: str, event: dict) -> dict:
+    """Record an agent step with heeczer and return the score."""
+    async with HeeczerClient(base_url="http://localhost:3000") as client:
+        return await client.ingest_event(workspace_id=workspace_id, event=event)
+
+heeczer_tool = FunctionTool(record_step)
+```
+
+Attach ``heeczer_tool`` to your ADK ``Agent`` via ``tools=[heeczer_tool]``.
+The return value of ``record_step`` is serialised by ADK and forwarded as
+the tool response to the model.
+
 ## Development
 
 ```bash

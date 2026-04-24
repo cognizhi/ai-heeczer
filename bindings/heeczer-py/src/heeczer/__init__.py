@@ -7,6 +7,7 @@ from .client import (
     HeeczerClient,
     IngestEventResponse,
     ScoreResult,
+    SyncHeeczerClient,
     VersionResponse,
 )
 
@@ -17,6 +18,7 @@ __all__ = [
     "HeeczerClient",
     "IngestEventResponse",
     "ScoreResult",
+    "SyncHeeczerClient",
     "VersionResponse",
 ]
 

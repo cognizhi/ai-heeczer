@@ -84,6 +84,11 @@ jobs:
           cache-dependency-path: bindings/heeczer-go/go.mod
       - run: go test ./...
         working-directory: bindings/heeczer-go
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+        working-directory: bindings/heeczer-go
 
   # Step 5: Java SDK parity — validates ingest paths via WireMock.
   parity-java:
