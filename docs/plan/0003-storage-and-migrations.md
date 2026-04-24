@@ -6,11 +6,13 @@
 - **ADR:** ADR-0004, ADR-0005
 
 ## Goal
+
 Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (production) backends sharing a single migration history, append-only event/score tables, and tenant-scoped queries.
 
 ## Checklist
 
 ### Tables (PRD §20)
+
 - [x] `aih_workspaces` — tenant root. (PR #1)
 - [x] `aih_api_keys` — hashed keys per workspace. (PR #1)
 - [x] `aih_events` — append-only raw normalized events keyed by `event_id`. (PR #1)
@@ -25,6 +27,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] `aih_schema_migrations` — migration history view alias over `_sqlx_migrations` (ADR-0004). (PR #1)
 
 ### Indexes
+
 - [x] `aih_events(workspace_id, timestamp)`, `aih_events(workspace_id, event_id)` unique. (PR #1)
 - [x] `aih_scores(workspace_id, event_id, scoring_version)` unique. (PR #1)
 - [x] `aih_scores(workspace_id, scoring_profile_id, created_at)` for dashboard rollups. (PR #1)
@@ -32,6 +35,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] `aih_audit_log(workspace_id, created_at)`. (PR #1)
 
 ### Migrations (ADR-0004)
+
 - [x] Wire `sqlx_macros::migrate!` into the storage layer used by the ingestion service/CLI, with `sqlx-core` + `sqlx-sqlite` + `sqlx-postgres` split so the lockfile does not pull the unused MySQL driver into security scans. (CI hardening, April 2026)
 - [x] Author `0001_init.sql` with SQLite dialect (PR #1); PostgreSQL parity migration deferred to plan 04.
 - [x] Author `migrations-pg/0001_init.sql` — PostgreSQL dialect (PL/pgSQL triggers, `NOW()` defaults). (plan 0004)
@@ -42,20 +46,24 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] Calibration tables migration: `core/heeczer-storage/migrations/0003_calibration.sql` (SQLite) and `migrations-pg/0003_calibration.sql` (PostgreSQL). (session Apr-2026)
 
 ### Multi-tenancy
+
 - [ ] Every tenant-scoped query carries `workspace_id` parameter; lints flag missing scopes.
 - [ ] Repository layer enforces workspace scoping at the type level (newtype wrapper).
 
 ### Append-only enforcement
+
 - [x] `aih_events` and `aih_scores` have DB triggers preventing UPDATE/DELETE except via tombstone insert. (SQLite: migration 0001; PostgreSQL: PL/pgSQL functions in migrations-pg/0001)
 - [x] Re-scoring path inserts new score rows; never updates. (PR #1)
 - [x] `aih_audit_log` append-only trigger pair (PRD §22.5). (migration 0002, commit 9fb81aa)
 
 ### Retention and deletion (PRD §12.17)
+
 - [ ] Background sweeper deletes events past retention; writes tombstone rows.
 - [ ] Hard-deletion API endpoint (admin only) with audit log entry.
 - [ ] Aggregates remain anonymized after raw deletion.
 
 ### Tests
+
 - [ ] Migration test: fresh-install on SQLite and PostgreSQL. (partial: SQLite covered via CLI integration test PR #1; PostgreSQL pending)
 - [x] PostgreSQL migration file presence tests in `core/heeczer-storage/tests/migration_pg.rs` — 4 tests verify directory existence, non-empty files, CREATE TABLE presence, and SQLite/PG parity. (session Apr-2026)
 - [ ] Migration test: incremental upgrade from each prior version.
@@ -67,9 +75,11 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Integration: tombstone prevents re-scoring of deleted event.
 
 ### Docs
+
 - [x] `docs/architecture/data-model.md` with ERD. (session Apr-2026)
 - [ ] Operational runbook for PostgreSQL vacuum/index tuning at scale.
 
 ## Acceptance
+
 - Both backends pass the same integration suite.
 - Append-only invariants verified in CI.

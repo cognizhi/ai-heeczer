@@ -24,24 +24,24 @@ This is the entry point for ai-heeczer implementation plans. Each linked documen
 
 ## Plans
 
-| # | Plan | Primary PRD refs | Primary ADR refs |
-| --- | --- | --- | --- |
-| 01 | [Schema and contracts](0001-schema-and-contracts.md) | §13, §12.2, §12.16 | ADR-0002 |
-| 02 | [Scoring core](0002-scoring-core.md) | §14, §15, §16 | ADR-0001, ADR-0003 |
-| 03 | [Storage and migrations](0003-storage-and-migrations.md) | §20, §12.20 | ADR-0004 |
-| 04 | [Ingestion service](0004-ingestion-service.md) | §12.4, §19, §29 | ADR-0005, ADR-0006 |
-| 05 | [JS/TS SDK](0005-sdk-jsts.md) | §23 | ADR-0001 |
-| 06 | [Python SDK](0006-sdk-python.md) | §23 | ADR-0001 |
-| 07 | [Go SDK](0007-sdk-go.md) | §23 | ADR-0001 |
-| 08 | [Rust SDK](0008-sdk-rust.md) | §23 | ADR-0001 |
-| 09 | [Java SDK](0009-sdk-java.md) | §23 | ADR-0001 |
-| 10 | [Dashboard](0010-dashboard.md) | §21, §28.4 | ADR-0008 |
-| 11 | [Framework adapters](0011-framework-adapters.md) | §24 | — |
-| 12 | [CI/CD and release](0012-cicd-release.md) | §27, §12.10–§12.11 | ADR-0009 |
-| 13 | [Developer experience](0013-developer-experience.md) | §26, §12.13, §12.21 | ADR-0007, ADR-0010 |
-| 14 | [Security and privacy](0014-security-and-privacy.md) | §22, §12.17–§12.19 | — |
-| 15 | [Calibration and benchmarks](0015-calibration-benchmarks.md) | §25, §12.8 | — |
-| 16 | [Local per-SDK test stacks](0016-local-sdk-test-stacks.md) | §12.13, §12.21, §23, §24, §26 | ADR-0005, ADR-0007, ADR-0008, ADR-0010 |
+| #   | Plan                                                         | Primary PRD refs              | Primary ADR refs                       |
+| --- | ------------------------------------------------------------ | ----------------------------- | -------------------------------------- |
+| 01  | [Schema and contracts](0001-schema-and-contracts.md)         | §13, §12.2, §12.16            | ADR-0002                               |
+| 02  | [Scoring core](0002-scoring-core.md)                         | §14, §15, §16                 | ADR-0001, ADR-0003                     |
+| 03  | [Storage and migrations](0003-storage-and-migrations.md)     | §20, §12.20                   | ADR-0004                               |
+| 04  | [Ingestion service](0004-ingestion-service.md)               | §12.4, §19, §29               | ADR-0005, ADR-0006                     |
+| 05  | [JS/TS SDK](0005-sdk-jsts.md)                                | §23                           | ADR-0001                               |
+| 06  | [Python SDK](0006-sdk-python.md)                             | §23                           | ADR-0001                               |
+| 07  | [Go SDK](0007-sdk-go.md)                                     | §23                           | ADR-0001                               |
+| 08  | [Rust SDK](0008-sdk-rust.md)                                 | §23                           | ADR-0001                               |
+| 09  | [Java SDK](0009-sdk-java.md)                                 | §23                           | ADR-0001                               |
+| 10  | [Dashboard](0010-dashboard.md)                               | §21, §28.4                    | ADR-0008                               |
+| 11  | [Framework adapters](0011-framework-adapters.md)             | §24                           | —                                      |
+| 12  | [CI/CD and release](0012-cicd-release.md)                    | §27, §12.10–§12.11            | ADR-0009                               |
+| 13  | [Developer experience](0013-developer-experience.md)         | §26, §12.13, §12.21           | ADR-0007, ADR-0010                     |
+| 14  | [Security and privacy](0014-security-and-privacy.md)         | §22, §12.17–§12.19            | —                                      |
+| 15  | [Calibration and benchmarks](0015-calibration-benchmarks.md) | §25, §12.8                    | —                                      |
+| 16  | [Local per-SDK test stacks](0016-local-sdk-test-stacks.md)   | §12.13, §12.21, §23, §24, §26 | ADR-0005, ADR-0007, ADR-0008, ADR-0010 |
 
 ## Cross-cutting acceptance gates
 

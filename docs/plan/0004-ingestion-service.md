@@ -6,17 +6,20 @@
 - **ADR:** ADR-0005, ADR-0006
 
 ## Goal
+
 Ship the Rust ingestion service that accepts events via HTTP and queue, validates against the canonical schema, normalizes, scores via the core, persists, and responds — meeting the documented latency and throughput targets.
 
 ## Checklist
 
 ### Service scaffolding
+
 - [x] `services/heeczer-ingest/` cargo binary using `axum` + `tokio` + `sqlx`. (skeleton landed; relocated under `services/` to match ADR-0007 layout)
 - [x] Layered config via `figment` (env + file + flags). (`services/heeczer-ingest/src/config.rs`, session Apr-2026)
 - [x] Structured logging via `tracing` + `tracing-subscriber` JSON formatter. (foundation: env-filter format; JSON formatter and span propagation pending)
 - [ ] Prometheus metrics endpoint via `axum-prometheus`.
 
 ### HTTP API (PRD §12.16)
+
 - [x] `POST /v1/events` — single event ingest, sync ack. (validates against canonical schema, scores, persists `heec_events` + `heec_scores` in a single transaction; dedupe via PK + `INSERT OR IGNORE`)
 - [x] `POST /v1/events:batch` — batch ingest with partial-success semantics (100 event cap), single transaction commit. (session Apr-2026)
 - [x] `GET /v1/events/{event_id}` — read. (session Apr-2026)
@@ -30,38 +33,45 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 - [ ] All tracing spans propagate `correlation_id` and `event_id` as span attributes.
 
 ### Auth
+
 - [ ] API-key middleware: hashed lookup, workspace scoping, audit log entry on auth failure.
 - [ ] Optional mTLS configuration documented.
 
 ### Rate limiting and quotas (PRD §12.18)
+
 - [ ] Per-API-key token bucket via `tower-governor`.
 - [ ] Per-workspace daily quota check from `heec_workspaces`.
 - [ ] Payload size limits enforced at the body extractor.
 - [ ] 429 responses include `Retry-After` and quota headers.
 
 ### Idempotency (PRD §12.19)
+
 - [ ] `event_id` dedup by primary key.
 - [ ] `Idempotency-Key` cache for batch endpoints (24h default TTL).
 - [ ] Replayed responses are byte-equal to the original.
 
 ### Queue worker (image mode, ADR-0006)
+
 - [ ] `JobQueue` trait; PostgreSQL `SKIP LOCKED` implementation.
 - [ ] Worker loop with backoff, retry policy, DLQ.
 - [ ] Visibility metrics: queue depth, queue age p95, retries, DLQ count.
 - [ ] Graceful shutdown drains in-flight jobs.
 
 ### Persistence (Plan 03)
+
 - [ ] Repository layer enforces workspace scoping.
 - [ ] Append-only invariants enforced in code and DB.
 - [ ] Re-score creates new score row; original preserved.
 
 ### Performance (PRD §29)
+
 - [ ] Native-mode `track()` path benched; <2 ms p95.
 - [ ] Image-mode async ack path benched; <50 ms p95 same-region.
 - [ ] Throughput bench targets ≥10k accepted enqueues/s/node.
 - [ ] Bench profile documented in `docs/architecture/benchmarks.md` (payload size, auth mode, durability mode, queue backend, storage backend, hardware).
 
 ### Tests
+
 - [x] Unit per handler. (8 integration tests cover healthz, version, ingest happy path + invalid + missing workspace, test-pipeline feature-off / no-tester / happy)
 - [x] Integration: end-to-end ingest → score → persist (single-event happy path; multi-event read endpoints pending)
 - [ ] Contract: OpenAPI spec validated against handler responses.
@@ -69,9 +79,11 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 - [ ] Load test (k6) wired into nightly CI for trend tracking.
 
 ### Docs
+
 - [ ] `server/ingestion/README.md` with run, config, deploy.
 - [ ] `docs/architecture/deployment-modes.md` updated for native vs image flows.
 
 ## Acceptance
+
 - All NFR targets demonstrated under the documented bench profile.
 - Required CI jobs green.

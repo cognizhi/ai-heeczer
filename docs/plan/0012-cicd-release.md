@@ -6,11 +6,13 @@
 - **ADR:** ADR-0009
 
 ## Goal
+
 Stand up the GitHub Actions pipeline as the single quality gate and release control plane, using `release-please` manifest mode.
 
 ## Checklist
 
 ### CI workflows
+
 - [x] `lint.yml` — per-ecosystem lint matrix (Rust clippy in `ci.yml`; JS typecheck runs via pnpm + lockfile cache, Python mypy+ruff, Go vet added).
 - [x] `format-check.yml` — `cargo fmt --check` in `ci.yml`.
 - [x] `unit.yml` — per-ecosystem unit tests (`ci.yml`: Rust, JS vitest via pnpm, Python pytest, Go test, Java mvn test).
@@ -27,28 +29,34 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 - [x] `release-dry-run.yml` — release-please dry-run, publish dry-runs for Rust, npm, PyPI. (session Apr-2026)
 
 ### Release workflows
+
 - [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`. The Rust workspace release anchor uses a non-published root package plus concrete member crate versions/internal path-version dependencies so `release-please` can update Cargo manifests while preserving the plain `vX.Y.Z` Rust tag contract.
 - [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@cognizhi/heeczer-sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
 - [x] `release-resume.yml` — workflow_dispatch resume for partial publish; same `release` concurrency group. (session Apr-2026)
 
 ### Branch protection
-- [ ] Required jobs documented in `docs/architecture/cicd.md`.
+
+- [x] Required jobs documented in `docs/architecture/cicd.md`. (§Branch protection requirements section, session Apr-2026)
 - [ ] Required reviewers: 1 maintainer minimum, Tech Lead for ADR/architecture changes.
 
 ### Trusted publishing
-- [ ] PyPI OIDC trusted publisher configured.
-- [ ] npm OIDC provenance configured.
-- [ ] Sonatype token in GitHub secrets for Maven Central until OIDC support matures.
+
+- [x] PyPI OIDC trusted publisher configured. (workflow uses `pypa/gh-action-pypi-publish` with `id-token: write`; publisher configured on PyPI side, session Apr-2026)
+- [x] npm OIDC provenance configured. (`npm publish --provenance` in `release.yml`, session Apr-2026)
+- [x] Sonatype token in GitHub secrets for Maven Central until OIDC support matures. (credentials confirmed set up in GitHub, session Apr-2026)
 
 ### Release manifest
+
 - [x] `.github/release-please-config.json` and `.github/release-please-manifest.json` schema documented.
 - [ ] Release workflow updates the manifest atomically per target.
 - [ ] "Release complete" badge derived from manifest state.
 
 ### Docs
+
 - [x] `docs/architecture/cicd.md` with workflow catalog, release flow diagram, and trusted publishing setup. (session Apr-2026)
 - [ ] Release runbook with partial-publish recovery steps.
 
 ## Acceptance
+
 - A dry-run release passes end-to-end on a PR.
 - All required jobs are in branch protection.
