@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
-from heeczer import HeeczerApiError, HeeczerClient
+from heeczer import HeeczerApiError, HeeczerClient, SyncHeeczerClient
 
 
 def _stub(handler: Any) -> httpx.AsyncBaseTransport:
@@ -181,8 +181,6 @@ async def test_base_url_trailing_slash_is_normalised() -> None:
 
 
 def test_sync_healthz_returns_true() -> None:
-    from heeczer import SyncHeeczerClient
-
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
 
@@ -196,8 +194,6 @@ def test_sync_healthz_returns_true() -> None:
 
 
 def test_sync_client_context_manager_closes() -> None:
-    from heeczer import SyncHeeczerClient
-
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
 

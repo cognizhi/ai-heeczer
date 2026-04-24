@@ -48,6 +48,7 @@ format-check: ## verify formatting without writing
 .PHONY: lint
 lint: ## run all linters
 	cargo clippy --workspace --all-targets -- -D warnings
+	cd bindings/heeczer-py && uv run ruff check src tests
 
 # ----- tests -----------------------------------------------------------------
 
