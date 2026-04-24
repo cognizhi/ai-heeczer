@@ -49,6 +49,7 @@ format-check: ## verify formatting without writing
 lint: ## run all linters
 	cargo clippy --workspace --all-targets -- -D warnings
 	cd bindings/heeczer-py && uv run ruff check src tests
+	cd bindings/heeczer-go && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 # ----- tests -----------------------------------------------------------------
 
