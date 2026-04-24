@@ -92,11 +92,6 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: package check (heeczer)
-        run: cargo publish -p heeczer --dry-run --locked
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
       - name: list packaged files (heeczer-core)
         run: cargo package -p heeczer-core --list
 
@@ -114,6 +109,10 @@ jobs:
           done
           echo "heeczer-core did not appear in index in time"
           exit 1
+      - name: package check (heeczer)
+        run: cargo publish -p heeczer --dry-run --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       - name: publish heeczer (Rust SDK)
         run: cargo publish -p heeczer
         env:
