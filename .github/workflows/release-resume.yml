@@ -1,0 +1,158 @@
+name: release-resume
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Publish target to resume"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - rust
+          - npm
+          - pypi
+          - go
+          - java
+          - all
+      tag:
+        description: "Release tag to resume from (e.g. v1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write  # required for OIDC trusted publishing (PyPI, npm, cosign)
+  packages: write  # required for GHCR
+
+# Shares the release concurrency group so a resume cannot race a live release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# All third-party Actions are pinned to a 40-char commit SHA per
+# docs/agents/AGENT_HARNESS.md §5 and the foundation backlog. Dependabot
+# (.github/dependabot.yml) keeps these current. The `# vX.Y.Z` comment is the
+# resolved tag for human review only — Dependabot edits both the SHA and tag.
+jobs:
+  # ── Rust workspace ────────────────────────────────────────────────────────────
+  resume-rust:
+    name: resume publish (crates.io)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'rust' || inputs.target == 'all' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+      - name: publish heeczer-core
+        run: cargo publish -p heeczer-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: wait for heeczer-core to appear
+        run: |
+          for i in {1..30}; do
+            cargo search heeczer-core --limit 1 | grep heeczer-core && exit 0
+            sleep 10
+          done
+          echo "heeczer-core did not appear in index in time"
+          exit 1
+      - name: publish heeczer (Rust SDK)
+        run: cargo publish -p heeczer
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # ── JS/TS SDK ─────────────────────────────────────────────────────────────────
+  resume-npm:
+    name: resume publish (@cognizhi/heeczer-sdk → npm)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'npm' || inputs.target == 'all' }}
+    environment: publish
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: pnpm/action-setup@a15d269cd4658e1107c09f1fabf4cbd7bd1f308a # v4.4.0
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: bindings/heeczer-js/pnpm-lock.yaml
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+        working-directory: bindings/heeczer-js
+      - run: pnpm run build
+        working-directory: bindings/heeczer-js
+      - run: npm publish --provenance --access public
+        working-directory: bindings/heeczer-js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+  # ── Python SDK ────────────────────────────────────────────────────────────────
+  resume-pypi:
+    name: resume publish (cognizhi-heeczer → PyPI)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'pypi' || inputs.target == 'all' }}
+    environment: publish
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          python-version: "3.12"
+      - run: uv build
+        working-directory: bindings/heeczer-py
+      - name: publish (OIDC trusted publisher)
+        uses: pypa/gh-action-pypi-publish@7f25271a4aa483500f742f9492b2ab5648d61011 # v1.12.4
+        with:
+          packages-dir: bindings/heeczer-py/dist/
+
+  # ── Go SDK ────────────────────────────────────────────────────────────────────
+  resume-go:
+    name: resume tag (heeczer-go)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'go' || inputs.target == 'all' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: "1.22"
+          cache-dependency-path: bindings/heeczer-go/go.mod
+      - run: go test ./...
+        working-directory: bindings/heeczer-go
+      # Go modules are versioned via git tags; no further publish step needed.
+
+  # ── Java SDK ──────────────────────────────────────────────────────────────────
+  resume-java:
+    name: resume publish (heeczer-sdk → Maven Central)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.target == 'java' || inputs.target == 'all' }}
+    environment: publish
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_TOKEN_USERNAME
+          server-password: CENTRAL_TOKEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+      - run: mvn -B -ntp deploy -DskipTests
+        working-directory: bindings/heeczer-java
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

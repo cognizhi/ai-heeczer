@@ -1,0 +1,60 @@
+# docker-compose.dev.yml — local development stack.
+# Usage: docker compose -f docker-compose.dev.yml up
+#
+# Brings up:
+#   postgres  — PostgreSQL 16 database
+#   ingest    — ai-heeczer ingestion service (requires a prior `cargo build --release`)
+#   dashboard — Next.js 15 dashboard (requires a prior `pnpm build` in dashboard/)
+#
+# Environment variables can be overridden in a local `.env.dev` file (not committed).
+
+name: ai-heeczer-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: heeczer
+      POSTGRES_PASSWORD: heeczer_dev
+      POSTGRES_DB: heeczer_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heeczer -d heeczer_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ingest:
+    build:
+      context: .
+      dockerfile: services/heeczer-ingest/Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://heeczer:heeczer_dev@postgres:5432/heeczer_dev
+      HEECZER_FEATURE_TEST_ORCHESTRATION: "1"
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
+    profiles:
+      - ingest
+
+  dashboard:
+    build:
+      context: dashboard
+      dockerfile: Dockerfile.dev
+    depends_on:
+      - ingest
+    environment:
+      NEXT_PUBLIC_API_URL: http://ingest:8080
+    ports:
+      - "3000:3000"
+    profiles:
+      - dashboard
+
+volumes:
+  pg_data:

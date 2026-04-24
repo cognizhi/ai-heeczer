@@ -133,3 +133,35 @@ fn every_valid_fixture_scores_under_default_profile() {
         );
     }
 }
+
+#[test]
+fn minimum_payload_scores_without_error() {
+    let event = fixture("valid/08-minimum-payload.json");
+    let profile = ScoringProfile::default_v1();
+    let tiers = TierSet::default_v1();
+    let r = score(&event, &profile, &tiers, None).unwrap();
+    // Minimum payload: no category → uncategorized multiplier 1.0, confidence penalty applied.
+    // We only assert invariants, not exact values, since defaults may evolve.
+    assert!(r.confidence_score >= dec("0.0"));
+    assert!(r.confidence_score <= dec("1.0"));
+    assert!(r.final_estimated_minutes > dec("0"));
+    assert!(!r.scoring_version.is_empty());
+}
+
+#[test]
+fn failure_outcome_does_not_panic() {
+    let event = fixture("valid/09-outcome-failure.json");
+    let profile = ScoringProfile::default_v1();
+    let tiers = TierSet::default_v1();
+    let r = score(&event, &profile, &tiers, None).unwrap();
+    assert!(r.final_estimated_minutes > dec("0"));
+}
+
+#[test]
+fn partial_success_outcome_scores_without_error() {
+    let event = fixture("valid/10-outcome-partial.json");
+    let profile = ScoringProfile::default_v1();
+    let tiers = TierSet::default_v1();
+    let r = score(&event, &profile, &tiers, None).unwrap();
+    assert!(r.final_estimated_minutes > dec("0"));
+}

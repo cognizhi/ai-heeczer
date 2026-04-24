@@ -1,0 +1,8 @@
+# All third-party and workspace clippy overrides are in Cargo.toml [workspace.lints].
+# This file adds repo-wide configuration that cannot be expressed in Cargo.toml.
+
+# Scoring arithmetic MUST use rust_decimal::Decimal, not f32/f64.
+# f64 is allowed ONLY in serde deserialization fields (event.rs). The scoring.rs,
+# confidence.rs, and normalize.rs modules enforce this via
+# `#![allow(clippy::cast_precision_loss)]` exemptions only where serde forces it.
+msrv = "1.88"

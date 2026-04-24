@@ -1,0 +1,34 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000011",
+  "timestamp": "2026-04-22T10:03:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_test",
+  "identity": {
+    "user_id": "usr_highconf",
+    "tier_id": "tier_mid_eng"
+  },
+  "task": {
+    "name": "high_confidence_task",
+    "category": "summarization",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 10000,
+    "tokens_prompt": 2000,
+    "tokens_completion": 1000,
+    "workflow_steps": 3,
+    "tool_call_count": 1,
+    "artifact_count": 1,
+    "output_size_proxy": 1.5
+  },
+  "context": {
+    "human_in_loop": false,
+    "review_required": false,
+    "risk_class": "low"
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

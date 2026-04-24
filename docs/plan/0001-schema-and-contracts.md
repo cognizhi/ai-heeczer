@@ -20,7 +20,8 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 - [x] Author `core/schema/event.v1.json` matching PRD §13. (PR #1)
 - [x] Add validation rules: `spec_version` mandatory, `meta.extensions` is the only unknown-field bucket, strict mode rejects all other unknowns. (PR #1)
 - [x] Add fixture set: `valid/`, `invalid/`, `edge/` (min payload, max payload, unicode, missing optional fields, extension passthrough). (PR #1)
-- [x] Expand `valid/` fixtures to cover representative use cases beyond the canonical PRD example: summarization HIL, RCA failure high-risk, planning-architecture partial, regulated decision support, drafting timeout, CI triage tool-heavy. (now 7 fixtures total; auto-discovered by `every_valid_fixture_validates` and `every_valid_fixture_scores_under_default_profile`.)
+- [x] Expand `valid/` fixtures to cover representative use cases beyond the canonical PRD example: summarization HIL, RCA failure high-risk, planning-architecture partial, regulated decision support, drafting timeout, CI triage tool-heavy. (now 12 fixtures total; auto-discovered by `every_valid_fixture_validates` and `every_valid_fixture_scores_under_default_profile`.)
+- [x] Additional golden fixtures `08-minimum-payload.json`, `09-outcome-failure.json`, `10-outcome-partial.json`, `11-high-confidence-band.json`, `12-low-confidence-band.json` added to `core/schema/fixtures/events/valid/`. (session Apr-2026)
 - [ ] Document the schema authoring guide in `docs/architecture/data-model.md`.
 
 ### Generation and bindings
@@ -36,6 +37,7 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 - [x] Unit: `ProfileValidator` validates the embedded default profile and rejects unknown / missing fields. (commit 2d11a69)
 - [x] Unit: `ScoringProfile` struct rejects unknown top-level fields via `serde(deny_unknown_fields)`. (commit 2d11a69)
 - [x] Unit: `TierSetValidator` validates `tiers/default.v1.json` and activated `heec validate tier` surface. (ADR-0010 Phase 2)
+- [x] Golden scoring tests for minimum payload, failure outcome, and partial success outcome in `tests/golden_scoring.rs`. (session Apr-2026)
 - [ ] Contract: all five bindings produce byte-equal normalized JSON for every valid fixture.
 - [ ] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode.
 

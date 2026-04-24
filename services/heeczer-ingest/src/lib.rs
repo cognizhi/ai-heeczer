@@ -12,10 +12,12 @@
 //!   persists. Requires `HEECZER_FEATURE_TEST_ORCHESTRATION=1` at process
 //!   start and the `x-heeczer-tester: 1` header on the request.
 
+pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod state;
 
+pub use config::Config;
 pub use state::{AppState, Features};
 
 use axum::routing::{get, post};
@@ -34,6 +36,12 @@ pub fn build_router(state: AppState) -> Router {
         .route("/healthz", get(handlers::healthz))
         .route("/v1/version", get(handlers::version))
         .route("/v1/events", post(handlers::ingest_event))
+        .route("/v1/events:batch", post(handlers::ingest_batch))
+        .route("/v1/events/{event_id}", axum::routing::get(handlers::get_event))
+        .route(
+            "/v1/events/{event_id}/scores",
+            axum::routing::get(handlers::get_event_scores),
+        )
         .route(
             "/v1/test/score-pipeline",
             post(handlers::test_score_pipeline),

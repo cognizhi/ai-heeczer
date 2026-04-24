@@ -38,7 +38,8 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] Author `migrations-pg/0002_append_only_audit_and_global_unique.sql` — PostgreSQL dialect. (plan 0004)
 - [x] Add `src/pg.rs` PostgreSQL backend module (`heeczer_storage::pg`). (plan 0004)
 - [x] Add `heec migrate up|status|verify` CLI subcommands (per ADR-0010; supersedes the prior `heeczerctl` plan). (PR #1)
-- [ ] Document migration authoring guide in `docs/architecture/data-model.md`.
+- [x] Document migration authoring guide in `docs/architecture/data-model.md`. (session Apr-2026)
+- [x] Calibration tables migration: `core/heeczer-storage/migrations/0003_calibration.sql` (SQLite) and `migrations-pg/0003_calibration.sql` (PostgreSQL). (session Apr-2026)
 
 ### Multi-tenancy
 - [ ] Every tenant-scoped query carries `workspace_id` parameter; lints flag missing scopes.
@@ -56,6 +57,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 
 ### Tests
 - [ ] Migration test: fresh-install on SQLite and PostgreSQL. (partial: SQLite covered via CLI integration test PR #1; PostgreSQL pending)
+- [x] PostgreSQL migration file presence tests in `core/heeczer-storage/tests/migration_pg.rs` — 4 tests verify directory existence, non-empty files, CREATE TABLE presence, and SQLite/PG parity. (session Apr-2026)
 - [ ] Migration test: incremental upgrade from each prior version.
 - [x] Unit: append-only guard rejects updates/deletes. (`aih_events`, `aih_scores`, `aih_audit_log` triggers all under test in `tests/hardening.rs`, commit 9fb81aa)
 - [x] Unit: `current_version` matches the embedded migration count, FK enforcement, `aih_jobs.state` CHECK constraint, `open_path` round-trip. (foundation hardening, commit 9fb81aa)
@@ -65,7 +67,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Integration: tombstone prevents re-scoring of deleted event.
 
 ### Docs
-- [ ] `docs/architecture/data-model.md` with ERD.
+- [x] `docs/architecture/data-model.md` with ERD. (session Apr-2026)
 - [ ] Operational runbook for PostgreSQL vacuum/index tuning at scale.
 
 ## Acceptance

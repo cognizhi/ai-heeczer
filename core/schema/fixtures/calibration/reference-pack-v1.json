@@ -1,0 +1,85 @@
+{
+  "pack_id": "reference-pack",
+  "version": "1.0.0",
+  "name": "Reference Benchmark Pack",
+  "description": "PRD §25 reference pack: 5 representative AI task types for scoring calibration.",
+  "items": [
+    {
+      "item_id": "long-doc-summarize",
+      "name": "Long document summarization",
+      "description": "Summarize a 50-page technical document into a 2-page executive summary.",
+      "expected_human_effort_minutes": { "min": 30, "max": 90 },
+      "task_category": "summarization",
+      "expected_confidence_band": "high",
+      "telemetry_profile": {
+        "duration_ms": 45000,
+        "tokens_prompt": 30000,
+        "tokens_completion": 2000,
+        "workflow_steps": 3
+      }
+    },
+    {
+      "item_id": "api-spec-gen",
+      "name": "API specification generation",
+      "description": "Generate an OpenAPI 3.1 spec from a set of 10 plain-language endpoint descriptions.",
+      "expected_human_effort_minutes": { "min": 60, "max": 180 },
+      "task_category": "code_generation",
+      "expected_confidence_band": "high",
+      "telemetry_profile": {
+        "duration_ms": 35000,
+        "tokens_prompt": 5000,
+        "tokens_completion": 8000,
+        "tool_call_count": 2,
+        "workflow_steps": 4,
+        "artifact_count": 3
+      }
+    },
+    {
+      "item_id": "release-notes-draft",
+      "name": "Release notes drafting",
+      "description": "Draft release notes for a v2.0 product release from a 200-item git log.",
+      "expected_human_effort_minutes": { "min": 20, "max": 60 },
+      "task_category": "summarization",
+      "expected_confidence_band": "medium",
+      "telemetry_profile": {
+        "duration_ms": 20000,
+        "tokens_prompt": 15000,
+        "tokens_completion": 1500,
+        "workflow_steps": 2
+      }
+    },
+    {
+      "item_id": "ci-triage",
+      "name": "CI failure triage",
+      "description": "Diagnose a flaky CI run across 12 test suites, identify root cause, and produce a fix plan.",
+      "expected_human_effort_minutes": { "min": 15, "max": 45 },
+      "task_category": "analysis",
+      "expected_confidence_band": "medium",
+      "telemetry_profile": {
+        "duration_ms": 12000,
+        "tokens_prompt": 3000,
+        "tokens_completion": 1200,
+        "tool_call_count": 8,
+        "workflow_steps": 6,
+        "retries": 1
+      }
+    },
+    {
+      "item_id": "root-cause-analysis",
+      "name": "Production incident root-cause analysis",
+      "description": "Analyze logs and traces from a 2-hour production incident, identify contributing factors.",
+      "expected_human_effort_minutes": { "min": 90, "max": 240 },
+      "task_category": "analysis",
+      "expected_confidence_band": "medium",
+      "telemetry_profile": {
+        "duration_ms": 65000,
+        "tokens_prompt": 40000,
+        "tokens_completion": 3000,
+        "tool_call_count": 5,
+        "workflow_steps": 8,
+        "retries": 2,
+        "risk_class": "high"
+      }
+    }
+  ]
+}

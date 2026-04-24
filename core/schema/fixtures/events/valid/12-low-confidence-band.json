@@ -1,0 +1,22 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000012",
+  "timestamp": "2026-04-22T10:04:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_test",
+  "task": {
+    "name": "low_confidence_task",
+    "outcome": "partial_success"
+  },
+  "metrics": {
+    "duration_ms": 30000,
+    "retries": 5
+  },
+  "context": {
+    "risk_class": "high"
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

@@ -15,6 +15,7 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 - [x] `bindings/heeczer-py/` package with `pyproject.toml` (uv-managed, hatchling backend, Python ≥ 3.11 since the test fixtures use modern type syntax). Path differs from the original `bindings/python/` placeholder.
 - [ ] abi3 wheels for cpython 3.10+, manylinux/musllinux/macos/windows. (deferred: HTTP-first SDK ships now; pyo3/maturin in-process binding follows once parity test rig + napi-rs sibling land)
 - [x] `py.typed` marker shipped; types inline in `client.py` via `TypedDict` + `Literal` (closed `kind` enum).
+- [x] Adapter module `heeczer.adapters` added with LangGraph and Google ADK adapters. (session Apr-2026)
 
 ### Public API
 - [x] `HeeczerClient` async client with `healthz`, `version`, `ingest_event`, `test_score_pipeline`. (The plan's original `track`/`track_batch`/`flush`/`close` shape predates the ingestion service; HTTP-first surface is the foundation, with batching following the batch endpoint in plan 0004.)

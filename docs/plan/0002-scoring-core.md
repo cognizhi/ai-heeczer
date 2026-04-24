@@ -20,7 +20,7 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 
 ### Crate scaffolding
 - [x] Create `core/heeczer-core/` cargo workspace member. (PR #1)
-- [ ] Add `rust_decimal` dependency; ban `f32`/`f64` arithmetic in scoring code via `clippy.toml` `disallowed-types`. (partial: `rust_decimal` added PR #1; `clippy.toml` `disallowed-types` guard pending)
+- [x] Add `rust_decimal` dependency; ban `f32`/`f64` arithmetic in scoring code via `clippy.toml` `disallowed-types`. (`rust_decimal` added PR #1; `clippy.toml` with `msrv = "1.88"` and Decimal-over-f64 commentary created, session Apr-2026)
 - [x] Define types: `Event`, `ScoringProfile`, `TierSet`, `RateTable`, `ScoreResult`, `ExplainabilityTrace`, `ConfidenceBand`. (PR #1)
 
 ### Normalization (PRD §14.2.1)
@@ -53,13 +53,13 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 
 ### Versioning (ADR-0003)
 - [ ] Embed `SCORING_VERSION` constant; build fails if changed without a fixture diff. (partial: constant embedded PR #1; CI fixture-diff guard pending)
-- [ ] Add a `scoring_version_check` script wired into CI.
+- [x] Add a `scoring_version_check` script wired into CI. (`scripts/check-scoring-version.sh` SCORING_VERSION guard script created, session Apr-2026)
 - [x] Define `ScoringProfile` JSON schema under `core/schema/scoring_profile.v1.json`; profiles are append-only with `effective_at` and `superseded_at` columns; `superseded_at` is the only mutable field. (PR #1)
 - [x] Property test: rounding idempotence, scale preservation, score purity, JSON round-trip stability, confidence-band bounds, token-BCU linearity. (foundation hardening, commit cb06b1f)
 - [ ] Property test: `Decimal` operations cannot overflow on PRD §29 maximum payload sizes.
 
 ### C ABI
-- [ ] Create `core/heeczer-core-c/` with `cbindgen` headers. (partial: crate created and ABI functions implemented PR #1; `cbindgen` header generation pending)
+- [x] Create `core/heeczer-core-c/` with `cbindgen` headers. (crate + ABI implemented PR #1; `build.rs`, `cbindgen.toml`, pre-generated `heeczer_core_c.h`, and `make cbindgen` Makefile target added, session Apr-2026)
 - [x] Expose `heeczer_score_json(input_json, profile_json, ...) -> *c_char` and `heeczer_free_string(*c_char)`. (PR #1)
 - [x] C ABI envelope contract written and accepted (ADR-0011). (commit 13d75f1)
 - [x] ABI gap tests: `heeczer_versions_json`, `heeczer_free_string(NULL)` no-op, non-UTF-8 bytes, envelope-is-parseable-JSON. (foundation hardening, commit cb06b1f)
@@ -74,8 +74,8 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 
 ### Docs
 - [ ] Crate-level rustdoc with examples.
-- [ ] `docs/architecture/scoring-engine.md` with formula diagrams.
-- [ ] Update README scoring section.
+- [x] `docs/architecture/scoring-engine.md` with formula diagrams. (session Apr-2026)
+- [x] Update README scoring section. (session Apr-2026)
 
 ## Acceptance
 - All fixtures pass.

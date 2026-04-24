@@ -1,0 +1,40 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# All third-party Actions are pinned to a 40-char commit SHA per
+# docs/agents/AGENT_HARNESS.md §5 and the foundation backlog. Dependabot
+# (.github/dependabot.yml) keeps these current. The `# vX.Y.Z` comment is the
+# resolved tag for human review only — Dependabot edits both the SHA and tag.
+jobs:
+  markdownlint:
+    name: markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+      - run: npm install -g markdownlint-cli2
+      - run: markdownlint-cli2 "docs/**/*.md" "*.md" --config .markdownlint.yml
+
+  rustdoc:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+      - run: cargo doc --workspace --no-deps

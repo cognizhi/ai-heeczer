@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** Tech Lead
-- **Last reviewed:** 2026-04-22
+- **Last reviewed:** 2026-04-24
 - **Related:** PRD §31 MVP Definition, §32 Roadmap, §37 Engineering Milestones
 
 This is the entry point for ai-heeczer implementation plans. Each linked document below is a concrete, checklist-driven plan covering one slice of the system. Plans cite their PRD and ADR sources so any agent or contributor can trace a checklist item back to product intent.

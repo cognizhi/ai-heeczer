@@ -12,15 +12,15 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 
 ### Service scaffolding
 - [x] `services/heeczer-ingest/` cargo binary using `axum` + `tokio` + `sqlx`. (skeleton landed; relocated under `services/` to match ADR-0007 layout)
-- [ ] Layered config via `figment` (env + file + flags). (partial: env-only bootstrap shipped; file/flag layering pending)
+- [x] Layered config via `figment` (env + file + flags). (`services/heeczer-ingest/src/config.rs`, session Apr-2026)
 - [x] Structured logging via `tracing` + `tracing-subscriber` JSON formatter. (foundation: env-filter format; JSON formatter and span propagation pending)
 - [ ] Prometheus metrics endpoint via `axum-prometheus`.
 
 ### HTTP API (PRD §12.16)
 - [x] `POST /v1/events` — single event ingest, sync ack. (validates against canonical schema, scores, persists `heec_events` + `heec_scores` in a single transaction; dedupe via PK + `INSERT OR IGNORE`)
-- [ ] `POST /v1/events:batch` — batch ingest with `Idempotency-Key` (PRD §12.19).
-- [ ] `GET /v1/events/{event_id}` — read.
-- [ ] `GET /v1/events/{event_id}/scores` — list score versions.
+- [x] `POST /v1/events:batch` — batch ingest with partial-success semantics (100 event cap), single transaction commit. (session Apr-2026)
+- [x] `GET /v1/events/{event_id}` — read. (session Apr-2026)
+- [x] `GET /v1/events/{event_id}/scores` — list score versions. (session Apr-2026)
 - [ ] `POST /v1/events/{event_id}:rescore` — explicit re-score.
 - [ ] `GET /v1/jobs/{job_id}` — job status.
 - [x] `GET /healthz`, `GET /v1/version`. (`/metrics`, `/v1/ready` pending)

@@ -81,6 +81,11 @@ enum Command {
     Replay(ReplayArgs),
     /// Print engine and CLI version metadata.
     Version,
+    /// Run calibration against a benchmark pack (plan 0015, PRD §25).
+    Calibrate {
+        #[command(subcommand)]
+        sub: CalibrateCmd,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -201,7 +206,21 @@ fn main() -> Result<()> {
         Command::Bench(args) => cmd_bench(&args),
         Command::Replay(args) => cmd_replay(&args),
         Command::Version => cmd_version(),
+        Command::Calibrate { sub } => cmd_calibrate(sub),
     }
+}
+
+#[derive(Debug, Subcommand)]
+enum CalibrateCmd {
+    /// Run calibration against a benchmark pack and scoring profile.
+    Run {
+        /// Benchmark pack id to run against.
+        #[arg(long)]
+        pack: String,
+        /// Scoring profile id to calibrate.
+        #[arg(long)]
+        profile: String,
+    },
 }
 
 fn read_input(arg: &str) -> Result<String> {
@@ -398,6 +417,20 @@ fn cmd_version() -> Result<()> {
         SPEC_VERSION,
     );
     Ok(())
+}
+
+fn cmd_calibrate(sub: CalibrateCmd) -> Result<()> {
+    match sub {
+        CalibrateCmd::Run { pack, profile } => {
+            // Calibration workflow not yet implemented (plan 0015, PRD §25).
+            // Track progress at docs/plan/0015-calibration-benchmarks.md.
+            println!(
+                "calibration not yet implemented (pack={pack}, profile={profile}); \
+                see docs/plan/0015-calibration-benchmarks.md"
+            );
+            Ok(())
+        }
+    }
 }
 
 fn write_detail<W: Write>(out: &mut W, r: &heeczer_core::ScoreResult) -> Result<()> {

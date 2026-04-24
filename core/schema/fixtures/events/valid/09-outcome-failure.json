@@ -1,0 +1,25 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000009",
+  "timestamp": "2026-04-22T10:01:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_test",
+  "task": {
+    "name": "failed_task",
+    "category": "code_generation",
+    "outcome": "failure"
+  },
+  "metrics": {
+    "duration_ms": 5000,
+    "tokens_prompt": 500,
+    "tokens_completion": 200,
+    "retries": 3
+  },
+  "context": {
+    "risk_class": "high"
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

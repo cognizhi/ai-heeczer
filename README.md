@@ -1,5 +1,11 @@
 # ai-heeczer
 
+[![CI](https://github.com/cognizhi/ai-heeczer/actions/workflows/ci.yml/badge.svg)](https://github.com/cognizhi/ai-heeczer/actions/workflows/ci.yml)
+[![Release](https://github.com/cognizhi/ai-heeczer/actions/workflows/release.yml/badge.svg)](https://github.com/cognizhi/ai-heeczer/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+ai-heeczer — deterministic AI effort & cost estimation SDK.
+
 A reproducible scoring engine that turns raw AI agent task telemetry into
 **Human Equivalent Effort (HEE)** and **Financial Equivalent Cost (FEC)** so
 that engineering organizations can evaluate AI productivity with the same
@@ -30,6 +36,13 @@ land iteratively on top of this foundation.
 ## Quickstart
 
 ```bash
+# score a single event right away (after installing the CLI)
+heec score examples/event.json
+```
+
+For a full local setup:
+
+```bash
 # install the latest stable Rust toolchain plus local security tooling
 make bootstrap
 
@@ -51,6 +64,22 @@ heec score core/schema/fixtures/events/valid/01-prd-canonical.json --format pret
 
 The full target catalogue is in the [`Makefile`](Makefile); run `make help`.
 
+## Language SDKs
+
+| Language   | Package                                        | Install                                      | Status      |
+| ---------- | ---------------------------------------------- | -------------------------------------------- | ----------- |
+| Rust       | [`heeczer-rs`](bindings/heeczer-rs)            | `cargo add heeczer`                          | In progress |
+| JS / TS    | [`heeczer-js`](bindings/heeczer-js)            | `pnpm add @cognizhi/heeczer`                 | In progress |
+| Python     | [`heeczer-py`](bindings/heeczer-py)            | `pip install heeczer`                        | In progress |
+| Go         | [`heeczer-go`](bindings/heeczer-go)            | `go get github.com/cognizhi/heeczer-go`      | In progress |
+| Java       | [`heeczer-java`](bindings/heeczer-java)        | Maven / Gradle — see SDK README              | In progress |
+
+All SDKs call into `heeczer-core` (directly for Rust; via `heeczer-core-c` for
+everyone else) and produce **byte-identical** scoring output for the same event,
+profile, and tier set.
+
+See [`examples/`](examples/) for per-language usage.
+
 ## Architecture at a glance
 
 ```
@@ -70,6 +99,9 @@ Cross-language SDKs (JS/TS, Python, Go, Rust, Java) call into
 else) so all callers produce **byte-identical** scoring output for the same
 event + profile + tier set.
 
+Full architecture documentation is in [`docs/architecture/`](docs/architecture/),
+starting with [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
+
 ## Repository layout
 
 | Path                  | Owner                            |
@@ -88,6 +120,11 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 [`docs/agents/AGENT_HARNESS.md`](docs/agents/AGENT_HARNESS.md). Every change
 must keep the canonical scoring tests green and may not bump
 `SCORING_VERSION` without an ADR-0003 amendment.
+
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for the vulnerability reporting process.
+GitHub private vulnerability reporting is enabled on this repository.
 
 ## License
 

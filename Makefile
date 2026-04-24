@@ -106,6 +106,34 @@ cli-smoke: build ## end-to-end smoke of the heec CLI against shipped fixtures
 	./target/release/heec diff /tmp/heec-score.json /tmp/heec-score.json
 	./target/release/heec migrate up --database-url sqlite::memory:
 
+# ----- examples -------------------------------------------------------------
+
+.PHONY: example-node
+example-node: ## run the Node.js quickstart example (requires a running ingest service)
+	node examples/node/quickstart.mjs
+
+.PHONY: example-python
+example-python: ## run the Python quickstart example (requires a running ingest service)
+	cd bindings/heeczer-py && uv run python ../../examples/python/quickstart.py
+
+.PHONY: example-go
+example-go: ## run the Go quickstart example (requires a running ingest service)
+	cd examples/go && go run quickstart.go
+
+.PHONY: example-rust
+example-rust: ## run the Rust quickstart example (in-process, no service needed)
+	cargo run -p heeczer --example quickstart
+
+.PHONY: example-java
+example-java: ## run the Java quickstart example (requires a running ingest service)
+	javac -d /tmp/heeczer-java examples/java/Quickstart.java
+	java -cp /tmp/heeczer-java Quickstart
+
+.PHONY: examples-smoke
+examples-smoke: example-rust ## smoke-test examples that don't require a running service
+	@echo "examples-smoke: in-process (Rust) example passed"
+	@echo "NOTE: HTTP-mode examples (node, python, go, java) require a running ingest service"
+
 # ----- security --------------------------------------------------------------
 
 .PHONY: security
@@ -139,6 +167,15 @@ security-licenses-ci: ## mirror CI by fresh-installing cargo-deny on stable befo
 
 .PHONY: security-ci
 security-ci: security-audit-ci security-licenses-ci ## mirror the Rust security CI jobs locally
+
+# ----- C ABI / cbindgen (ADR-0011) ------------------------------------------
+
+.PHONY: cbindgen
+cbindgen: ## regenerate C headers for heeczer-core-c (requires cbindgen)
+	@command -v cbindgen >/dev/null || cargo install cbindgen --locked
+	cbindgen --config core/heeczer-core-c/cbindgen.toml \
+	          --crate heeczer-core-c \
+	          --output core/heeczer-core-c/heeczer_core_c.h
 
 # ----- docs -----------------------------------------------------------------
 

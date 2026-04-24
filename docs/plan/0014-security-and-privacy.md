@@ -13,7 +13,8 @@ Enforce the privacy-by-default and security-by-default posture from PRD §22, pl
 ### Privacy defaults (PRD §22)
 - [ ] Schema validation rejects prompt/output content fields by default.
 - [ ] Logs and audit entries never include payload bodies.
-- [ ] Data classification documented in `docs/architecture/privacy.md`.
+- [x] `docs/architecture/privacy.md` — data classification, log hygiene, retention/deletion flow, workspace isolation. (session Apr-2026)
+- [x] `docs/architecture/security.md` — API key auth, TLS, CORS, RBAC, rate limiting, idempotency, supply chain, SLSA, threat model summary. (session Apr-2026)
 
 ### Auth and transport
 - [ ] API-key auth with hashed storage and rotation.
@@ -45,8 +46,8 @@ Enforce the privacy-by-default and security-by-default posture from PRD §22, pl
 - [ ] cargo-audit, npm audit, pip-audit, govulncheck, OWASP dep-check.
 - [ ] Trivy on container images.
 - [ ] gitleaks on every PR.
-- [ ] cosign keyless signing of release artifacts.
-- [ ] CycloneDX SBOM on every GitHub Release.
+- [x] cosign keyless signing of release artifacts. (`sign-artifacts` job in `release.yml`, session Apr-2026)
+- [x] CycloneDX SBOM on every GitHub Release. (`generate-sbom` job in `release.yml`, session Apr-2026)
 - [ ] SLSA Build Level 3 provenance attestation.
 
 ### Disclosure

@@ -1,0 +1,27 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000010",
+  "timestamp": "2026-04-22T10:02:00Z",
+  "framework_source": "test",
+  "workspace_id": "ws_test",
+  "task": {
+    "name": "partial_task",
+    "category": "analysis",
+    "outcome": "partial_success"
+  },
+  "metrics": {
+    "duration_ms": 8000,
+    "tokens_prompt": 800,
+    "tokens_completion": 600,
+    "workflow_steps": 4,
+    "retries": 2
+  },
+  "context": {
+    "human_in_loop": true,
+    "risk_class": "medium"
+  },
+  "meta": {
+    "sdk_language": "test",
+    "sdk_version": "0.0.0"
+  }
+}

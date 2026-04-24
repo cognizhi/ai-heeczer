@@ -1,0 +1,9 @@
+# Development Dockerfile for heeczer-ingest.
+# Build the binary on the host first: cargo build --release
+# Then: docker compose -f docker-compose.dev.yml up ingest
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY target/release/heeczer-ingest /app/heeczer-ingest
+EXPOSE 8080
+ENTRYPOINT ["/app/heeczer-ingest"]
