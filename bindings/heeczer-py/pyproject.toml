@@ -1,6 +1,6 @@
 [project]
 name = "cognizhi-heeczer"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python client for the ai-heeczer ingestion service."
 readme = "README.md"
 requires-python = ">=3.11"
