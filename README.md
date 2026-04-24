@@ -131,15 +131,15 @@ starting with [`docs/architecture/system-overview.md`](docs/architecture/system-
 
 ## Repository layout
 
-| Path               | Owner                                        |
-| ------------------ | -------------------------------------------- |
-| `core/`            | Rust core, C ABI, storage, CLI               |
-| `core/schema/`     | JSON schemas + golden fixtures               |
-| `docs/research/`   | Scoring model paper and calibration analysis |
-| `docs/adr/`        | Architecture Decision Records                |
-| `docs/plan/`       | Implementation plans 0000–0015               |
-| `docs/agents/`     | Agent harness and operating rules            |
-| `.github/`         | CI workflows + agent role files              |
+| Path             | Owner                                        |
+| ---------------- | -------------------------------------------- |
+| `core/`          | Rust core, C ABI, storage, CLI               |
+| `core/schema/`   | JSON schemas + golden fixtures               |
+| `docs/research/` | Scoring model paper and calibration analysis |
+| `docs/adr/`      | Architecture Decision Records                |
+| `docs/plan/`     | Implementation plans 0000–0015               |
+| `docs/agents/`   | Agent harness and operating rules            |
+| `.github/`       | CI workflows + agent role files              |
 
 ## Contributing
 
