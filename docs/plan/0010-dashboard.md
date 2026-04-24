@@ -53,7 +53,7 @@ Ship a Next.js dashboard container that renders summary metrics, trends, leaderb
 ### Docs
 
 - [x] `dashboard/README.md`.
-- [ ] `docs/architecture/dashboard.md` with data contract.
+- [x] `docs/architecture/dashboard.md` with data contract. (session Cat-3)
 
 ## Acceptance
 

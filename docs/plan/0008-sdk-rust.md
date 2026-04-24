@@ -14,7 +14,7 @@ Ship `heeczer` crate as a thin idiomatic Rust SDK over `heeczer-core`.
 
 - [x] `bindings/heeczer-rs/` workspace member. Re-exports `Event`, `ScoreResult`, `ScoringProfile`, `TierSet`, `ConfidenceBand` from `heeczer-core`.
 - [x] `Client::native()` — synchronous in-process scoring, zero network hop. Feature flag `native` (on by default).
-- [ ] `Client::http()` — async HTTP client targeting the ingestion service. Feature flag `http` (optional, deps: `reqwest 0.12`, `tokio 1`). Scaffold in `src/http.rs` behind `#[cfg(feature = "http")]`; full impl deferred until ingestion service auth lands (plan 0004).
+- [x] `Client::http()` — async HTTP client targeting the ingestion service. Feature flag `http` (optional, deps: `reqwest 0.12`, `tokio 1`). `src/http.rs` implements `score_event()` via reqwest; wiremock integration tests in `tests/http_client.rs`. (session Cat-3)
 - [ ] Mode selection: `native` and `image`. Native ships today; image follows.
 - [x] 2 integration tests in `tests/native.rs` against the canonical fixture (green).
 - [ ] Contract: shared fixtures parity. (pending: needs the parity fixture rig in plan 0001 §Tests)

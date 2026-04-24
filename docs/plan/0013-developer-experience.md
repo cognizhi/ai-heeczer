@@ -25,7 +25,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 - [x] `.nvmrc`. (PR #1)
 - [x] `.python-version` + `uv.lock`. (`.python-version` at repo root and in `bindings/heeczer-py/`; `uv.lock` in `bindings/heeczer-py/`, session Apr-2026)
 - [x] `go.work` linking `bindings/heeczer-go` and `examples/go` created. (session Apr-2026)
-- [ ] Maven properties pinned.
+- [x] Maven properties pinned. (plugin versions extracted to `<properties>` in `pom.xml`, session Cat-3)
 
 ### Examples
 
@@ -33,7 +33,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 - [x] `examples/node/`, `examples/python/`, `examples/go/`, `examples/java/` plus the in-tree Rust example at `bindings/heeczer-rs/examples/quickstart.rs` (`cargo run -p heeczer --example quickstart`).
 - [x] `examples/langgraph/`, `examples/google-adk/`. (session Apr-2026; README files added as part of plan 0011)
 - [x] `make example-node`, `make example-python`, `make example-go`, `make example-rust`, `make example-java`, and `make examples-smoke` Makefile targets added. (session Apr-2026)
-- [ ] Examples smoke-tested in CI.
+- [x] Examples smoke-tested in CI. (`examples-smoke` job in `ci.yml`, session Cat-3)
 
 ### README
 
@@ -56,7 +56,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 
 - [x] `.editorconfig` with per-language indent rules. (session Apr-2026)
 - [x] `.vscode/extensions.json` and `.vscode/settings.json` created. (session Apr-2026)
-- [ ] `.devcontainer/` for codespaces.
+- [x] `.devcontainer/` for codespaces. (`devcontainer.json` + `post-create.sh`, session Cat-3)
 
 ## Acceptance
 

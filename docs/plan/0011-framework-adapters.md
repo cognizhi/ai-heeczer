@@ -30,7 +30,7 @@ Translate native telemetry from popular agentic frameworks into the canonical ev
 
 ### Docs and examples
 
-- [ ] `bindings/python/README.md` adapters section.
+- [x] `bindings/heeczer-py/README.md` adapters section (LangGraph + Google ADK). (session Cat-3)
 - [x] Example under `examples/langgraph/README.md` and `examples/google-adk/README.md`. (session Apr-2026)
 - [x] Mapping reference in `docs/architecture/integrations.md`. (session Apr-2026)
 

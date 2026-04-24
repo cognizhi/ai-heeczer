@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
-from heeczer import HeeczerApiError, HeeczerClient
+from heeczer import HeeczerApiError, HeeczerClient, SyncHeeczerClient
 
 
 def _stub(handler: Any) -> httpx.AsyncBaseTransport:
@@ -173,3 +173,33 @@ async def test_base_url_trailing_slash_is_normalised() -> None:
         await c.healthz()
 
     assert seen["url"] == "https://api.example.com/healthz"
+
+
+# ---------------------------------------------------------------------------
+# SyncHeeczerClient tests
+# ---------------------------------------------------------------------------
+
+
+def test_sync_healthz_returns_true() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
+
+    # SyncHeeczerClient uses HeeczerClient internally — inject transport via
+    # the async client attribute.
+    client = SyncHeeczerClient.__new__(SyncHeeczerClient)
+    client._async = HeeczerClient(
+        base_url="https://api.example.com", transport=_stub(handler)
+    )
+    assert client.healthz() is True
+
+
+def test_sync_client_context_manager_closes() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
+
+    with SyncHeeczerClient.__new__(SyncHeeczerClient) as client:
+        client._async = HeeczerClient(
+            base_url="https://api.example.com", transport=_stub(handler)
+        )
+        ok = client.healthz()
+    assert ok is True

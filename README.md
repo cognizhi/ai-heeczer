@@ -6,17 +6,44 @@
 
 ai-heeczer — deterministic AI effort & cost estimation SDK.
 
-A reproducible scoring engine that turns raw AI agent task telemetry into
-**Human Equivalent Effort (HEE)** and **Financial Equivalent Cost (FEC)** so
-that engineering organizations can evaluate AI productivity with the same
-rigor as human work. HEE is aggregated from per-event **Base Cognitive Units
-(BCU)**; the full pipeline (BCU → minutes → hours/days/FEC) is defined in PRD
-§14.
+A reproducible scoring engine that converts raw AI agent task telemetry into
+**Human Equivalent Effort (HEE)** and **Financial Equivalent Cost (FEC)** —
+the business-legible units that engineering leadership, finance, and platform
+teams actually need. Every score is derived from a mathematically grounded,
+peer-literature-anchored model; the same event, profile, and tier set always
+produces the same number, on any platform, in any language.
 
-This repository delivers the spec, the scoring core, language SDKs, an
-ingestion service, a dashboard, and the operational tooling to ship them. See
-[`docs/prd/ai-heeczer-prd.md`](docs/prd/ai-heeczer-prd.md) for the canonical product
-requirements.
+## Research foundations
+
+The scoring model is not heuristic — it is built on four convergent research
+traditions and validated against published empirical results:
+
+- **Classical software effort estimation.** The BCU formula inherits the
+  multiplicative-multiplier structure of COCOMO (Boehm, 1981) and the
+  functional-scope principles of Function Point Analysis (Albrecht, 1979).
+  Token mass maps directly to Halstead's cognitive volume metric (1977).
+- **Empirical AI productivity evidence.** Peng et al. (2023) measured a **55.8%
+  speed-up** for AI-assisted developers; Brynjolfsson et al. (2023) found a
+  **15% throughput gain** for AI-assisted support agents; Eloundou et al. (2023)
+  estimated **~15% of all US worker tasks** can already be completed faster at
+  equivalent quality with LLM access. These studies provide direct calibration
+  anchors for the HEE tier-adjustment step.
+- **Agentic AI behavioral research.** SWE-agent (Yang et al., 2024) and the
+  MINT benchmark (Wang et al., 2023) show that tool-call count and workflow
+  step count are independent, reliable signals of task complexity — which is
+  why they appear as first-class BCU components rather than being rolled into
+  duration alone.
+- **Knowledge-work productivity theory.** Drucker's (1999) task-output
+  framing grounds the key question: not "how long did the agent run?" but
+  "how long would a human of a specified role have taken to produce an
+  equivalent result?"
+
+For the full derivation, worked numerical example, confidence model, and
+calibration roadmap, see
+[`docs/research/hee-fec-scoring-model.md`](docs/research/hee-fec-scoring-model.md).
+
+This repository delivers the scoring core, language SDKs, an ingestion
+service, a dashboard, and the operational tooling to ship them.
 
 ## Status
 
@@ -104,15 +131,15 @@ starting with [`docs/architecture/system-overview.md`](docs/architecture/system-
 
 ## Repository layout
 
-| Path           | Owner                             |
-| -------------- | --------------------------------- |
-| `core/`        | Rust core, C ABI, storage, CLI    |
-| `core/schema/` | JSON schemas + golden fixtures    |
-| `docs/prd/`    | Product requirements              |
-| `docs/adr/`    | Architecture Decision Records     |
-| `docs/plan/`   | Implementation plans 0000–0015    |
-| `docs/agents/` | Agent harness and operating rules |
-| `.github/`     | CI workflows + agent role files   |
+| Path             | Owner                                        |
+| ---------------- | -------------------------------------------- |
+| `core/`          | Rust core, C ABI, storage, CLI               |
+| `core/schema/`   | JSON schemas + golden fixtures               |
+| `docs/research/` | Scoring model paper and calibration analysis |
+| `docs/adr/`      | Architecture Decision Records                |
+| `docs/plan/`     | Implementation plans 0000–0015               |
+| `docs/agents/`   | Agent harness and operating rules            |
+| `.github/`       | CI workflows + agent role files              |
 
 ## Contributing
 

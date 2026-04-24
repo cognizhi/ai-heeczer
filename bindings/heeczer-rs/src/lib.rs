@@ -32,7 +32,7 @@ mod error;
 mod native;
 
 #[cfg(feature = "http")]
-mod http;
+pub mod http;
 
 pub use error::{Error, Result};
 pub use native::Client;

@@ -113,3 +113,52 @@ proptest! {
         prop_assert!(r.confidence_score <= profile.confidence.max);
     }
 }
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(64))]
+
+    /// Monotonicity: more tokens must yield a BCU token component >= the base event.
+    #[test]
+    fn more_tokens_means_higher_or_equal_bcu_tokens(
+        tokens_prompt in 100u64..=50_000,
+        tokens_completion in 100u64..=50_000,
+        multiplier in 2u32..=4,
+    ) {
+        let mut event = canonical_event();
+        event.metrics.tokens_prompt = Some(tokens_prompt);
+        event.metrics.tokens_completion = Some(tokens_completion);
+        let profile = ScoringProfile::default_v1();
+        let tiers = TierSet::default_v1();
+        let base = score(&event, &profile, &tiers, None).unwrap();
+
+        event.metrics.tokens_prompt = Some(tokens_prompt * u64::from(multiplier));
+        event.metrics.tokens_completion = Some(tokens_completion * u64::from(multiplier));
+        let scaled = score(&event, &profile, &tiers, None).unwrap();
+
+        prop_assert!(scaled.bcu_breakdown.tokens >= base.bcu_breakdown.tokens);
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(64))]
+
+    /// Overflow safety: extreme inputs (PRD §29 max payload sizes) must not panic or overflow.
+    #[test]
+    fn no_overflow_on_extreme_inputs(
+        tokens_prompt in 0u64..=2_000_000,
+        tokens_completion in 0u64..=2_000_000,
+        duration_secs in 0u64..=7_200,
+        steps in 0u32..=10_000,
+        tool_calls in 0u32..=1_000,
+    ) {
+        let mut event = canonical_event();
+        event.metrics.tokens_prompt = Some(tokens_prompt);
+        event.metrics.tokens_completion = Some(tokens_completion);
+        event.metrics.duration_ms = duration_secs * 1_000;
+        event.metrics.workflow_steps = Some(steps);
+        event.metrics.tool_call_count = Some(tool_calls);
+        let profile = ScoringProfile::default_v1();
+        let tiers = TierSet::default_v1();
+        prop_assert!(score(&event, &profile, &tiers, None).is_ok());
+    }
+}

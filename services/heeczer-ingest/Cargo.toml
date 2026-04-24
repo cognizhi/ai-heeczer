@@ -23,6 +23,7 @@ sqlx-core = { workspace = true }
 sqlx-sqlite = { workspace = true }
 anyhow = { workspace = true }
 axum = "0.8"
+axum-prometheus = "0.7"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors", "limit"] }
 figment = { version = "0.10", features = ["env", "toml"] }

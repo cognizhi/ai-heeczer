@@ -7,19 +7,22 @@ All five SDK bindings (JS, Python, Go, Java, Rust) talk to this service.
 
 ## Endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/healthz` | Liveness probe — always returns `200 {"ok":true}` |
-| `GET` | `/v1/version` | Engine + spec versions |
-| `POST` | `/v1/events` | Validate + score + persist a single event |
+| Method | Path                      | Description                                                              |
+| ------ | ------------------------- | ------------------------------------------------------------------------ |
+| `GET`  | `/healthz`                | Liveness probe — always returns `200 {"ok":true}`                        |
+| `GET`  | `/v1/version`             | Engine + spec versions                                                   |
+| `POST` | `/v1/events`              | Validate + score + persist a single event                                |
+| `GET`  | `/metrics`                | Prometheus metrics scrape endpoint                                       |
 | `POST` | `/v1/test/score-pipeline` | Score-without-persist, for the test-orchestration dashboard view (gated) |
 
 ## Request body — `POST /v1/events`
 
 ```json
 {
-  "workspace_id": "my-workspace",
-  "event": { /* canonical event per core/schema/event.v1.json */ }
+    "workspace_id": "my-workspace",
+    "event": {
+        /* canonical event per core/schema/event.v1.json */
+    }
 }
 ```
 
@@ -27,12 +30,12 @@ All five SDK bindings (JS, Python, Go, Java, Rust) talk to this service.
 
 ## Environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `HEECZER_DATABASE_URL` | `sqlite::memory:` | SQLite or Postgres DSN |
-| `HEECZER_INGEST_BIND` | `0.0.0.0:8080` | TCP listen address |
-| `HEECZER_FEATURE_TEST_ORCHESTRATION` | _(unset)_ | Set to `1`, `true`, or `on` to enable `/v1/test/score-pipeline` |
-| `RUST_LOG` | `info` | Log level filter (tracing env filter syntax) |
+| Variable                             | Default           | Description                                                     |
+| ------------------------------------ | ----------------- | --------------------------------------------------------------- |
+| `HEECZER_DATABASE_URL`               | `sqlite::memory:` | SQLite or Postgres DSN                                          |
+| `HEECZER_INGEST_BIND`                | `0.0.0.0:8080`    | TCP listen address                                              |
+| `HEECZER_FEATURE_TEST_ORCHESTRATION` | _(unset)_         | Set to `1`, `true`, or `on` to enable `/v1/test/score-pipeline` |
+| `RUST_LOG`                           | `info`            | Log level filter (tracing env filter syntax)                    |
 
 ## Run locally
 
@@ -59,12 +62,12 @@ All non-2xx responses follow this shape (ADR-0011):
 
 ```json
 {
-  "ok": false,
-  "envelope_version": "1",
-  "error": {
-    "kind": "bad_request",
-    "message": "human-readable detail"
-  }
+    "ok": false,
+    "envelope_version": "1",
+    "error": {
+        "kind": "bad_request",
+        "message": "human-readable detail"
+    }
 }
 ```
 
@@ -77,3 +80,48 @@ cargo test -p heeczer-ingest
 ```
 
 Integration tests construct a real in-memory SQLite pool and drive the router via `tower::ServiceExt::oneshot` with no network listener.
+
+## Deploy
+
+### Docker (single container)
+
+```dockerfile
+FROM rust:1.88-slim AS builder
+WORKDIR /src
+COPY . .
+RUN cargo build -p heeczer-ingest --release
+
+FROM debian:bookworm-slim
+COPY --from=builder /src/target/release/heeczer-ingest /usr/local/bin/
+EXPOSE 8080
+CMD ["heeczer-ingest"]
+```
+
+### Docker Compose (with PostgreSQL)
+
+```yaml
+services:
+    db:
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_DB: heeczer
+            POSTGRES_USER: heeczer
+            POSTGRES_PASSWORD: heeczer
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+    ingest:
+        build: .
+        ports:
+            - "8080:8080"
+        environment:
+            HEECZER_DATABASE_URL: "postgres://heeczer:heeczer@db:5432/heeczer"
+        depends_on:
+            - db
+
+volumes:
+    pgdata:
+```
+
+See [docs/architecture/deployment-modes.md](../../docs/architecture/deployment-modes.md)
+for the native vs image deployment trade-offs.

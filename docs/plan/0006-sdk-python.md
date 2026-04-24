@@ -22,7 +22,7 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 ### Public API
 
 - [x] `HeeczerClient` async client with `healthz`, `version`, `ingest_event`, `test_score_pipeline`. (The plan's original `track`/`track_batch`/`flush`/`close` shape predates the ingestion service; HTTP-first surface is the foundation, with batching following the batch endpoint in plan 0004.)
-- [ ] Both sync and async (`asyncio`) methods. (async-only today; sync wrapper deferred)
+- [x] Both sync and async (`asyncio`) methods. `SyncHeeczerClient` wrapper added in `client.py`, exported from `__init__.py`. (session Cat-3)
 - [ ] Mode selection: `native` and `image`. (image-only today; in-process scoring depends on pyo3 binding above)
 - [ ] Pydantic v2 models for events, scores, traces. (TypedDicts today to keep the wheel stdlib-only beyond httpx)
 

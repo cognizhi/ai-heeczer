@@ -70,7 +70,7 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] Unit: append-only guard rejects updates/deletes. (`aih_events`, `aih_scores`, `aih_audit_log` triggers all under test in `tests/hardening.rs`, commit 9fb81aa)
 - [x] Unit: `current_version` matches the embedded migration count, FK enforcement, `aih_jobs.state` CHECK constraint, `open_path` round-trip. (foundation hardening, commit 9fb81aa)
 - [x] Unit: global rows on profiles/tiers/rates cannot duplicate via unique-with-COALESCE indexes (closes nullable-`workspace_id` PK hole). (migration 0002, commit 9fb81aa)
-- [ ] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4).
+- [x] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4). (session Cat-3)
 - [ ] Integration: conflicting payload for same `event_id` rejected with `409 Conflict` and audit-log entry.
 - [ ] Integration: tombstone prevents re-scoring of deleted event.
 

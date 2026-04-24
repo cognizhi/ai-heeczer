@@ -40,7 +40,7 @@ Provide a versioned calibration framework so organizations can tune the scoring 
 ### Docs
 
 - [x] `docs/architecture/benchmarks.md` with targets, reference hardware, payload, and bench-smoke workflow description. (session Apr-2026)
-- [ ] `docs/architecture/calibration.md`.
+- [x] `docs/architecture/calibration.md`. (session Cat-3)
 - [ ] User guide in dashboard help.
 
 ## Acceptance

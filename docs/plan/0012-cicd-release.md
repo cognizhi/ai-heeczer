@@ -54,7 +54,7 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 ### Docs
 
 - [x] `docs/architecture/cicd.md` with workflow catalog, release flow diagram, and trusted publishing setup. (session Apr-2026)
-- [ ] Release runbook with partial-publish recovery steps.
+- [x] Release runbook with partial-publish recovery steps. (`docs/runbooks/release.md`, session Cat-3)
 
 ## Acceptance
 

@@ -8,6 +8,7 @@ callers do not pattern-match on strings.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Literal, TypedDict, cast, get_args
 
 import httpx
@@ -190,3 +191,77 @@ class HeeczerClient:
         except ValueError:
             pass
         raise HeeczerApiError(resp.status_code, kind, message)
+
+
+def _run(coro: Any) -> Any:
+    """Run a coroutine in a new event loop (for sync wrapper methods)."""
+    return asyncio.get_event_loop().run_until_complete(coro)
+
+
+class SyncHeeczerClient:
+    """Synchronous wrapper around :class:`HeeczerClient`.
+
+    Provides the same methods as :class:`HeeczerClient` but blocks until
+    each response arrives. Useful in scripts and notebooks where an
+    asyncio event loop is not running.
+
+    .. code-block:: python
+
+        from heeczer import SyncHeeczerClient
+
+        client = SyncHeeczerClient(base_url="https://ingest.example.com", api_key="…")
+        result = client.ingest_event(workspace_id="ws_default", event=my_event)
+        print(result["score"]["final_estimated_minutes"])
+        client.close()
+
+    Or as a context manager::
+
+        with SyncHeeczerClient(base_url="…") as client:
+            print(client.version())
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        api_key: str | None = None,
+        timeout: float = 10.0,
+    ) -> None:
+        self._async = HeeczerClient(base_url=base_url, api_key=api_key, timeout=timeout)
+
+    def __enter__(self) -> SyncHeeczerClient:
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        _run(self._async.aclose())
+
+    def healthz(self) -> bool:
+        return _run(self._async.healthz())  # type: ignore[no-any-return]
+
+    def version(self) -> VersionResponse:
+        return _run(self._async.version())  # type: ignore[no-any-return]
+
+    def ingest_event(
+        self, *, workspace_id: str, event: dict[str, Any]
+    ) -> IngestEventResponse:
+        return _run(self._async.ingest_event(workspace_id=workspace_id, event=event))  # type: ignore[no-any-return]
+
+    def test_score_pipeline(
+        self,
+        *,
+        event: dict[str, Any],
+        profile: dict[str, Any] | None = None,
+        tier_set: dict[str, Any] | None = None,
+        tier_override: str | None = None,
+    ) -> TestPipelineResponse:
+        return _run(  # type: ignore[no-any-return]
+            self._async.test_score_pipeline(
+                event=event,
+                profile=profile,
+                tier_set=tier_set,
+                tier_override=tier_override,
+            )
+        )

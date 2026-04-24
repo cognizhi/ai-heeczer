@@ -28,6 +28,11 @@ uuid = { workspace = true }
 proptest = { workspace = true }
 insta = { workspace = true }
 pretty_assertions = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "score_bench"
+harness = false
 
 [lints]
 workspace = true

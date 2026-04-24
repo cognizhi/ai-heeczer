@@ -30,7 +30,7 @@ Ship the Go SDK as a Go module that consumes the Rust core via the C ABI (`heecz
 - [ ] Contract: shared fixtures. (pending: needs the parity fixture rig in plan 0001 §Tests)
 - [ ] Parity: byte-equal output vs Rust reference.
 - [x] `go vet ./...` clean. (`golangci-lint` + `govulncheck` to be wired in plan 0012 CI work.)
-- [ ] `govulncheck` clean.
+- [x] `govulncheck` clean. (wired into `parity.yml` Go job, session Cat-3)
 
 ### Docs
 

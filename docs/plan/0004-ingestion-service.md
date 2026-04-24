@@ -16,7 +16,7 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 - [x] `services/heeczer-ingest/` cargo binary using `axum` + `tokio` + `sqlx`. (skeleton landed; relocated under `services/` to match ADR-0007 layout)
 - [x] Layered config via `figment` (env + file + flags). (`services/heeczer-ingest/src/config.rs`, session Apr-2026)
 - [x] Structured logging via `tracing` + `tracing-subscriber` JSON formatter. (foundation: env-filter format; JSON formatter and span propagation pending)
-- [ ] Prometheus metrics endpoint via `axum-prometheus`.
+- [x] Prometheus metrics endpoint via `axum-prometheus`. (`GET /metrics`, session Cat-3)
 
 ### HTTP API (PRD §12.16)
 
@@ -80,8 +80,8 @@ Ship the Rust ingestion service that accepts events via HTTP and queue, validate
 
 ### Docs
 
-- [ ] `server/ingestion/README.md` with run, config, deploy.
-- [ ] `docs/architecture/deployment-modes.md` updated for native vs image flows.
+- [x] `services/heeczer-ingest/README.md` with run, config, deploy. (session Cat-3)
+- [x] `docs/architecture/deployment-modes.md` updated for native vs image flows. (session Cat-3)
 
 ## Acceptance
 
