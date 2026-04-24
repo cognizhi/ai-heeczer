@@ -1,6 +1,6 @@
 [package]
 name = "heeczer-cli"
-version = "0.4.1"
+version = "0.5.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -13,8 +13,8 @@ name = "heec"
 path = "src/main.rs"
 
 [dependencies]
-heeczer-core = { path = "../heeczer-core", version = "0.4.1" }
-heeczer-storage = { path = "../heeczer-storage", version = "0.4.1" }
+heeczer-core = { path = "../heeczer-core", version = "0.5.0" }
+heeczer-storage = { path = "../heeczer-storage", version = "0.5.0" }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
