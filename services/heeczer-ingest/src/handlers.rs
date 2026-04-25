@@ -91,6 +91,21 @@ pub async fn ingest_event(
             "workspace_id must be 1–128 ASCII alphanumeric, dash, or underscore chars".into(),
         ));
     }
+
+    // Extract and route on spec_version before full schema validation (ADR-0002).
+    // spec_version is the routing key: reject unsupported versions early with a
+    // clear, actionable error message.
+    let spec_version = body
+        .event
+        .get("spec_version")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ApiError::BadRequest("spec_version is required in event".into()))?;
+    if spec_version != "1.0" {
+        return Err(ApiError::BadRequest(format!(
+            "unsupported spec_version `{spec_version}`; only `1.0` is accepted"
+        )));
+    }
+
     validator()
         .validate(&body.event, Mode::Strict)
         .map_err(|e| ApiError::Schema(e.to_string()))?;

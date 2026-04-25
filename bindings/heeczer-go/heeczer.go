@@ -290,3 +290,110 @@ func (c *Client) handle(resp *http.Response, out any) error {
 	}
 	return apiErr
 }
+
+// ── Canonical event types (mirrored from core/schema/event.v1.json) ──────────
+// Mirrors heeczer_core::event (Rust) and generated per plan 0001 / ADR-0002.
+// Use these types to construct events type-safely before passing them to
+// Client.IngestEvent.
+
+// Outcome is the closed task-outcome enum.
+type Outcome string
+
+const (
+	OutcomeSuccess        Outcome = "success"
+	OutcomePartialSuccess Outcome = "partial_success"
+	OutcomeFailure        Outcome = "failure"
+	OutcomeTimeout        Outcome = "timeout"
+)
+
+// EventRiskClass is the closed risk-classification enum.
+type EventRiskClass string
+
+const (
+	RiskLow    EventRiskClass = "low"
+	RiskMedium EventRiskClass = "medium"
+	RiskHigh   EventRiskClass = "high"
+)
+
+// EventIdentity is the optional identity block.
+type EventIdentity struct {
+	UserID         *string `json:"user_id,omitempty"`
+	TeamID         *string `json:"team_id,omitempty"`
+	BusinessUnitID *string `json:"business_unit_id,omitempty"`
+	// TierID is resolved against the active TierSet (PRD §14.2.1).
+	TierID *string `json:"tier_id,omitempty"`
+}
+
+// EventTask is the task descriptor block.
+type EventTask struct {
+	Name string `json:"name"`
+	// Category is optional; missing/null normalises to "uncategorized" per PRD §14.2.1.
+	Category    *string `json:"category,omitempty"`
+	SubCategory *string `json:"sub_category,omitempty"`
+	Outcome     Outcome `json:"outcome"`
+}
+
+// EventMetrics is the required telemetry metrics block.
+type EventMetrics struct {
+	// DurationMS is the wall-clock task duration in milliseconds (required).
+	DurationMS       int64    `json:"duration_ms"`
+	TokensPrompt     *int64   `json:"tokens_prompt,omitempty"`
+	TokensCompletion *int64   `json:"tokens_completion,omitempty"`
+	ToolCallCount    *int32   `json:"tool_call_count,omitempty"`
+	WorkflowSteps    *int32   `json:"workflow_steps,omitempty"`
+	Retries          *int32   `json:"retries,omitempty"`
+	ArtifactCount    *int32   `json:"artifact_count,omitempty"`
+	OutputSizeProxy  *float64 `json:"output_size_proxy,omitempty"`
+}
+
+// EventContext is the optional execution context block.
+type EventContext struct {
+	HumanInLoop    *bool           `json:"human_in_loop,omitempty"`
+	ReviewRequired *bool           `json:"review_required,omitempty"`
+	Temperature    *float64        `json:"temperature,omitempty"`
+	RiskClass      *EventRiskClass `json:"risk_class,omitempty"`
+	Tags           []string        `json:"tags,omitempty"`
+}
+
+// EventMeta is the SDK metadata block. Extensions is the sole permitted bucket
+// for unknown fields (PRD §13 / ADR-0002).
+type EventMeta struct {
+	SDKLanguage    string          `json:"sdk_language"`
+	SDKVersion     string          `json:"sdk_version"`
+	ScoringProfile *string         `json:"scoring_profile,omitempty"`
+	Extensions     json.RawMessage `json:"extensions,omitempty"`
+}
+
+// CanonicalEvent is the canonical ai-heeczer telemetry event (v1).
+//
+// Mirrors heeczer_core::Event (Rust) and the JSON Schema at
+// core/schema/event.v1.json. Construct this type and pass it (or its
+// json.RawMessage equivalent) to Client.IngestEvent.
+//
+// Example:
+//
+//	event := heeczer.CanonicalEvent{
+//	    SpecVersion:     "1.0",
+//	    EventID:         uuid.New().String(),
+//	    Timestamp:       time.Now().UTC().Format(time.RFC3339Nano),
+//	    FrameworkSource: "langgraph",
+//	    WorkspaceID:     "ws_default",
+//	    Task:   heeczer.EventTask{Name: "summarise_pr", Outcome: heeczer.OutcomeSuccess},
+//	    Metrics: heeczer.EventMetrics{DurationMS: 3200},
+//	    Meta:   heeczer.EventMeta{SDKLanguage: "go", SDKVersion: "0.1.0"},
+//	}
+type CanonicalEvent struct {
+	// SpecVersion must be "1.0" for v1 events.
+	SpecVersion     string         `json:"spec_version"`
+	EventID         string         `json:"event_id"`
+	CorrelationID   *string        `json:"correlation_id,omitempty"`
+	Timestamp       string         `json:"timestamp"`
+	FrameworkSource string         `json:"framework_source"`
+	WorkspaceID     string         `json:"workspace_id"`
+	ProjectID       *string        `json:"project_id,omitempty"`
+	Identity        *EventIdentity `json:"identity,omitempty"`
+	Task            EventTask      `json:"task"`
+	Metrics         EventMetrics   `json:"metrics"`
+	Context         *EventContext  `json:"context,omitempty"`
+	Meta            EventMeta      `json:"meta"`
+}

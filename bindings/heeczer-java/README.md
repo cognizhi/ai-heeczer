@@ -40,16 +40,16 @@ try (var client = new HeeczerClient.Builder("https://ingest.example.com")
 All methods throw `HeeczerApiException` on non-2xx responses. `getKind()`
 returns a closed `ApiErrorKind` enum mirroring the ingestion service:
 
-| Kind | When |
-| --- | --- |
-| `schema` | Event failed canonical schema validation. |
-| `bad_request` | Malformed JSON or missing top-level fields. |
-| `scoring` | Engine rejected a normalized event (e.g. unknown tier id). |
-| `storage` | Persistence layer error. |
-| `not_found` | Read endpoint did not find the resource. |
-| `forbidden` | Auth or RBAC denied the request. |
-| `feature_disabled` | Endpoint exists but the feature flag is off. |
-| `unknown` | Non-JSON 5xx body; the raw text is in `getMessage()`. |
+| Kind               | When                                                       |
+| ------------------ | ---------------------------------------------------------- |
+| `schema`           | Event failed canonical schema validation.                  |
+| `bad_request`      | Malformed JSON or missing top-level fields.                |
+| `scoring`          | Engine rejected a normalized event (e.g. unknown tier id). |
+| `storage`          | Persistence layer error.                                   |
+| `not_found`        | Read endpoint did not find the resource.                   |
+| `forbidden`        | Auth or RBAC denied the request.                           |
+| `feature_disabled` | Endpoint exists but the feature flag is off.               |
+| `unknown`          | Non-JSON 5xx body; the raw text is in `getMessage()`.      |
 
 ```java
 try {
@@ -61,20 +61,20 @@ try {
 
 ## Builder options
 
-| Method | Description |
-| --- | --- |
-| `apiKey(String)` | Sets the `x-heeczer-api-key` header. |
+| Method                   | Description                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| `apiKey(String)`         | Sets the `x-heeczer-api-key` header.                       |
 | `httpClient(HttpClient)` | Inject a custom `HttpClient` (proxy, mTLS, fake in tests). |
 
 ## Methods
 
-| Method | HTTP | Returns |
-| --- | --- | --- |
-| `healthz()` | `GET /healthz` | `boolean` |
-| `version()` | `GET /v1/version` | `VersionResponse` |
-| `ingestEvent(workspaceId, event)` | `POST /v1/events` | `IngestEventResponse` |
-| `testScorePipeline(request)` | `POST /v1/test/score-pipeline` | `TestPipelineResponse` (gated by the test-orchestration feature flag) |
-| `close()` | — | implements `AutoCloseable` for try-with-resources. |
+| Method                            | HTTP                           | Returns                                                               |
+| --------------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `healthz()`                       | `GET /healthz`                 | `boolean`                                                             |
+| `version()`                       | `GET /v1/version`              | `VersionResponse`                                                     |
+| `ingestEvent(workspaceId, event)` | `POST /v1/events`              | `IngestEventResponse`                                                 |
+| `testScorePipeline(request)`      | `POST /v1/test/score-pipeline` | `TestPipelineResponse` (gated by the test-orchestration feature flag) |
+| `close()`                         | —                              | implements `AutoCloseable` for try-with-resources.                    |
 
 ## Contract
 

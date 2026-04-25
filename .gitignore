@@ -45,6 +45,7 @@ Thumbs.db
 *.sqlite
 *.sqlite-journal
 *.db
+.tmp-*
 .env
 .env.local
 .envrc

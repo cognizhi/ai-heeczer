@@ -13,12 +13,12 @@ The repo must publish synchronized releases to npm, PyPI, crates.io, Maven Centr
 - **`release-please` in manifest mode** is the release control plane (per PRD §27.1).
 - One release PR per cycle aggregates conventional-commit-derived changelogs across all components and computes the next semver.
 - Merging the release PR triggers a release workflow that:
-  1. Tags the repo (`v<version>`).
-  2. Builds and signs all artifacts (cosign keyless).
-  3. Generates SBOMs (CycloneDX) and SLSA provenance.
-  4. Publishes to each registry in parallel where independent; serialized only where ordering matters (e.g., Maven Central staging close).
-  5. Updates the **release manifest** (`.github/release-manifest.json`) with intent, digests, and per-target publish status.
-  6. Marks the release complete only when all required targets succeed (PRD §27.5).
+    1. Tags the repo (`v<version>`).
+    2. Builds and signs all artifacts (cosign keyless).
+    3. Generates SBOMs (CycloneDX) and SLSA provenance.
+    4. Publishes to each registry in parallel where independent; serialized only where ordering matters (e.g., Maven Central staging close).
+    5. Updates the **release manifest** (`.github/release-manifest.json`) with intent, digests, and per-target publish status.
+    6. Marks the release complete only when all required targets succeed (PRD §27.5).
 - **Trusted publishing** is preferred wherever the registry supports it (PyPI OIDC, npm provenance via OIDC, GitHub Releases). Maven Central uses a Sonatype token in GitHub Secrets until OIDC trusted publishing is broadly available.
 - Failed targets enter a partial-publish state. Resume is operator-driven via a `release-resume` workflow_dispatch and never mints a new version.
 

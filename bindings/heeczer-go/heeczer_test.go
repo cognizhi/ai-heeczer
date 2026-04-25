@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -134,5 +138,143 @@ func TestBaseURLTrailingSlashStripped(t *testing.T) {
 	}
 	if !strings.HasSuffix(seenPath, "/healthz") || strings.Contains(seenPath, "//") {
 		t.Fatalf("path = %q", seenPath)
+	}
+}
+
+// ── Contract tests (plan 0001 / ADR-0002) ────────────────────────────────────
+
+// fixtureDir returns the absolute path to core/schema/fixtures/events/valid
+// regardless of where `go test` is invoked from.
+func fixtureDir() string {
+	_, thisFile, _, _ := runtime.Caller(0)
+	// thisFile = .../bindings/heeczer-go/heeczer_test.go
+	return filepath.Join(filepath.Dir(thisFile), "../../core/schema/fixtures/events/valid")
+}
+
+func loadValidFixtures(t *testing.T) []struct{ name, body string } {
+	t.Helper()
+	dir := fixtureDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read fixture dir %s: %v", dir, err)
+	}
+	var out []struct{ name, body string }
+	for _, e := range entries {
+		if filepath.Ext(e.Name()) != ".json" {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		if err != nil {
+			t.Fatalf("read fixture %s: %v", e.Name(), err)
+		}
+		out = append(out, struct{ name, body string }{e.Name(), string(raw)})
+	}
+	return out
+}
+
+// TestContractAtLeastOneValidFixture verifies the fixture directory is reachable.
+func TestContractAtLeastOneValidFixture(t *testing.T) {
+	fixtures := loadValidFixtures(t)
+	if len(fixtures) == 0 {
+		t.Fatalf("no valid fixtures found in %s", fixtureDir())
+	}
+}
+
+// TestContractValidFixtureRoundTrips checks every valid fixture deserializes
+// into CanonicalEvent and re-serializes to semantically equal JSON.
+func TestContractValidFixtureRoundTrips(t *testing.T) {
+	for _, fix := range loadValidFixtures(t) {
+		fix := fix // capture
+		t.Run(fix.name, func(t *testing.T) {
+			var event heeczer.CanonicalEvent
+			if err := json.Unmarshal([]byte(fix.body), &event); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+
+			reserialised, err := json.Marshal(&event)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+
+			// Compare semantically: parse both as map[string]any.
+			var original, roundtripped map[string]any
+			if err := json.Unmarshal([]byte(fix.body), &original); err != nil {
+				t.Fatalf("unmarshal original: %v", err)
+			}
+			if err := json.Unmarshal(reserialised, &roundtripped); err != nil {
+				t.Fatalf("unmarshal roundtripped: %v", err)
+			}
+			if !reflect.DeepEqual(original, roundtripped) {
+				t.Fatalf("round-trip mismatch for %s:\noriginal   : %v\nroundtripped: %v",
+					fix.name, original, roundtripped)
+			}
+		})
+	}
+}
+
+// TestContractExtensionsSurviveRoundTrip verifies meta.extensions are preserved.
+func TestContractExtensionsSurviveRoundTrip(t *testing.T) {
+	extensions := json.RawMessage(`{"custom_key":42,"nested":{"x":true}}`)
+	event := heeczer.CanonicalEvent{
+		SpecVersion:     "1.0",
+		EventID:         "00000000-0000-4000-8000-aabbccddeeff",
+		Timestamp:       "2026-04-22T10:00:00Z",
+		FrameworkSource: "test",
+		WorkspaceID:     "ws_ext",
+		Task:            heeczer.EventTask{Name: "ext_test", Outcome: heeczer.OutcomeSuccess},
+		Metrics:         heeczer.EventMetrics{DurationMS: 100},
+		Meta: heeczer.EventMeta{
+			SDKLanguage: "go",
+			SDKVersion:  "0.1.0",
+			Extensions:  extensions,
+		},
+	}
+
+	raw, err := json.Marshal(&event)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var back heeczer.CanonicalEvent
+	if err := json.Unmarshal(raw, &back); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	var ext map[string]any
+	if err := json.Unmarshal(back.Meta.Extensions, &ext); err != nil {
+		t.Fatalf("unmarshal extensions: %v", err)
+	}
+	if v, ok := ext["custom_key"].(float64); !ok || v != 42 {
+		t.Fatalf("extensions.custom_key = %v, want 42", ext["custom_key"])
+	}
+	nested, ok := ext["nested"].(map[string]any)
+	if !ok {
+		t.Fatalf("extensions.nested is not an object: %v", ext["nested"])
+	}
+	if nested["x"] != true {
+		t.Fatalf("extensions.nested.x = %v, want true", nested["x"])
+	}
+}
+
+// TestContractUnknownTopLevelFieldRejected verifies that DisallowUnknownFields
+// causes decoding to fail when an unknown top-level field is present.
+func TestContractUnknownTopLevelFieldRejected(t *testing.T) {
+	bad := `{
+		"spec_version":"1.0",
+		"event_id":"00000000-0000-4000-8000-aabbccddeeff",
+		"timestamp":"2026-04-22T10:00:00Z",
+		"framework_source":"test",
+		"workspace_id":"ws_strict",
+		"task":{"name":"t","outcome":"success"},
+		"metrics":{"duration_ms":100},
+		"meta":{"sdk_language":"go","sdk_version":"0.1.0"},
+		"forbidden_extra_field":"value"
+	}`
+
+	dec := json.NewDecoder(strings.NewReader(bad))
+	dec.DisallowUnknownFields()
+	var event heeczer.CanonicalEvent
+	if err := dec.Decode(&event); err == nil {
+		t.Fatal("expected error when unknown top-level field is present")
 	}
 }

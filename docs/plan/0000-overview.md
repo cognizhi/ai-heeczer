@@ -26,7 +26,7 @@ This is the entry point for ai-heeczer implementation plans. Each linked documen
 
 | #   | Plan                                                         | Primary PRD refs              | Primary ADR refs                       |
 | --- | ------------------------------------------------------------ | ----------------------------- | -------------------------------------- |
-| 01  | [Schema and contracts](0001-schema-and-contracts.md)         | §13, §12.2, §12.16            | ADR-0002                               |
+| 01  | [Schema and contracts](0001-schema-and-contracts.md) ✅ Done | §13, §12.2, §12.16            | ADR-0002                               |
 | 02  | [Scoring core](0002-scoring-core.md)                         | §14, §15, §16                 | ADR-0001, ADR-0003                     |
 | 03  | [Storage and migrations](0003-storage-and-migrations.md)     | §20, §12.20                   | ADR-0004                               |
 | 04  | [Ingestion service](0004-ingestion-service.md)               | §12.4, §19, §29               | ADR-0005, ADR-0006                     |

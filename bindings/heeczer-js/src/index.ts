@@ -8,6 +8,109 @@
  * `@cognizhi/heeczer-sdk-core` (FFI binding, plan 0005 follow-up).
  */
 
+// ─── Canonical event types (generated from core/schema/event.v1.json) ──────
+// Mirrors the Rust `event.rs` structs in heeczer-core (plan 0001 / ADR-0002).
+
+/** Outcome of a task (closed enum). */
+export type Outcome = "success" | "partial_success" | "failure" | "timeout";
+
+/** Risk classification of a task context (closed enum). */
+export type RiskClass = "low" | "medium" | "high";
+
+/** Optional identity block: identifies the user/team/tier making the request. */
+export interface EventIdentity {
+  user_id?: string | null;
+  team_id?: string | null;
+  business_unit_id?: string | null;
+  /** Resolved against the active TierSet (PRD §14.2.1). */
+  tier_id?: string | null;
+}
+
+/** Task descriptor block. */
+export interface EventTask {
+  name: string;
+  /** Optional; missing/null normalises to `"uncategorized"` per PRD §14.2.1. */
+  category?: string | null;
+  sub_category?: string | null;
+  outcome: Outcome;
+}
+
+/** Required telemetry metrics block. */
+export interface EventMetrics {
+  /** Wall-clock task duration in milliseconds (required). */
+  duration_ms: number;
+  tokens_prompt?: number | null;
+  tokens_completion?: number | null;
+  tool_call_count?: number | null;
+  workflow_steps?: number | null;
+  retries?: number | null;
+  artifact_count?: number | null;
+  output_size_proxy?: number | null;
+}
+
+/** Optional execution context block. */
+export interface EventContext {
+  human_in_loop?: boolean | null;
+  review_required?: boolean | null;
+  temperature?: number | null;
+  risk_class?: RiskClass | null;
+  tags?: string[] | null;
+}
+
+/** SDK metadata block. `extensions` is the sole permitted bucket for
+ *  unknown fields (PRD §13 / ADR-0002). */
+export interface EventMeta {
+  /** SDK language identifier (`"node"`, `"python"`, `"go"`, `"java"`, `"rust"`, …). */
+  sdk_language: string;
+  sdk_version: string;
+  /** Override scoring profile id. Omit to use the workspace default. */
+  scoring_profile?: string | null;
+  /** Sole permitted location for custom/unknown fields (PRD §13). */
+  extensions?: Record<string, unknown> | null;
+}
+
+/**
+ * Canonical ai-heeczer telemetry event (v1).
+ *
+ * Mirrors `heeczer_core::Event` (Rust) and the JSON Schema in
+ * `core/schema/event.v1.json`. Construct this type and pass it to
+ * {@link HeeczerClient.ingestEvent} as the `event` field.
+ *
+ * @example
+ * ```ts
+ * const event: Event = {
+ *   spec_version: "1.0",
+ *   event_id: crypto.randomUUID(),
+ *   timestamp: new Date().toISOString(),
+ *   framework_source: "langgraph",
+ *   workspace_id: "ws_default",
+ *   task: { name: "summarise_pr", category: "summarization", outcome: "success" },
+ *   metrics: { duration_ms: 3200 },
+ *   meta: { sdk_language: "node", sdk_version: "0.1.0" },
+ * };
+ * ```
+ */
+export interface Event {
+  /** Must be the literal string `"1.0"` for v1 events. */
+  spec_version: "1.0";
+  /** RFC 4122 UUID; primary idempotency key (PRD §12.19). */
+  event_id: string;
+  correlation_id?: string | null;
+  /** RFC 3339 / ISO 8601 timestamp in UTC. */
+  timestamp: string;
+  /** Originating framework slug (`"langgraph"`, `"google_adk"`, …). */
+  framework_source: string;
+  workspace_id: string;
+  project_id?: string | null;
+  identity?: EventIdentity | null;
+  task: EventTask;
+  metrics: EventMetrics;
+  context?: EventContext | null;
+  meta: EventMeta;
+}
+
+// ─── Client types ────────────────────────────────────────────────────────────
+
 /** Confidence band, matches the Rust `ConfidenceBand` enum. */
 export type ConfidenceBand = "Low" | "Medium" | "High";
 
@@ -101,7 +204,9 @@ export class HeeczerClient {
 
   /** Liveness probe; resolves with `true` if the service responds 2xx. */
   async healthz(): Promise<boolean> {
-    const resp = await this.#fetch(`${this.#baseUrl}/healthz`, { method: "GET" });
+    const resp = await this.#fetch(`${this.#baseUrl}/healthz`, {
+      method: "GET",
+    });
     return resp.ok;
   }
 
@@ -158,7 +263,11 @@ export class HeeczerClient {
   ): Promise<T> {
     const resp = await this.#fetch(`${this.#baseUrl}${path}`, {
       method: "POST",
-      headers: { ...this.#headers(), "content-type": "application/json", ...extraHeaders },
+      headers: {
+        ...this.#headers(),
+        "content-type": "application/json",
+        ...extraHeaders,
+      },
       body: JSON.stringify(body),
     });
     return this.#handle<T>(resp);
@@ -177,7 +286,12 @@ export class HeeczerClient {
     let message = text || resp.statusText;
     try {
       const env = JSON.parse(text) as ErrorEnvelope;
-      if (env && env.ok === false && env.error && typeof env.error.kind === "string") {
+      if (
+        env &&
+        env.ok === false &&
+        env.error &&
+        typeof env.error.kind === "string"
+      ) {
         kind = env.error.kind;
         message = env.error.message;
       }

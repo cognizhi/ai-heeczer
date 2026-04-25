@@ -91,7 +91,9 @@ async fn ingest_event_rejects_invalid_payload() {
     let app = router_with_features(Features::default()).await;
     let body = json!({
         "workspace_id": "ws_test",
-        "event": { "not": "a valid event" },
+        // spec_version present so routing passes; remaining fields are invalid
+        // and must be caught by the schema validator.
+        "event": { "spec_version": "1.0", "not_a_real_field": "value" },
     });
     let resp = app
         .oneshot(

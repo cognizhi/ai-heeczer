@@ -20,6 +20,7 @@ pub mod state;
 pub use config::Config;
 pub use state::{AppState, Features};
 
+use axum::http::{HeaderValue, Response};
 use axum::routing::{get, post};
 use axum::Router;
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
@@ -39,6 +40,19 @@ static PROMETHEUS: OnceLock<(PrometheusMetricLayer<'static>, PrometheusHandle)> 
 fn prometheus_pair() -> (PrometheusMetricLayer<'static>, PrometheusHandle) {
     let (layer, handle) = PROMETHEUS.get_or_init(PrometheusMetricLayer::pair);
     (layer.clone(), handle.clone())
+}
+
+/// Middleware that stamps every response with `X-Heeczer-Spec-Version: 1.0`.
+///
+/// When v2 ships, this layer will additionally emit `Deprecation: true` and
+/// `Sunset: <RFC 7231 date>` for responses that processed v1 events, giving
+/// callers a standards-based signal that v1 support has an end-of-life date.
+/// See ADR-0002 §v1 → v2 Evolution Policy.
+async fn add_spec_version_header<B>(mut response: Response<B>) -> Response<B> {
+    response
+        .headers_mut()
+        .insert("x-heeczer-spec-version", HeaderValue::from_static("1.0"));
+    response
 }
 
 /// Build the application router. Kept as a free function so integration tests
@@ -70,5 +84,6 @@ pub fn build_router(state: AppState) -> Router {
         .layer(prometheus_layer)
         .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
         .layer(TraceLayer::new_for_http())
+        .layer(axum::middleware::map_response(add_spec_version_header))
         .with_state(state)
 }

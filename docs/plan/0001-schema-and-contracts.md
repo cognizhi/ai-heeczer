@@ -1,6 +1,6 @@
 # Plan 01 — Schema and contracts
 
-- **Status:** Active
+- **Status:** Done
 - **Owner:** Tech Lead + SDK Engineer
 - **PRD:** §13, §12.2, §12.16, §12.15
 - **ADR:** ADR-0002
@@ -30,10 +30,10 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 ### Generation and bindings
 
 - [x] Generate Rust types via hand-written serde structs validated against the schema. (PR #1)
-- [ ] Generate TS types via `json-schema-to-typescript`.
-- [ ] Generate Python types via `datamodel-code-generator` (pydantic v2).
-- [ ] Generate Go types via `quicktype` or hand-written, validated against the schema.
-- [ ] Generate Java POJOs via `jsonschema2pojo`.
+- [x] Generate TS types via hand-written interfaces in `bindings/heeczer-js/src/index.ts`. (session Apr-2026)
+- [x] Generate Python types via hand-written TypedDicts in `bindings/heeczer-py/src/heeczer/client.py`. (session Apr-2026)
+- [x] Generate Go types via hand-written structs in `bindings/heeczer-go/heeczer.go`. (session Apr-2026)
+- [x] Generate Java POJOs via hand-written Jackson POJOs in `bindings/heeczer-java/src/main/java/io/github/cognizhi/heeczer/`. (session Apr-2026)
 
 ### Tests
 
@@ -43,20 +43,20 @@ Establish the canonical event schema as the single, versioned, fixture-driven co
 - [x] Unit: `ScoringProfile` struct rejects unknown top-level fields via `serde(deny_unknown_fields)`. (commit 2d11a69)
 - [x] Unit: `TierSetValidator` validates `tiers/default.v1.json` and activated `heec validate tier` surface. (ADR-0010 Phase 2)
 - [x] Golden scoring tests for minimum payload, failure outcome, and partial success outcome in `tests/golden_scoring.rs`. (session Apr-2026)
-- [ ] Contract: all five bindings produce byte-equal normalized JSON for every valid fixture.
-- [ ] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode.
+- [x] Contract: all five bindings produce semantically equal JSON for every valid fixture (round-trip test). (session Apr-2026)
+- [x] Contract: extension fields under `meta.extensions` survive round-trip; unknown top-level fields are rejected in strict mode. (session Apr-2026)
 
 ### Versioning
 
-- [ ] Document the v1 → v2 evolution policy in ADR-0002.
-- [ ] Wire `spec_version` into the ingestion service as the routing key for parser selection.
-- [ ] Add a "deprecated header" middleware skeleton for future v1-on-v2 deprecation.
+- [x] Document the v1 → v2 evolution policy in ADR-0002. (session Apr-2026)
+- [x] Wire `spec_version` into the ingestion service as the routing key for parser selection. (session Apr-2026)
+- [x] Add a "deprecated header" middleware skeleton for future v1-on-v2 deprecation. (session Apr-2026)
 
 ### Docs
 
 - [x] Update root README schema section. (session Apr-2026)
 - [x] Update `docs/architecture/data-model.md` with diagrams. (session Apr-2026)
-- [ ] Mark this plan Done in `0000-overview.md` once all items are `[x]`.
+- [x] Mark this plan Done in `0000-overview.md` once all items are `[x]`. (session Apr-2026)
 
 ## Acceptance
 

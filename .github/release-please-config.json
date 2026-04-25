@@ -2,31 +2,65 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "simple",
   "include-component-in-tag": true,
+  "plugins": [
+    {
+      "type": "cargo-workspace",
+      "merge": false
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "ai-heeczer sdk product version",
+      "components": [
+        "workspace",
+        "heeczer-js",
+        "heeczer-py",
+        "heeczer-go",
+        "heeczer-java"
+      ]
+    }
+  ],
   "packages": {
     ".": {
       "release-type": "rust",
       "component": "workspace",
       "include-component-in-tag": false,
+      "release-as": "0.5.1",
+      "exclude-paths": [
+        ".github",
+        "bindings/heeczer-js",
+        "bindings/heeczer-py",
+        "bindings/heeczer-go",
+        "bindings/heeczer-java",
+        "dashboard",
+        "docs",
+        "examples",
+        "scripts",
+        "services"
+      ],
       "changelog-path": "CHANGELOG.md"
     },
     "bindings/heeczer-js": {
       "release-type": "node",
       "component": "heeczer-js",
+      "release-as": "0.5.1",
       "changelog-path": "CHANGELOG.md"
     },
     "bindings/heeczer-py": {
       "release-type": "python",
       "component": "heeczer-py",
+      "release-as": "0.5.1",
       "changelog-path": "CHANGELOG.md"
     },
     "bindings/heeczer-go": {
       "release-type": "simple",
       "component": "heeczer-go",
+      "release-as": "0.5.1",
       "changelog-path": "CHANGELOG.md"
     },
     "bindings/heeczer-java": {
       "release-type": "maven",
       "component": "heeczer-java",
+      "release-as": "0.5.1",
       "changelog-path": "CHANGELOG.md"
     },
     "dashboard": {

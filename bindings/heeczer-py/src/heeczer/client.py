@@ -9,9 +9,107 @@ callers do not pattern-match on strings.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Literal, TypedDict, cast, get_args
+from typing import Any, Literal, NotRequired, TypedDict, cast, get_args
 
 import httpx
+
+# ── Canonical event types (mirrored from core/schema/event.v1.json) ──────────
+# Mirrors heeczer_core::event (Rust) and generated per plan 0001 / ADR-0002.
+
+Outcome = Literal["success", "partial_success", "failure", "timeout"]
+"""Outcome of a task (closed enum)."""
+
+RiskClass = Literal["low", "medium", "high"]
+"""Risk classification (closed enum)."""
+
+
+class EventIdentity(TypedDict, total=False):
+    """Optional identity block; all fields optional."""
+
+    user_id: str | None
+    team_id: str | None
+    business_unit_id: str | None
+    tier_id: str | None
+
+
+class EventTask(TypedDict):
+    """Task descriptor. ``name`` and ``outcome`` are required."""
+
+    name: str
+    outcome: Outcome
+    category: NotRequired[str | None]
+    sub_category: NotRequired[str | None]
+
+
+class EventMetrics(TypedDict):
+    """Telemetry metrics. ``duration_ms`` is required."""
+
+    duration_ms: int
+    tokens_prompt: NotRequired[int | None]
+    tokens_completion: NotRequired[int | None]
+    tool_call_count: NotRequired[int | None]
+    workflow_steps: NotRequired[int | None]
+    retries: NotRequired[int | None]
+    artifact_count: NotRequired[int | None]
+    output_size_proxy: NotRequired[float | None]
+
+
+class EventContext(TypedDict, total=False):
+    """Optional execution context; all fields optional."""
+
+    human_in_loop: bool | None
+    review_required: bool | None
+    temperature: float | None
+    risk_class: RiskClass | None
+    tags: list[str] | None
+
+
+class EventMeta(TypedDict):
+    """SDK metadata. ``sdk_language`` and ``sdk_version`` are required.
+    ``extensions`` is the sole permitted bucket for unknown fields (PRD §13)."""
+
+    sdk_language: str
+    sdk_version: str
+    scoring_profile: NotRequired[str | None]
+    extensions: NotRequired[Any]
+
+
+class Event(TypedDict):
+    """Canonical ai-heeczer telemetry event (v1).
+
+    Mirrors ``heeczer_core::Event`` (Rust) and the JSON Schema in
+    ``core/schema/event.v1.json``. Construct this type and pass it to
+    :meth:`HeeczerClient.ingest_event` as the ``event`` argument.
+
+    Example::
+
+        event: Event = {
+            "spec_version": "1.0",
+            "event_id": str(uuid.uuid4()),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "framework_source": "langgraph",
+            "workspace_id": "ws_default",
+            "task": {"name": "summarise_pr", "category": "summarization", "outcome": "success"},
+            "metrics": {"duration_ms": 3200},
+            "meta": {"sdk_language": "python", "sdk_version": "0.1.0"},
+        }
+    """
+
+    spec_version: Literal["1.0"]
+    event_id: str
+    timestamp: str
+    framework_source: str
+    workspace_id: str
+    task: EventTask
+    metrics: EventMetrics
+    meta: EventMeta
+    correlation_id: NotRequired[str | None]
+    project_id: NotRequired[str | None]
+    identity: NotRequired[EventIdentity | None]
+    context: NotRequired[EventContext | None]
+
+
+# ── Client types ──────────────────────────────────────────────────────────────
 
 ConfidenceBand = Literal["Low", "Medium", "High"]
 
