@@ -4,7 +4,7 @@
 
   <groupId>com.cognizhi</groupId>
   <artifactId>heeczer-sdk</artifactId>
-  <version>0.2.1-SNAPSHOT</version>
+  <version>0.5.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>heeczer-sdk</name>
