@@ -67,6 +67,11 @@ jobs:
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
           python-version: "3.12"
+      # release-please uses "-SNAPSHOT" placeholders which violate PEP 440.
+      # Normalise to ".dev0" so uv can parse the version on pre-release branches.
+      - name: normalize snapshot version (PEP 440)
+        run: sed -i 's/-SNAPSHOT/.dev0/' pyproject.toml
+        working-directory: bindings/heeczer-py
       - run: uv sync --all-extras
         working-directory: bindings/heeczer-py
       - run: uv run pytest
