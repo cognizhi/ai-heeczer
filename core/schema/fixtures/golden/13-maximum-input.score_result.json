@@ -1,0 +1,37 @@
+{
+    "scoring_version": "1.0.0",
+    "spec_version": "1.0",
+    "scoring_profile": "default",
+    "bcu_breakdown": {
+        "tokens": "400",
+        "duration": "3600",
+        "steps": "200",
+        "tools": "150",
+        "artifacts": "30.0",
+        "output": "14.00",
+        "review": "8"
+    },
+    "category": "planning_architecture",
+    "category_multiplier": "1.5",
+    "context_multiplier": {
+        "retry": "2.0",
+        "ambiguity": "1.1",
+        "risk": "1.2",
+        "human_in_loop": "0.7",
+        "outcome": "1.0"
+    },
+    "baseline_human_minutes": "12202.34",
+    "tier": {
+        "id": "tier_principal_eng",
+        "multiplier": "3.0",
+        "hourly_rate": "200",
+        "currency": "USD"
+    },
+    "final_estimated_minutes": "4067.45",
+    "estimated_hours": "67.79",
+    "estimated_days": "8.47",
+    "financial_equivalent_cost": "13558.16",
+    "confidence_score": "0.7500",
+    "confidence_band": "Medium",
+    "human_summary": "Estimated 4067.45 Principal Engineer-equivalent minutes (~13558.16 cost) for `planning_architecture`; confidence medium."
+}

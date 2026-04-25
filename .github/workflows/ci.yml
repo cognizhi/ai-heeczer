@@ -63,6 +63,56 @@ jobs:
       - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
       - run: make cli-smoke
 
+  c-abi-valgrind:
+    name: C ABI memory-leak check (valgrind)
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+      - name: Install valgrind
+        run: sudo apt-get install -y valgrind
+      - name: Build C ABI shared library
+        run: cargo build -p heeczer-core-c --release
+      - name: Write C ABI smoke driver
+        run: |
+          cat > /tmp/valgrind_driver.c << 'EOF'
+          #include <stdlib.h>
+          extern char *heeczer_score_json(const char *, const char *, const char *, const char *);
+          extern void  heeczer_free_string(char *);
+          extern char *heeczer_versions_json(void);
+          int main(void) {
+              const char *event =
+                  "{\"spec_version\":\"1.0\","
+                  "\"event_id\":\"00000000-0000-4000-8000-000000000008\","
+                  "\"timestamp\":\"2026-04-22T09:46:00Z\","
+                  "\"framework_source\":\"test\","
+                  "\"workspace_id\":\"ws_test\","
+                  "\"task\":{\"name\":\"t\",\"outcome\":\"success\"},"
+                  "\"metrics\":{\"duration_ms\":1000},"
+                  "\"meta\":{\"sdk_language\":\"c\",\"sdk_version\":\"0.5.1\"}}";
+              char *result = heeczer_score_json(event, NULL, NULL, NULL);
+              heeczer_free_string(result);
+              heeczer_free_string(NULL); /* must be a no-op */
+              char *v = heeczer_versions_json();
+              heeczer_free_string(v);
+              return 0;
+          }
+          EOF
+      - name: Compile driver
+        run: |
+          gcc /tmp/valgrind_driver.c \
+            -L target/release \
+            -l heeczer_core_c \
+            -Wl,-rpath,$(pwd)/target/release \
+            -o /tmp/valgrind_driver
+      - name: Run valgrind leak check
+        run: |
+          valgrind --leak-check=full --error-exitcode=1 /tmp/valgrind_driver
+
   security-audit:
     name: cargo-audit
     runs-on: ubuntu-latest

@@ -1,0 +1,46 @@
+{
+  "spec_version": "1.0",
+  "event_id": "00000000-0000-4000-8000-000000000013",
+  "correlation_id": "batch-max-001",
+  "timestamp": "2026-04-22T12:00:00Z",
+  "framework_source": "langgraph",
+  "workspace_id": "ws_max",
+  "project_id": "proj_max",
+  "identity": {
+    "user_id": "usr_max",
+    "team_id": "tm_max",
+    "business_unit_id": "bu_max",
+    "tier_id": "tier_principal_eng"
+  },
+  "task": {
+    "name": "maximum_input_task",
+    "category": "planning_architecture",
+    "sub_category": "system_design",
+    "outcome": "success"
+  },
+  "metrics": {
+    "duration_ms": 7200000,
+    "tokens_prompt": 100000,
+    "tokens_completion": 100000,
+    "tool_call_count": 50,
+    "workflow_steps": 100,
+    "retries": 8,
+    "artifact_count": 25,
+    "output_size_proxy": 10.0
+  },
+  "context": {
+    "human_in_loop": true,
+    "review_required": true,
+    "temperature": 0.9,
+    "risk_class": "high",
+    "tags": ["max-input", "stress-test"]
+  },
+  "meta": {
+    "sdk_language": "python",
+    "sdk_version": "0.5.1",
+    "scoring_profile": "default",
+    "extensions": {
+      "custom_key": "custom_value"
+    }
+  }
+}

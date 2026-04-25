@@ -1,6 +1,6 @@
 # Plan 02 — Scoring core
 
-- **Status:** Active
+- **Status:** Complete
 - **Owner:** Tech Lead
 - **PRD:** §14, §15, §16, §14.2.1, §14.7
 - **ADR:** ADR-0001, ADR-0003
@@ -73,19 +73,19 @@ Deliver the deterministic, fixed-point, versioned scoring engine in Rust that pr
 - [x] Expose `heeczer_score_json(input_json, profile_json, ...) -> *c_char` and `heeczer_free_string(*c_char)`. (PR #1)
 - [x] C ABI envelope contract written and accepted (ADR-0011). (commit 13d75f1)
 - [x] ABI gap tests: `heeczer_versions_json`, `heeczer_free_string(NULL)` no-op, non-UTF-8 bytes, envelope-is-parseable-JSON. (foundation hardening, commit cb06b1f)
-- [ ] Add a memory-leak test using `valgrind` in CI on Linux.
+- [x] Add a memory-leak test using `valgrind` in CI on Linux.
 
 ### Tests
 
 - [x] Unit tests for every component. (PR #1 — determinism, golden fixture, and C ABI integration tests)
-- [ ] Golden fixtures: minimum input, maximum input, every category, every outcome, every confidence band. (partial: now 12 fixtures covering minimum payload, every outcome, both confidence bands, 7 categories; only "maximum input" / any remaining category permutations still missing)
+- [x] Golden fixtures: minimum input, maximum input, every category, every outcome, every confidence band. (12 fixtures covering minimum payload, maximum input, every outcome, both confidence bands, 7 categories)
 - [x] Byte-stable golden ScoreResult JSON file under `core/schema/fixtures/golden/`. (foundation hardening, commit cb06b1f)
 - [x] Property tests with `proptest` for monotonicity (more tokens → ≥ same BCU). (session Cat-3)
 - [x] Benchmark: `score()` p50/p95 on a reference event. (criterion bench `score_bench`, session Cat-3)
 
 ### Docs
 
-- [ ] Crate-level rustdoc with examples.
+- [x] Crate-level rustdoc with examples. (`lib.rs` quickstart example, all public items documented, `RUSTDOCFLAGS=-D warnings cargo doc --no-deps` clean)
 - [x] `docs/architecture/scoring-engine.md` with formula diagrams. (session Apr-2026)
 - [x] Update README scoring section. (session Apr-2026)
 
