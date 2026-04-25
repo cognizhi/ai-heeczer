@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/v0.5.1...v0.5.1) (2026-04-25)
+
+
+### Features
+
+* **cli:** embed fixtures via include_dir, add `aih fixtures show` ([13d75f1](https://github.com/cognizhi/ai-heeczer/commit/13d75f13f9860449ba029f956e353d6b11a9fe94))
+* **cli:** Phase 2 aih subcommands — score --detail, validate, bench, replay ([53b3f6e](https://github.com/cognizhi/ai-heeczer/commit/53b3f6ee8e041a2eee72bfdc7ff64673f166eea4))
+* **cli:** rename binary 'aih' to 'heec' (all references updated) ([c7f4273](https://github.com/cognizhi/ai-heeczer/commit/c7f4273200de5c0b5228394b8756a4ffe5d1b053))
+* **cli:** ship the aih developer CLI (ADR-0010) ([8b46a72](https://github.com/cognizhi/ai-heeczer/commit/8b46a7240341b622ce0303c20c51b025c94241a2))
+* complete plans 0001-0015 — CI, docs, adapters, calibration, ingestion depth ([3f9bf97](https://github.com/cognizhi/ai-heeczer/commit/3f9bf973a2ea6a4f7f2a4270165a3b711d024cc6))
+* **core-c:** expose stable C ABI for non-Rust SDKs ([4b4f979](https://github.com/cognizhi/ai-heeczer/commit/4b4f9796f387b458c140f1d34d8b78f24284b26d))
+* **core:** implement deterministic Rust scoring engine with golden + schema + determinism tests ([c1689d8](https://github.com/cognizhi/ai-heeczer/commit/c1689d82e7ad3c6896688c70443250c7ab47c8d6))
+* **core:** ProfileValidator + deny_unknown_fields on ScoringProfile, MSRV unify ([2d11a69](https://github.com/cognizhi/ai-heeczer/commit/2d11a69b8b091c40496ff1de16d4118e932d63c7))
+* **foundation:** scoring core, C ABI, storage, and aih CLI ([1a5ca09](https://github.com/cognizhi/ai-heeczer/commit/1a5ca0943804e6207add2928b048904653476f8a))
+* implement Category 3 — sync wrapper, http scaffold, govulncheck… ([#7](https://github.com/cognizhi/ai-heeczer/issues/7)) ([057d5dc](https://github.com/cognizhi/ai-heeczer/commit/057d5dca0679f3dd1ef4d0613fa269f81e56dd77))
+* **ingest:** bootstrap heeczer-ingest service skeleton (axum + sqlx) ([664d4b8](https://github.com/cognizhi/ai-heeczer/commit/664d4b81c7945a95bb62f24519c4af088c81678c))
+* **schema:** add canonical event.v1 schema, scoring profile/tier schemas, default profile + tiers, and golden fixtures ([8da79e4](https://github.com/cognizhi/ai-heeczer/commit/8da79e49271917c95eb7d0f4af86a8930977bb06))
+* **schema:** TierSetValidator + activate aih validate tier (ADR-0010 Phase 2) ([f4f728f](https://github.com/cognizhi/ai-heeczer/commit/f4f728f40cd5adab7e11c5287012898a87246d9e))
+* **sdk-rust:** bootstrap heeczer crate — in-process native scoring (plan 0008) ([1a4c5d8](https://github.com/cognizhi/ai-heeczer/commit/1a4c5d858bbb6746bb5099db580b3bfb71b90ca8))
+* **storage:** migration 0002 — append-only audit log + global-row unique indexes ([9fb81aa](https://github.com/cognizhi/ai-heeczer/commit/9fb81aad27f6f8c287b1b5de2680e2f4a8cbf5a6))
+* **storage:** PostgreSQL migration parity + pg module (plan 0004) ([3ea94aa](https://github.com/cognizhi/ai-heeczer/commit/3ea94aac1b7738f5943f615fc754048f20a7c32f))
+* **storage:** SQLite layer with sqlx migrations and append-only triggers ([8ff8a26](https://github.com/cognizhi/ai-heeczer/commit/8ff8a26ba921db997e13846180f879689c304a1f))
+
+
+### Bug Fixes
+
+* align Rust security CI with stable toolchain and local bootstrap ([3ada3d0](https://github.com/cognizhi/ai-heeczer/commit/3ada3d0b903061a76e318fe3189dfb268ddab152))
+* apply multi-reviewer findings (security, code, test, arch) ([0b4b82a](https://github.com/cognizhi/ai-heeczer/commit/0b4b82acedad8e2d8aa8abcdbea7667ebd663247))
+* **foundation:** apply subagent review consensus ([6a62c8a](https://github.com/cognizhi/ai-heeczer/commit/6a62c8a1956b9a9eb6a511b24ac573f5103062c4))
+* harden rust dependency checks ([e9fca72](https://github.com/cognizhi/ai-heeczer/commit/e9fca72bd8323a9d0160095c29fac57934693564))
+* linting and build issue ([50d45a8](https://github.com/cognizhi/ai-heeczer/commit/50d45a86c1c7b921b153c3adccef1128bccf9acc))
+* refactoring adn enhancement ([c6b2f7e](https://github.com/cognizhi/ai-heeczer/commit/c6b2f7e50e4e0e85f7ddff488ce2bdf036bb5615))
+* stable markdownlint config, bench-smoke split, pre-commit hook, Java CHANGELOG ([54b89c2](https://github.com/cognizhi/ai-heeczer/commit/54b89c2bf6c8a607da1b6f7d7afec5a17715843d))
+
+
+### Documentation
+
+* rewrite root README and add architecture/system-overview ([c4b2e84](https://github.com/cognizhi/ai-heeczer/commit/c4b2e84ffb4e9294f8221c37bc0fe33c84f6a6ea))
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/v0.5.0...v0.5.1) (2026-04-25)
 
 
