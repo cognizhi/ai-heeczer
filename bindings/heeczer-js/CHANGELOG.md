@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1-SNAPSHOT](https://github.com/cognizhi/ai-heeczer/compare/heeczer-js-v0.5.1...heeczer-js-v0.5.1-SNAPSHOT) (2026-04-25)
+
+
+### Miscellaneous Chores
+
+* **heeczer-js:** Synchronize ai-heeczer sdk product version versions
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-js-v0.5.1...heeczer-js-v0.5.1) (2026-04-25)
 
 
