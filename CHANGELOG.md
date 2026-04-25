@@ -5,6 +5,15 @@
 
 ### Features
 
+* **scoring:** complete plan 0002 — valgrind CI, max-input golden test, rustdoc ([0971366](https://github.com/cognizhi/ai-heeczer/commit/097136624945cd8aaacb4ef40c5afd0ed3e62ec1))
+* **storage:** add hard-delete event admin command with tombstone-backed protection ([8560e06](https://github.com/cognizhi/ai-heeczer/commit/8560e0656e3f2247ea0860953e38d050665d8385))
+* **storage:** audit-log PII redaction for hard-deleted events (PRD §12.17) ([08c909b](https://github.com/cognizhi/ai-heeczer/commit/08c909bafff28f910d37e8729724db9033b4033f))
+
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/v0.5.1...v0.5.1) (2026-04-25)
+
+
+### Features
+
 * **cli:** embed fixtures via include_dir, add `aih fixtures show` ([13d75f1](https://github.com/cognizhi/ai-heeczer/commit/13d75f13f9860449ba029f956e353d6b11a9fe94))
 * **cli:** Phase 2 aih subcommands — score --detail, validate, bench, replay ([53b3f6e](https://github.com/cognizhi/ai-heeczer/commit/53b3f6ee8e041a2eee72bfdc7ff64673f166eea4))
 * **cli:** rename binary 'aih' to 'heec' (all references updated) ([c7f4273](https://github.com/cognizhi/ai-heeczer/commit/c7f4273200de5c0b5228394b8756a4ffe5d1b053))
