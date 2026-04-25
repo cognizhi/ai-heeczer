@@ -13,15 +13,15 @@
 //! inserting the tombstone row first, within the same transaction, before
 //! issuing the `DELETE` statements.
 //!
-//! # Known limitation — audit-log PII redaction
+//! # Audit-log PII redaction
 //!
-//! PRD §12.17 requires removal of "audit-log identifiers." Pre-existing
-//! `heec_audit_log` rows that reference the deleted `event_id` in their
-//! `target_id` column are **not redacted** by this function. Redacting them
-//! requires loosening the `heec_audit_log_no_update` trigger, which has its
-//! own security implications. This is tracked as a follow-up item in plan 0003
-//! and requires a separate migration with a dedicated security review.
-//! Operators completing a GDPR/CCPA erasure request must account for this gap.
+//! Migration 0005 replaces the blanket `heec_audit_log_no_update` trigger with a
+//! tombstone-aware version that allows a single mutation: setting `target_id` to
+//! `NULL` when a tombstone exists for the deleted event. [`hard_delete_event`]
+//! exploits this by issuing `UPDATE heec_audit_log SET target_id = NULL WHERE
+//! workspace_id = ? AND target_id = ?` after inserting the tombstone and before
+//! committing the transaction. All other UPDATE attempts on `heec_audit_log` are
+//! still rejected.
 
 use crate::error::Result;
 use sqlx_core::query::query;
@@ -35,6 +35,9 @@ use uuid::Uuid;
 pub struct HardDeleteOutcome {
     /// Number of `heec_scores` rows removed.
     pub scores_deleted: u64,
+    /// Number of `heec_audit_log` rows whose `target_id` was set to `NULL`
+    /// (PRD §12.17 audit-log PII redaction).
+    pub audit_log_rows_redacted: u64,
     /// `true` if the event was already tombstoned before this call.
     /// When `true` the function returns immediately; no second deletion is
     /// attempted so the call is safe to retry.
@@ -63,17 +66,13 @@ pub struct HardDeleteOutcome {
 /// - **Aggregates preserved** — `heec_daily_aggregates` rows are never
 ///   touched; anonymized rollups remain intact per PRD §12.17.
 /// - **Append-only audit trail** — a new `heec_audit_log` row is inserted for
-///   the deletion event; existing audit rows are not modified.
+///   the deletion event; pre-existing audit rows that reference `event_id` in
+///   `target_id` have that column set to `NULL` (PRD §12.17).
 ///
 /// # Authorization
 ///
 /// The caller **must** verify admin authority before invoking this function.
 /// This is a storage primitive; RBAC enforcement belongs at the service layer.
-///
-/// # Audit-log PII redaction caveat
-///
-/// Pre-existing `heec_audit_log` rows that reference `event_id` in `target_id`
-/// are **not redacted**. See module-level documentation for details.
 pub async fn hard_delete_event(
     pool: &SqlitePool,
     workspace_id: &str,
@@ -94,12 +93,14 @@ pub async fn hard_delete_event(
     if existing.is_some() {
         return Ok(HardDeleteOutcome {
             scores_deleted: 0,
+            audit_log_rows_redacted: 0,
             already_tombstoned: true,
         });
     }
 
     // 2. Insert tombstone — this satisfies the migration-0004 trigger guards
-    //    on heec_events and heec_scores for the remainder of this transaction.
+    //    on heec_events and heec_scores for the remainder of this transaction,
+    //    and also enables the migration-0005 audit-log redaction path.
     query("INSERT INTO heec_tombstones (workspace_id, event_id, reason) VALUES (?1, ?2, ?3)")
         .bind(workspace_id)
         .bind(event_id)
@@ -107,7 +108,18 @@ pub async fn hard_delete_event(
         .execute(&mut *tx)
         .await?;
 
-    // 3. Delete scores (tombstone now satisfies the append-only guard).
+    // 3. Redact target_id on pre-existing audit log rows (PRD §12.17).
+    //    Migration 0005 permits this UPDATE because the tombstone now exists.
+    let audit_redact_result = query(
+        "UPDATE heec_audit_log SET target_id = NULL WHERE workspace_id = ?1 AND target_id = ?2",
+    )
+    .bind(workspace_id)
+    .bind(event_id)
+    .execute(&mut *tx)
+    .await?;
+    let audit_log_rows_redacted = audit_redact_result.rows_affected();
+
+    // 4. Delete scores (tombstone now satisfies the append-only guard).
     let scores_result = query("DELETE FROM heec_scores WHERE workspace_id = ?1 AND event_id = ?2")
         .bind(workspace_id)
         .bind(event_id)
@@ -115,20 +127,22 @@ pub async fn hard_delete_event(
         .await?;
     let scores_deleted = scores_result.rows_affected();
 
-    // 4. Delete the event row (tombstone now satisfies the append-only guard).
+    // 5. Delete the event row (tombstone now satisfies the append-only guard).
     query("DELETE FROM heec_events WHERE workspace_id = ?1 AND event_id = ?2")
         .bind(workspace_id)
         .bind(event_id)
         .execute(&mut *tx)
         .await?;
 
-    // 5. Append audit log entry for this deletion.
+    // 6. Append audit log entry for this deletion.
     //    target_id is set to event_id so standard audit queries for this event
-    //    locate the deletion record.
+    //    locate the deletion record. This new row is inserted after the redaction
+    //    step above and is not itself redacted.
     let audit_id = Uuid::new_v4().to_string();
     let payload_json = serde_json::json!({
         "reason": reason,
         "scores_deleted": scores_deleted,
+        "audit_log_rows_redacted": audit_log_rows_redacted,
     })
     .to_string();
     query(
@@ -148,6 +162,7 @@ pub async fn hard_delete_event(
 
     Ok(HardDeleteOutcome {
         scores_deleted,
+        audit_log_rows_redacted,
         already_tombstoned: false,
     })
 }
@@ -155,8 +170,7 @@ pub async fn hard_delete_event(
 /// Hard-delete an event and all associated scores for a workspace (PostgreSQL).
 ///
 /// Semantically identical to [`hard_delete_event`]; see that function's
-/// documentation for full invariants, parameter descriptions, and the
-/// audit-log PII redaction caveat.
+/// documentation for full invariants and parameter descriptions.
 pub async fn hard_delete_event_pg(
     pool: &PgPool,
     workspace_id: &str,
@@ -177,6 +191,7 @@ pub async fn hard_delete_event_pg(
     if existing.is_some() {
         return Ok(HardDeleteOutcome {
             scores_deleted: 0,
+            audit_log_rows_redacted: 0,
             already_tombstoned: true,
         });
     }
@@ -189,7 +204,17 @@ pub async fn hard_delete_event_pg(
         .execute(&mut *tx)
         .await?;
 
-    // 3. Delete scores.
+    // 3. Redact target_id on pre-existing audit log rows (PRD §12.17).
+    let audit_redact_result = query(
+        "UPDATE heec_audit_log SET target_id = NULL WHERE workspace_id = $1 AND target_id = $2",
+    )
+    .bind(workspace_id)
+    .bind(event_id)
+    .execute(&mut *tx)
+    .await?;
+    let audit_log_rows_redacted = audit_redact_result.rows_affected();
+
+    // 4. Delete scores.
     let scores_result = query("DELETE FROM heec_scores WHERE workspace_id = $1 AND event_id = $2")
         .bind(workspace_id)
         .bind(event_id)
@@ -197,18 +222,19 @@ pub async fn hard_delete_event_pg(
         .await?;
     let scores_deleted = scores_result.rows_affected();
 
-    // 4. Delete event.
+    // 5. Delete event.
     query("DELETE FROM heec_events WHERE workspace_id = $1 AND event_id = $2")
         .bind(workspace_id)
         .bind(event_id)
         .execute(&mut *tx)
         .await?;
 
-    // 5. Append audit log entry.
+    // 6. Append audit log entry.
     let audit_id = Uuid::new_v4().to_string();
     let payload_json = serde_json::json!({
         "reason": reason,
         "scores_deleted": scores_deleted,
+        "audit_log_rows_redacted": audit_log_rows_redacted,
     })
     .to_string();
     query(
@@ -228,6 +254,7 @@ pub async fn hard_delete_event_pg(
 
     Ok(HardDeleteOutcome {
         scores_deleted,
+        audit_log_rows_redacted,
         already_tombstoned: false,
     })
 }

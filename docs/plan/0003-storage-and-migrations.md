@@ -13,26 +13,26 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 
 ### Tables (PRD §20)
 
-- [x] `aih_workspaces` — tenant root. (PR #1)
-- [x] `aih_api_keys` — hashed keys per workspace. (PR #1)
-- [x] `aih_events` — append-only raw normalized events keyed by `event_id`. (PR #1)
-- [x] `aih_scores` — append-only, keyed by `(event_id, scoring_version, scoring_profile_id)`. (PR #1)
-- [x] `aih_jobs` — queue rows for image-mode workers (ADR-0006). (PR #1)
-- [x] `aih_tiers` — append-only with `effective_at`. (PR #1)
-- [x] `aih_rates` — append-only with `effective_at`. (PR #1)
-- [x] `aih_scoring_profiles` — append-only with `effective_at`. (PR #1)
-- [x] `aih_audit_log` — every config change and re-scoring event. (PR #1)
-- [x] `aih_daily_aggregates` — derived rollups. (PR #1)
-- [x] `aih_tombstones` — for hard-deletion (PRD §12.17). (PR #1)
-- [x] `aih_schema_migrations` — migration history view alias over `_sqlx_migrations` (ADR-0004). (PR #1)
+- [x] `heec_workspaces` — tenant root. (PR #1)
+- [x] `heec_api_keys` — hashed keys per workspace. (PR #1)
+- [x] `heec_events` — append-only raw normalized events keyed by `event_id`. (PR #1)
+- [x] `heec_scores` — append-only, keyed by `(event_id, scoring_version, scoring_profile_id)`. (PR #1)
+- [x] `heec_jobs` — queue rows for image-mode workers (ADR-0006). (PR #1)
+- [x] `heec_tiers` — append-only with `effective_at`. (PR #1)
+- [x] `heec_rates` — append-only with `effective_at`. (PR #1)
+- [x] `heec_scoring_profiles` — append-only with `effective_at`. (PR #1)
+- [x] `heec_audit_log` — every config change and re-scoring event. (PR #1)
+- [x] `heec_daily_aggregates` — derived rollups. (PR #1)
+- [x] `heec_tombstones` — for hard-deletion (PRD §12.17). (PR #1)
+- [x] `heec_schema_migrations` — migration history view alias over `_sqlx_migrations` (ADR-0004). (PR #1)
 
 ### Indexes
 
-- [x] `aih_events(workspace_id, timestamp)`, `aih_events(workspace_id, event_id)` unique. (PR #1)
-- [x] `aih_scores(workspace_id, event_id, scoring_version)` unique. (PR #1)
-- [x] `aih_scores(workspace_id, scoring_profile_id, created_at)` for dashboard rollups. (PR #1)
-- [x] `aih_jobs(state, available_at)` partial index for queue scans. (PR #1)
-- [x] `aih_audit_log(workspace_id, created_at)`. (PR #1)
+- [x] `heec_events(workspace_id, timestamp)`, `heec_events(workspace_id, event_id)` unique. (PR #1)
+- [x] `heec_scores(workspace_id, event_id, scoring_version)` unique. (PR #1)
+- [x] `heec_scores(workspace_id, scoring_profile_id, created_at)` for dashboard rollups. (PR #1)
+- [x] `heec_jobs(state, available_at)` partial index for queue scans. (PR #1)
+- [x] `heec_audit_log(workspace_id, created_at)`. (PR #1)
 
 ### Migrations (ADR-0004)
 
@@ -52,9 +52,9 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 
 ### Append-only enforcement
 
-- [x] `aih_events` and `aih_scores` have DB triggers preventing UPDATE/DELETE except via tombstone insert. (SQLite: migration 0001; PostgreSQL: PL/pgSQL functions in migrations-pg/0001)
+- [x] `heec_events` and `heec_scores` have DB triggers preventing UPDATE/DELETE except via tombstone insert. (SQLite: migration 0001; PostgreSQL: PL/pgSQL functions in migrations-pg/0001)
 - [x] Re-scoring path inserts new score rows; never updates. (PR #1)
-- [x] `aih_audit_log` append-only trigger pair (PRD §22.5). (migration 0002, commit 9fb81aa)
+- [x] `heec_audit_log` append-only trigger pair (PRD §22.5). (migration 0002, commit 9fb81aa)
 
 ### Retention and deletion (PRD §12.17)
 
@@ -67,13 +67,13 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [ ] Migration test: fresh-install on SQLite and PostgreSQL. (partial: SQLite covered via CLI integration test PR #1; PostgreSQL pending)
 - [x] PostgreSQL migration file presence tests in `core/heeczer-storage/tests/migration_pg.rs` — 4 tests verify directory existence, non-empty files, CREATE TABLE presence, and SQLite/PG parity. (session Apr-2026)
 - [ ] Migration test: incremental upgrade from each prior version.
-- [x] Unit: append-only guard rejects updates/deletes. (`aih_events`, `aih_scores`, `aih_audit_log` triggers all under test in `tests/hardening.rs`, commit 9fb81aa)
-- [x] Unit: `current_version` matches the embedded migration count, FK enforcement, `aih_jobs.state` CHECK constraint, `open_path` round-trip. (foundation hardening, commit 9fb81aa)
+- [x] Unit: append-only guard rejects updates/deletes. (`heec_events`, `heec_scores`, `heec_audit_log` triggers all under test in `tests/hardening.rs`, commit 9fb81aa)
+- [x] Unit: `current_version` matches the embedded migration count, FK enforcement, `heec_jobs.state` CHECK constraint, `open_path` round-trip. (foundation hardening, commit 9fb81aa)
 - [x] Unit: global rows on profiles/tiers/rates cannot duplicate via unique-with-COALESCE indexes (closes nullable-`workspace_id` PK hole). (migration 0002, commit 9fb81aa)
 - [x] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4). (session Cat-3)
 - [ ] Integration: conflicting payload for same `event_id` rejected with `409 Conflict` and audit-log entry.
 - [x] Integration: tombstone prevents re-scoring of deleted event. (session Apr-2026)
-- [ ] Audit-log PII redaction: NULL the `target_id` on pre-existing `heec_audit_log` rows for a hard-deleted event (PRD §12.17). Requires loosening the `heec_audit_log_no_update` trigger; needs a separate migration and security review.
+- [x] Audit-log PII redaction: NULL the `target_id` on pre-existing `heec_audit_log` rows for a hard-deleted event (PRD §12.17). Migration 0005 replaces the blanket `heec_audit_log_no_update` trigger with a tombstone-authorized version; `hard_delete_event` redacts rows in the same transaction. (session May-2026)
 
 ### Docs
 

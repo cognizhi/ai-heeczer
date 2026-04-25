@@ -280,3 +280,94 @@ async fn hard_delete_preserves_daily_aggregates() {
     );
     assert_eq!(row.unwrap().0, 1, "aggregate event_count must be unchanged");
 }
+
+// --------------------------------------------------------------------------
+// Audit-log PII redaction (PRD §12.17, migration 0005)
+// --------------------------------------------------------------------------
+
+/// Pre-existing audit log rows that reference the deleted event_id in
+/// target_id must have target_id set to NULL after hard deletion.
+#[tokio::test]
+async fn hard_delete_redacts_audit_log_target_id() {
+    let pool = fresh_pool().await;
+    insert_event(&pool, "evt-10").await;
+
+    // Seed a pre-existing audit log row that references the event.
+    let prior_audit_id = "audit-prior-0001";
+    query(
+        "INSERT INTO heec_audit_log
+             (audit_id, workspace_id, actor, action, target_table, target_id, payload_json)
+         VALUES (?1, 'ws_t', 'system', 'score_event', 'heec_events', 'evt-10', '{}')",
+    )
+    .bind(prior_audit_id)
+    .execute(&pool)
+    .await
+    .expect("seed prior audit row");
+
+    let outcome = hard_delete_event(&pool, "ws_t", "evt-10", "admin", "gdpr-test")
+        .await
+        .unwrap();
+
+    // The redaction step must have NULLed exactly one pre-existing row.
+    assert_eq!(
+        outcome.audit_log_rows_redacted, 1,
+        "audit_log_rows_redacted must equal the number of pre-existing rows referencing the event"
+    );
+
+    // The prior audit row must now have target_id = NULL.
+    let row: Option<(Option<String>,)> =
+        query_as("SELECT target_id FROM heec_audit_log WHERE audit_id = ?1")
+            .bind(prior_audit_id)
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
+    assert!(row.is_some(), "prior audit row must still exist");
+    assert!(
+        row.unwrap().0.is_none(),
+        "target_id on prior audit row must be NULL after hard delete"
+    );
+
+    // The deletion audit row itself must still carry the event_id in target_id
+    // (it is inserted after the redaction step and is not itself redacted).
+    let del_row: Option<(Option<String>,)> = query_as(
+        "SELECT target_id FROM heec_audit_log
+         WHERE workspace_id = 'ws_t' AND action = 'hard_delete_event'",
+    )
+    .fetch_optional(&pool)
+    .await
+    .unwrap();
+    assert!(del_row.is_some(), "deletion audit row must be present");
+    assert_eq!(
+        del_row.unwrap().0.as_deref(),
+        Some("evt-10"),
+        "deletion audit row target_id must remain the event_id"
+    );
+}
+
+/// A direct UPDATE on heec_audit_log that is NOT tombstone-authorized must
+/// still be rejected (append-only guard preserved by migration 0005).
+#[tokio::test]
+async fn direct_audit_log_update_without_tombstone_is_rejected() {
+    let pool = fresh_pool().await;
+    insert_event(&pool, "evt-11").await;
+
+    // Seed an audit row with a target_id referencing the event.
+    query(
+        "INSERT INTO heec_audit_log
+             (audit_id, workspace_id, actor, action, target_table, target_id, payload_json)
+         VALUES ('audit-no-ts-0001', 'ws_t', 'system', 'score_event', 'heec_events', 'evt-11', '{}')",
+    )
+    .execute(&pool)
+    .await
+    .expect("seed audit row");
+
+    // Attempt UPDATE without an existing tombstone — must be rejected.
+    let result =
+        query("UPDATE heec_audit_log SET target_id = NULL WHERE audit_id = 'audit-no-ts-0001'")
+            .execute(&pool)
+            .await;
+    assert!(
+        result.is_err(),
+        "UPDATE on heec_audit_log without tombstone must be rejected by the trigger"
+    );
+}
