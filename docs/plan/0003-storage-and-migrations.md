@@ -59,8 +59,8 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 ### Retention and deletion (PRD §12.17)
 
 - [ ] Background sweeper deletes events past retention; writes tombstone rows.
-- [ ] Hard-deletion API endpoint (admin only) with audit log entry.
-- [ ] Aggregates remain anonymized after raw deletion.
+- [x] Hard-deletion storage API (`heeczer_storage::admin::hard_delete_event`) and CLI command (`heec admin delete-event`), admin only, with audit log entry and tombstone. (session Apr-2026, migration 0004)
+- [x] Aggregates remain anonymized after raw deletion. (`heec_daily_aggregates` is never touched by the hard-delete path; verified in `hard_delete_preserves_daily_aggregates` test, session Apr-2026)
 
 ### Tests
 
@@ -72,7 +72,8 @@ Provide a portable storage layer with SQLite (local/dev) and PostgreSQL (product
 - [x] Unit: global rows on profiles/tiers/rates cannot duplicate via unique-with-COALESCE indexes (closes nullable-`workspace_id` PK hole). (migration 0002, commit 9fb81aa)
 - [x] Integration: dedup on duplicate `event_id` returns existing record (PRD §19.4). (session Cat-3)
 - [ ] Integration: conflicting payload for same `event_id` rejected with `409 Conflict` and audit-log entry.
-- [ ] Integration: tombstone prevents re-scoring of deleted event.
+- [x] Integration: tombstone prevents re-scoring of deleted event. (session Apr-2026)
+- [ ] Audit-log PII redaction: NULL the `target_id` on pre-existing `heec_audit_log` rows for a hard-deleted event (PRD §12.17). Requires loosening the `heec_audit_log_no_update` trigger; needs a separate migration and security review.
 
 ### Docs
 

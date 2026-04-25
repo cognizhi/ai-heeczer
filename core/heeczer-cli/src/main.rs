@@ -86,6 +86,11 @@ enum Command {
         #[command(subcommand)]
         sub: CalibrateCmd,
     },
+    /// Admin-only operations (PRD §12.17).
+    Admin {
+        #[command(subcommand)]
+        sub: AdminCmd,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -189,6 +194,49 @@ enum OutputFormat {
     Table,
 }
 
+#[derive(Debug, Subcommand)]
+enum AdminCmd {
+    /// Hard-delete an event and its scores (GDPR/CCPA subject deletion, PRD §12.17).
+    ///
+    /// **This operation is irreversible.** Inserts a tombstone, permanently
+    /// removes the event and all associated score rows from the database, and
+    /// writes an audit log entry. Daily aggregates are preserved unchanged.
+    ///
+    /// WARNING: pre-existing audit_log rows that reference this event_id in
+    /// their target_id column are NOT redacted by this command. Full audit-log
+    /// PII redaction requires a separate migration (tracked in plan 0003).
+    /// Operators completing a GDPR/CCPA erasure request must account for this
+    /// gap until that migration ships.
+    ///
+    /// The target database must already have migration 0004 applied
+    /// (`heec migrate up --database-url ...`) before running this command.
+    DeleteEvent(AdminDeleteEventArgs),
+}
+
+#[derive(Debug, Parser)]
+struct AdminDeleteEventArgs {
+    /// Database URL.
+    ///
+    /// SQLite: `sqlite:///absolute/path/to/heec.sqlite`
+    /// PostgreSQL: `postgresql://user:pass@host:5432/dbname`
+    #[arg(long)]
+    database_url: String,
+    /// Workspace that owns the event.
+    #[arg(long)]
+    workspace: String,
+    /// Event id to hard-delete.
+    #[arg(long)]
+    event_id: String,
+    /// Identity of the admin performing the deletion (written to audit log),
+    /// e.g. `admin@example.com` or a service-account name.
+    #[arg(long)]
+    actor: String,
+    /// Deletion reason written to the audit log.
+    /// Use a structured reference where possible, e.g. `"GDPR erasure SR-2026-001"`.
+    #[arg(long)]
+    reason: String,
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
@@ -207,6 +255,7 @@ fn main() -> Result<()> {
         Command::Replay(args) => cmd_replay(&args),
         Command::Version => cmd_version(),
         Command::Calibrate { sub } => cmd_calibrate(sub),
+        Command::Admin { sub } => cmd_admin(sub),
     }
 }
 
@@ -431,6 +480,41 @@ fn cmd_calibrate(sub: CalibrateCmd) -> Result<()> {
             Ok(())
         }
     }
+}
+
+fn cmd_admin(sub: AdminCmd) -> Result<()> {
+    match sub {
+        AdminCmd::DeleteEvent(args) => cmd_admin_delete_event(&args),
+    }
+}
+
+fn cmd_admin_delete_event(args: &AdminDeleteEventArgs) -> Result<()> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(async move {
+        let pool = heeczer_storage::sqlite::open(&args.database_url).await?;
+        let outcome = heeczer_storage::admin::hard_delete_event(
+            &pool,
+            &args.workspace,
+            &args.event_id,
+            &args.actor,
+            &args.reason,
+        )
+        .await?;
+        if outcome.already_tombstoned {
+            println!(
+                "skipped: event {} in workspace {} is already tombstoned",
+                args.event_id, args.workspace
+            );
+        } else {
+            println!(
+                "deleted: event {} in workspace {} (scores_deleted={})",
+                args.event_id, args.workspace, outcome.scores_deleted
+            );
+        }
+        Ok(())
+    })
 }
 
 fn write_detail<W: Write>(out: &mut W, r: &heeczer_core::ScoreResult) -> Result<()> {

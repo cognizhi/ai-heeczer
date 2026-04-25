@@ -10,6 +10,7 @@
 
 extern crate sqlx_core as sqlx;
 
+pub mod admin;
 pub mod error;
 pub mod pg;
 pub mod sqlite;
