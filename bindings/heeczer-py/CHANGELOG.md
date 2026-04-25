@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.4.0...heeczer-py-v0.5.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* refactoring adn enhancement ([c6b2f7e](https://github.com/cognizhi/ai-heeczer/commit/c6b2f7e50e4e0e85f7ddff488ce2bdf036bb5615))
+
 ## [0.4.0](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.3.0...heeczer-py-v0.4.0) (2026-04-24)
 
 

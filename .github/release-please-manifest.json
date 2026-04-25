@@ -1,8 +1,8 @@
 {
-  ".": "0.5.0",
-  "bindings/heeczer-js": "0.2.0",
-  "bindings/heeczer-py": "0.4.0",
-  "bindings/heeczer-go": "0.4.0",
+  ".": "0.5.1",
+  "bindings/heeczer-js": "0.5.1",
+  "bindings/heeczer-py": "0.5.1",
+  "bindings/heeczer-go": "0.5.1",
   "bindings/heeczer-java": "0.5.0",
   "dashboard": "0.4.0"
 }
