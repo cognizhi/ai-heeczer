@@ -171,6 +171,8 @@ jobs:
         working-directory: bindings/heeczer-js
       - run: pnpm run typecheck
         working-directory: bindings/heeczer-js
+      - run: pnpm run build
+        working-directory: bindings/heeczer-js
 
   sdk-python-test:
     name: SDK — heeczer-py (Python ${{ matrix.python }})
@@ -214,7 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: ["17", "21"]
+        java: ["17", "21", "22"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
@@ -222,8 +224,33 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
+      - if: matrix.java == '22'
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - if: matrix.java == '22'
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
       - run: mvn -q test
         working-directory: bindings/heeczer-java
+
+  dashboard-test:
+    name: Dashboard — unit, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+        working-directory: dashboard
+      - run: npm test
+        working-directory: dashboard
+      - run: npm run typecheck
+        working-directory: dashboard
+      - run: npm run build
+        working-directory: dashboard
 
   examples-smoke:
     name: examples smoke (in-process Rust)

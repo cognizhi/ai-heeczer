@@ -2,7 +2,7 @@
 
 - **Status:** Active (Phase 2 target)
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-22
+- **Last reviewed:** 2026-04-26
 - **PRD:** §23, §31 (Excluded from MVP if not ready)
 - **ADR:** ADR-0001
 
@@ -13,10 +13,10 @@ Ship the Java SDK on Maven Central using the Foreign Function & Memory API (JDK 
 ## Checklist
 
 - [x] `bindings/heeczer-java/` Maven module.
-- [ ] FFM bindings to `heeczer-core-c`.
+- [x] FFM bindings to `heeczer-core-c`.
 - [x] Public `HeeczerClient` HTTP mode via `java.net.http`.
-- [x] Mode selection: HTTP client (stdlib, no third-party HTTP lib).
-- [x] Unit (JUnit 5) + WireMock 3.x contract tests — 9/9 pass.
+- [x] Mode selection: `HeeczerMode.image` uses the stdlib HTTP client; `HeeczerMode.native_mode` routes through a reflective FFM bridge on JDK 22+ when `heeczer_core_c` is resolvable. Builder also exposes request timeout and retry policy.
+- [x] Unit (JUnit 5) + WireMock 3.x contract tests cover HTTP mode and native-mode adaptation; a JDK 22 CI lane exercises the real FFM bridge against `heeczer-core-c`.
 - [x] `mvn test` clean.
 - [x] `bindings/heeczer-java/README.md`.
 - [x] Example under `examples/java/Quickstart.java` (cross-language index in `examples/README.md`).

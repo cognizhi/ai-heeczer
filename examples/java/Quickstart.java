@@ -1,17 +1,18 @@
 // Quickstart: submit an event to the ingestion service via the Java SDK.
 //
-// Prereq: ingestion service running locally (cargo run -p heeczer-ingest).
+// Prereq: ingestion service running locally in unauthenticated smoke-test mode
+// (HEECZER_AUTH__ENABLED=false cargo run -p heeczer-ingest).
 //
 // Easiest path (JDK 17+ single-file source mode, JEP 458):
-//   1. mvn -f bindings/heeczer-java install -DskipTests
-//   2. JAR=~/.m2/repository/io/github/cognizhi/heeczer-sdk/0.1.0/heeczer-sdk-0.1.0.jar
+//   1. mvn -f bindings/heeczer-java install -DskipTests -Dgpg.skip=true
+//   2. JAR=~/.m2/repository/com/cognizhi/heeczer-sdk/0.5.1-SNAPSHOT/heeczer-sdk-0.5.1-SNAPSHOT.jar
 //      JACKSON=$(mvn -f bindings/heeczer-java -q exec:exec \
 //        -Dexec.executable=echo -Dexec.args='%classpath')
 //      java --class-path "$JAR:$JACKSON" examples/java/Quickstart.java
 //
-// Once the SDK is on Maven Central (plan 0012) the Jackson dependency
-// will be pulled in transitively and only the SDK jar will be needed on
-// the class-path.
+// Once the SDK is on Maven Central (plan 0012), Maven/Gradle coordinates will
+// resolve Jackson transitively. The raw java --class-path invocation shown here
+// still needs Jackson on the class-path explicitly.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cognizhi.heeczer.HeeczerApiException;

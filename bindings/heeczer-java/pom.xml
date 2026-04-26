@@ -8,7 +8,7 @@
   <packaging>jar</packaging>
 
   <name>heeczer-sdk</name>
-  <description>Java HTTP client for the ai-heeczer ingestion service.</description>
+  <description>Java client for the ai-heeczer ingestion service and native core bridge.</description>
   <url>https://github.com/cognizhi/ai-heeczer</url>
   <licenses>
     <license>
@@ -16,6 +16,19 @@
       <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
+  <developers>
+    <developer>
+      <name>Cognizhi</name>
+      <organization>Cognizhi</organization>
+      <organizationUrl>https://github.com/cognizhi</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/cognizhi/ai-heeczer.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/cognizhi/ai-heeczer.git</developerConnection>
+    <url>https://github.com/cognizhi/ai-heeczer</url>
+    <tag>HEAD</tag>
+  </scm>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
@@ -32,7 +45,7 @@
   </properties>
 
   <dependencies>
-    <!-- JSON (no FFI dep today; in-process binding follows FFM work in plan 0009) -->
+    <!-- JSON only; the native bridge uses reflective java.lang.foreign calls so Java 17 compilation stays intact. -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -55,6 +68,12 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

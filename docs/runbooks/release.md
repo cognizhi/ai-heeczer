@@ -17,7 +17,7 @@ for ai-heeczer. The CI/CD design is documented in ADR-0009 and
        `heeczer-storage`, `heeczer-cli`, `heeczer` to crates.io.
     2. `npm publish --provenance` — publishes `@cognizhi/heeczer-sdk` to npm.
     3. `pypa/gh-action-pypi-publish` — publishes `heeczer-py` to PyPI.
-    4. `mvn deploy` — publishes `heeczer-java` to Maven Central via Sonatype.
+    4. `mvn deploy` — publishes `com.cognizhi:heeczer-sdk` to Maven Central via Sonatype.
     5. `git tag go/vX.Y.Z` — pushes the Go module tag.
     6. `gh release create` — creates the GitHub Release with the SBOM,
        SLSA provenance, and binary attachments.
@@ -27,6 +27,11 @@ The PyPI publish step uses a container action backed by GHCR. Pin it to an
 official action release tag or to the commit behind that release tag; an
 arbitrary SHA can fail before publish starts with `manifest unknown` because no
 matching container image tag exists.
+
+`release-dry-run.yml` also validates the Java publish path before a live tag by
+running `mvn deploy` in `bindings/heeczer-java` with an ephemeral GPG key and
+`-DskipPublishing=true`, which exercises sources/javadocs/signing and the
+Central plugin wiring without attempting a live Sonatype publication.
 
 ---
 
@@ -64,7 +69,7 @@ After `release-resume.yml` completes:
 - **crates.io**: `cargo search heeczer` should show the new version.
 - **npm**: `npm view @cognizhi/heeczer-sdk version` should show the new version.
 - **PyPI**: `pip index versions heeczer-py` should list the new version.
-- **Maven Central**: check [search.maven.org](https://search.maven.org/search?q=g:com.cognizhi+a:heeczer-java).
+- **Maven Central**: check [search.maven.org](https://search.maven.org/search?q=g:com.cognizhi+a:heeczer-sdk).
 - **Go**: `go list -m cognizhi.com/heeczer-go@vX.Y.Z` should resolve.
 - **GitHub Release**: the release page should be complete with all assets attached.
 

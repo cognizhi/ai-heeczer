@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env["CI"] ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:3000",
+    baseURL: process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:43110",
     trace: "on-first-retry",
   },
   projects: [
@@ -18,8 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
-    url: "http://localhost:3000",
+    command: "PORT=43110 node scripts/start-standalone.js",
+    url: "http://localhost:43110",
     reuseExistingServer: !process.env["CI"],
   },
 });

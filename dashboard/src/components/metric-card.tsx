@@ -22,7 +22,7 @@ export function MetricCard({ label, value, unit, disclaimer }: MetricCardProps) 
         )}
       </p>
       {disclaimer && (
-        <p className="mt-1 text-xs text-gray-400 italic">{disclaimer}</p>
+        <p className="mt-1 text-xs text-gray-600 italic">{disclaimer}</p>
       )}
     </div>
   );

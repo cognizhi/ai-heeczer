@@ -69,6 +69,8 @@ jobs:
           cache-dependency-path: bindings/heeczer-js/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: bindings/heeczer-js
+      - run: pnpm run build
+        working-directory: bindings/heeczer-js
       - run: pnpm publish --dry-run --no-git-checks
         working-directory: bindings/heeczer-js
 
@@ -86,3 +88,28 @@ jobs:
         working-directory: bindings/heeczer-py
       - run: uv tool run twine check dist/*
         working-directory: bindings/heeczer-py
+
+  maven-central-dry-run:
+    name: maven deploy (dry run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: generate ephemeral gpg key
+        env:
+          GPG_PASSPHRASE: dry-run-passphrase
+        run: |
+          gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --quick-generate-key "ai-heeczer release dry-run <release-dry-run@example.invalid>" rsa3072 sign 0
+          gpg --batch --list-secret-keys --keyid-format LONG
+      - name: maven deploy dry run (skip central publish)
+        env:
+          GPG_PASSPHRASE: dry-run-passphrase
+        run: >-
+          mvn -B -ntp deploy -DskipTests -DskipPublishing=true
+          -Dgpg.passphrase=${GPG_PASSPHRASE}
+        working-directory: bindings/heeczer-java
