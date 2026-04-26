@@ -22,7 +22,17 @@ const maxResponseBytes = 4 * 1024 * 1024 // 4 MiB
 
 // Version is the SDK version. Kept in lockstep with the npm + PyPI
 // siblings.
-const Version = "0.1.0"
+const Version = "0.5.1"
+
+// Mode selects the SDK execution path.
+type Mode string
+
+const (
+	// ModeImage sends requests to the ingestion service over HTTP.
+	ModeImage Mode = "image"
+	// ModeNative is reserved for the future cgo binding to heeczer-core-c.
+	ModeNative Mode = "native"
+)
 
 // ConfidenceBand mirrors the Rust ConfidenceBand enum.
 type ConfidenceBand string
@@ -83,8 +93,14 @@ const (
 	ErrScoring         ErrorKind = "scoring"
 	ErrStorage         ErrorKind = "storage"
 	ErrNotFound        ErrorKind = "not_found"
+	ErrUnauthorized    ErrorKind = "unauthorized"
 	ErrForbidden       ErrorKind = "forbidden"
+	ErrConflict        ErrorKind = "conflict"
+	ErrPayloadTooLarge ErrorKind = "payload_too_large"
+	ErrRateLimited     ErrorKind = "rate_limit_exceeded"
 	ErrFeatureDisabled ErrorKind = "feature_disabled"
+	ErrUnsupportedSpec ErrorKind = "unsupported_spec_version"
+	ErrUnavailable     ErrorKind = "unavailable"
 	ErrUnknown         ErrorKind = "unknown"
 )
 
@@ -113,9 +129,13 @@ type Doer interface {
 
 // Client talks to the ai-heeczer ingestion service.
 type Client struct {
-	baseURL string
-	apiKey  string
-	http    Doer
+	baseURL        string
+	apiKey         string
+	mode           Mode
+	http           Doer
+	retryAttempts  int
+	retryBackoff   time.Duration
+	retryStatusSet map[int]struct{}
 }
 
 // Option configures a Client.
@@ -132,17 +152,55 @@ func WithHTTPClient(d Doer) Option {
 	return func(c *Client) { c.http = d }
 }
 
+// WithMode selects image or native mode. Native mode currently fails fast in New
+// because the cgo binding is intentionally deferred.
+func WithMode(mode Mode) Option {
+	return func(c *Client) { c.mode = mode }
+}
+
+// WithTimeout updates the timeout on the default *http.Client. If a custom Doer
+// is provided, configure its timeout before injecting it.
+func WithTimeout(timeout time.Duration) Option {
+	return func(c *Client) {
+		if h, ok := c.http.(*http.Client); ok {
+			h.Timeout = timeout
+		}
+	}
+}
+
+// WithRetry configures retries for transient HTTP statuses and transport errors.
+// attempts includes the first request; values less than one are coerced to one.
+func WithRetry(attempts int, backoff time.Duration, statuses ...int) Option {
+	return func(c *Client) {
+		if attempts < 1 {
+			attempts = 1
+		}
+		c.retryAttempts = attempts
+		c.retryBackoff = backoff
+		if len(statuses) > 0 {
+			c.retryStatusSet = makeStatusSet(statuses)
+		}
+	}
+}
+
 // New constructs a Client for the given base URL.
 func New(baseURL string, opts ...Option) (*Client, error) {
 	if baseURL == "" {
 		return nil, errors.New("heeczer: baseURL is required")
 	}
 	c := &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
-		http:    &http.Client{Timeout: 10 * time.Second},
+		baseURL:        strings.TrimRight(baseURL, "/"),
+		mode:           ModeImage,
+		http:           &http.Client{Timeout: 10 * time.Second},
+		retryAttempts:  2,
+		retryBackoff:   100 * time.Millisecond,
+		retryStatusSet: makeStatusSet([]int{408, 429, 500, 502, 503, 504}),
 	}
 	for _, o := range opts {
 		o(c)
+	}
+	if c.mode == ModeNative {
+		return nil, errors.New("heeczer: native mode requires the deferred cgo binding; use image mode")
 	}
 	return c, nil
 }
@@ -229,7 +287,7 @@ func (c *Client) postJSON(
 	for k, v := range extraHeaders {
 		headers[k] = v
 	}
-	resp, err := c.do(ctx, http.MethodPost, path, bytes.NewReader(buf), headers)
+	resp, err := c.do(ctx, http.MethodPost, path, buf, headers)
 	if err != nil {
 		return err
 	}
@@ -237,23 +295,66 @@ func (c *Client) postJSON(
 }
 
 func (c *Client) do(
-	ctx context.Context, method, path string, body io.Reader, headers map[string]string,
+	ctx context.Context, method, path string, body []byte, headers map[string]string,
 ) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return nil, fmt.Errorf("heeczer: build request: %w", err)
+	var lastErr error
+	for attempt := 0; attempt < c.retryAttempts; attempt++ {
+		var reader io.Reader
+		if body != nil {
+			reader = bytes.NewReader(body)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
+		if err != nil {
+			return nil, fmt.Errorf("heeczer: build request: %w", err)
+		}
+		if c.apiKey != "" {
+			req.Header.Set("x-heeczer-api-key", c.apiKey)
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		resp, err := c.http.Do(req)
+		if err != nil {
+			lastErr = err
+			if attempt == c.retryAttempts-1 {
+				return nil, fmt.Errorf("heeczer: send request: %w", err)
+			}
+			c.sleepBeforeRetry(ctx, attempt)
+			continue
+		}
+		if !c.shouldRetry(resp.StatusCode) || attempt == c.retryAttempts-1 {
+			return resp, nil
+		}
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBytes))
+		_ = resp.Body.Close()
+		c.sleepBeforeRetry(ctx, attempt)
 	}
-	if c.apiKey != "" {
-		req.Header.Set("x-heeczer-api-key", c.apiKey)
+	return nil, fmt.Errorf("heeczer: send request: %w", lastErr)
+}
+
+func (c *Client) shouldRetry(status int) bool {
+	_, ok := c.retryStatusSet[status]
+	return ok
+}
+
+func (c *Client) sleepBeforeRetry(ctx context.Context, attempt int) {
+	if c.retryBackoff <= 0 {
+		return
 	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
+	timer := time.NewTimer(c.retryBackoff * time.Duration(1<<attempt))
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+	case <-timer.C:
 	}
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("heeczer: send request: %w", err)
+}
+
+func makeStatusSet(statuses []int) map[int]struct{} {
+	out := make(map[int]struct{}, len(statuses))
+	for _, status := range statuses {
+		out[status] = struct{}{}
 	}
-	return resp, nil
+	return out
 }
 
 func (c *Client) handle(resp *http.Response, out any) error {

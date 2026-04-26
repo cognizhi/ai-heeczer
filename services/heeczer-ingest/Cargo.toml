@@ -18,17 +18,22 @@ heeczer-storage = { path = "../../core/heeczer-storage", version = "0.5.1" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["signal", "time"] }
 sqlx-core = { workspace = true }
 sqlx-sqlite = { workspace = true }
+sqlx-postgres = { workspace = true }
 anyhow = { workspace = true }
 axum = "0.8"
 axum-prometheus = "0.7"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors", "limit"] }
+tower_governor = "0.8"
 figment = { version = "0.10", features = ["env", "toml"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+sha2 = { workspace = true }
+uuid = { workspace = true }
+async-trait = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

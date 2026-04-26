@@ -52,7 +52,7 @@ The following rules govern how the canonical event schema evolves over time.
 
 ### Versioning mechanics
 
-1. `spec_version` is the routing key in the ingestion service. The service validates the incoming event against the schema whose version matches `spec_version`. Unknown versions are rejected immediately with a `bad_request` error before any validation or storage.
+1. `spec_version` is the routing key in the ingestion service. The service validates the incoming event against the schema whose version matches `spec_version`. Unknown versions are rejected immediately before any validation or storage with `415 Unsupported Media Type`, `error.kind = "unsupported_spec_version"`, and a `Supported-Spec-Versions` response header.
 2. When v2 ships, the ingestion service validates v1 events against `event.v1.json` and v2 events against `event.v2.json` in parallel.
 3. v1 remains fully servable for **at least one minor release** after v2 is published. SDKs are expected to migrate within that window.
 4. The ingestion service emits `X-Heeczer-Spec-Version: <version>` on every response, reflecting the spec version used to process the request. This is always present as a machine-readable signal.
@@ -62,7 +62,7 @@ The following rules govern how the canonical event schema evolves over time.
 
 1. Update SDK to construct and accept v2 events.
 2. Gate on the `Deprecation` header (or monitor the `Sunset` date) to know when to drop v1 support.
-3. After the Sunset date, the service rejects v1 events with `bad_request`.
+3. After the Sunset date, the service rejects v1 events with `415 Unsupported Media Type` and a `Supported-Spec-Versions` response header.
 
 ## References
 

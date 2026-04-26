@@ -6,8 +6,7 @@
 ai-heeczer uses an **append-only, workspace-scoped event and score model**.
 Events are immutable once written; scores are immutable per `(workspace_id, event_id, scoring_version, scoring_profile_id, profile_version)`.
 Re-scoring inserts a new row rather than updating an old one.
-Hard-deletion honors data-subject requests via the `heec_tombstones` table without breaking
-the immutability of the raw event log.
+Hard-deletion honors data-subject requests via the `heec_tombstones` table. The tombstone records that an event was removed; it does not mean the raw event row survives.
 
 Two storage backends share one migration history:
 
@@ -22,7 +21,7 @@ References: [ADR-0004](../adr/0004-database-migration-tooling.md), [plan 0003](.
 
 ## Table catalog
 
-All table names carry the `heec_` prefix (the implementation prefix; plan 0003 and PRD §20 use the `aih_` logical name — these map 1-to-1).
+All table names carry the `heec_` prefix (the implementation prefix; earlier implementation prefix was `aih_`).
 
 | Table                    | Purpose                                                            |
 | ------------------------ | ------------------------------------------------------------------ |
@@ -31,12 +30,13 @@ All table names carry the `heec_` prefix (the implementation prefix; plan 0003 a
 | `heec_events`            | Append-only normalized events, keyed by `(workspace_id, event_id)` |
 | `heec_scores`            | Append-only scored results, versioned per scoring config           |
 | `heec_jobs`              | Queue rows for async/image-mode workers (ADR-0006)                 |
+| `heec_idempotency_keys`  | Batch `Idempotency-Key` replay cache scoped by workspace           |
 | `heec_tiers`             | Append-only tier sets with `effective_at` ranges                   |
 | `heec_rates`             | Append-only rate tables with `effective_at` ranges                 |
 | `heec_scoring_profiles`  | Append-only profiles with `effective_at` ranges                    |
 | `heec_audit_log`         | Every config change and re-scoring event (PRD §22.5)               |
 | `heec_daily_aggregates`  | Derived rollups (workspace, day, project, category)                |
-| `heec_tombstones`        | Hard-deletion records (PRD §12.17); raw event survives             |
+| `heec_tombstones`        | Hard-deletion records for removed raw event rows (PRD §12.17)      |
 | `heec_schema_migrations` | View over `_sqlx_migrations`; stable public contract               |
 
 ---
@@ -101,6 +101,16 @@ erDiagram
         TEXT finished_at
     }
 
+    heec_idempotency_keys {
+        TEXT workspace_id PK
+        TEXT idempotency_key PK
+        TEXT request_hash
+        INTEGER status_code
+        TEXT response_body
+        TEXT created_at
+        TEXT expires_at
+    }
+
     heec_tiers {
         TEXT tier_set_id PK
         TEXT version PK
@@ -162,11 +172,11 @@ erDiagram
     heec_workspaces ||--o{ heec_events : "scopes"
     heec_workspaces ||--o{ heec_scores : "scopes"
     heec_workspaces ||--o{ heec_jobs : "queues"
+    heec_workspaces ||--o{ heec_idempotency_keys : "caches"
     heec_workspaces ||--o{ heec_audit_log : "logs"
     heec_workspaces ||--o{ heec_daily_aggregates : "aggregates"
     heec_workspaces ||--o{ heec_tombstones : "tombstones"
     heec_events ||--o{ heec_scores : "scored by"
-    heec_events ||--o| heec_tombstones : "deleted via"
 ```
 
 ---
@@ -183,6 +193,12 @@ application logic.
 Re-scoring inserts a new `heec_scores` row with a different `scoring_version`
 or `scoring_profile_id` — it never touches the prior row.
 
+### Batch idempotency replay cache
+
+`heec_idempotency_keys` stores the original batch request hash and response body for each `(workspace_id, idempotency_key)` pair. A replay with the same request hash returns the stored response byte-for-byte until `expires_at`; a replay with a different request hash returns `409 conflict`.
+
+This table is intentionally not append-only because idempotency keys are a bounded replay cache, not a historical business record. Operational cleanup may delete expired rows without affecting event or score immutability.
+
 ### Composite primary key for scores
 
 ```sql
@@ -198,6 +214,12 @@ Each component of the key answers a distinct reproducibility question:
 | `scoring_version`    | Which engine version ran?                           |
 | `scoring_profile_id` | Which profile (component weights, multipliers) ran? |
 | `profile_version`    | Which revision of that profile was active?          |
+
+For ingestion with the default profile and tier set, `profile_version` is the profile semver. For explicit re-score requests with non-default profile, tier set, or tier override inputs, the ingestion service appends a deterministic configuration hash to `profile_version` so the append-only score identity includes all inputs that can affect the score.
+
+### Hard-delete tombstones
+
+`heec_tombstones` marks an event that was hard-deleted for data-subject or privacy reasons. Storage admin paths insert the tombstone, delete associated scores, delete the raw event row, and preserve an audit trail without retaining the raw event payload.
 
 ### Nullable `workspace_id` on config tables
 
@@ -232,8 +254,7 @@ SDKs and the dashboard query `heec_schema_migrations`. The view is the contract;
 ## Multi-tenancy
 
 Every query that touches tenant data **must** carry a `workspace_id` parameter.
-The repository layer wraps raw `String` IDs in a `WorkspaceId` newtype at the
-type level so missing scopes are a compile error.
+The target repository layer wraps raw `String` IDs in a `WorkspaceId` newtype so missing scopes become compile errors. That type-level enforcement is still tracked in plan 0003; until it lands, handler and storage queries must continue to pass explicit workspace scopes.
 
 Tenant isolation checklist for new queries:
 

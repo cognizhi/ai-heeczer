@@ -15,7 +15,8 @@ JavaScript / TypeScript client for the [ai-heeczer](https://github.com/cognizhi/
 pnpm add @cognizhi/heeczer-sdk
 ```
 
-Requires Node.js ≥ 20 (the SDK uses the global `fetch`).
+Requires Node.js ≥ 20. The package ships ESM and CJS exports; the default
+transport uses the global `fetch`.
 
 ## Usage
 
@@ -23,13 +24,16 @@ Requires Node.js ≥ 20 (the SDK uses the global `fetch`).
 import { HeeczerClient } from "@cognizhi/heeczer-sdk";
 
 const client = new HeeczerClient({
-  baseUrl: "https://ingest.example.com",
-  apiKey: process.env.HEECZER_API_KEY,
+    baseUrl: "https://ingest.example.com",
+    apiKey: process.env.HEECZER_API_KEY,
+    mode: "image",
+    timeoutMs: 10_000,
+    retry: { attempts: 2, backoffMs: 100 },
 });
 
 const { score } = await client.ingestEvent({
-  workspaceId: "ws_default",
-  event: canonicalEvent, // see core/schema/event.v1.json
+    workspaceId: "ws_default",
+    event: canonicalEvent, // see core/schema/event.v1.json
 });
 
 console.log(score.final_estimated_minutes, score.confidence_band);
@@ -44,29 +48,33 @@ exposes the closed `kind` enum from the ingestion service's envelope:
 import { HeeczerApiError } from "@cognizhi/heeczer-sdk";
 
 try {
-  await client.ingestEvent({ workspaceId: "ws", event: badEvent });
+    await client.ingestEvent({ workspaceId: "ws", event: badEvent });
 } catch (err) {
-  if (err instanceof HeeczerApiError && err.kind === "schema") {
-    // …
-  }
+    if (err instanceof HeeczerApiError && err.kind === "schema") {
+        // …
+    }
 }
 ```
 
 ## Configuration
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `baseUrl` | `string` | required | Base URL of the ingestion service. Trailing slash is stripped. |
-| `apiKey` | `string \| undefined` | `undefined` | Sent as `x-heeczer-api-key`. |
-| `fetch` | `typeof fetch` | `globalThis.fetch` | Inject a custom `fetch` (e.g. `undici.fetch`, mocks in tests). |
+| Option           | Type                   | Default                           | Description                                                                |
+| ---------------- | ---------------------- | --------------------------------- | -------------------------------------------------------------------------- |
+| `baseUrl`        | `string`               | required                          | Base URL of the ingestion service. Trailing slash is stripped.             |
+| `mode`           | `"image" \| "native"`  | `"image"`                         | `image` is HTTP mode. `native` fails fast until the napi-rs binding ships. |
+| `apiKey`         | `string \| undefined`  | `undefined`                       | Sent as `x-heeczer-api-key`.                                               |
+| `fetch`          | `typeof fetch`         | `globalThis.fetch`                | Inject a custom `fetch` (e.g. `undici.fetch`, mocks in tests).             |
+| `timeoutMs`      | `number`               | `10000`                           | Request timeout.                                                           |
+| `retry`          | `false \| RetryPolicy` | `{ attempts: 2, backoffMs: 100 }` | Retries transient transport/status failures.                               |
+| `validateEvents` | `boolean`              | `true`                            | Validate v1 events locally before `POST /v1/events`.                       |
 
 ## Methods
 
-| Method | HTTP | Returns |
-| --- | --- | --- |
-| `healthz()` | `GET /healthz` | `Promise<boolean>` |
-| `version()` | `GET /v1/version` | `Promise<VersionResponse>` |
-| `ingestEvent({ workspaceId, event })` | `POST /v1/events` | `Promise<IngestEventResponse>` |
+| Method                                                            | HTTP                           | Returns                                                                                                           |
+| ----------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `healthz()`                                                       | `GET /healthz`                 | `Promise<boolean>`                                                                                                |
+| `version()`                                                       | `GET /v1/version`              | `Promise<VersionResponse>`                                                                                        |
+| `ingestEvent({ workspaceId, event })`                             | `POST /v1/events`              | `Promise<IngestEventResponse>`                                                                                    |
 | `testScorePipeline({ event, profile?, tierSet?, tierOverride? })` | `POST /v1/test/score-pipeline` | `Promise<{ ok: true; envelope_version: "1"; score: ScoreResult }>` (gated by the test-orchestration feature flag) |
 
 ## Error kinds
@@ -74,16 +82,22 @@ try {
 `HeeczerApiError.kind` is a closed string union mirroring the ingestion
 service envelope:
 
-| Kind | When |
-| --- | --- |
-| `schema` | Event failed canonical schema validation. |
-| `bad_request` | Malformed JSON or missing top-level fields. |
-| `scoring` | Engine rejected a normalized event (e.g. unknown tier id). |
-| `storage` | Persistence layer error. |
-| `not_found` | Read endpoint did not find the resource. |
-| `forbidden` | Auth or RBAC denied the request. |
-| `feature_disabled` | Endpoint exists but the feature flag is off. |
-| `unknown` | Non-JSON 5xx body; the raw text is in `message`. |
+| Kind                       | When                                                       |
+| -------------------------- | ---------------------------------------------------------- |
+| `schema`                   | Event failed canonical schema validation.                  |
+| `bad_request`              | Malformed JSON or missing top-level fields.                |
+| `scoring`                  | Engine rejected a normalized event (e.g. unknown tier id). |
+| `storage`                  | Persistence layer error.                                   |
+| `not_found`                | Read endpoint did not find the resource.                   |
+| `unauthorized`             | Missing, invalid, or revoked API key.                      |
+| `forbidden`                | Auth or RBAC denied the request.                           |
+| `conflict`                 | Duplicate idempotency key or conflicting event payload.    |
+| `payload_too_large`        | Payload exceeded service limits.                           |
+| `rate_limit_exceeded`      | Per-key or workspace quota was exceeded.                   |
+| `feature_disabled`         | Endpoint exists but the feature flag is off.               |
+| `unsupported_spec_version` | Event `spec_version` is not accepted by the service.       |
+| `unavailable`              | Readiness or dependency check failed.                      |
+| `unknown`                  | Non-JSON 5xx body; the raw text is in `message`.           |
 
 ## Runnable example
 
@@ -93,35 +107,33 @@ and the cross-language index in [`examples/README.md`](../../examples/README.md)
 ## Common patterns
 
 **Validate locally before sending** (avoids a network round-trip on bad
-events). The schema is JSON Schema Draft 2020-12; any compliant library
-works — example with `ajv`:
+events). `ingestEvent()` validates v1 events by default. You can also call
+`validateEvent(event)` directly when building an event before handing it to
+the client.
 
 ```ts
-import Ajv from "ajv/dist/2020";
-import { readFileSync } from "fs";
+import { validateEvent } from "@cognizhi/heeczer-sdk";
 
-const schema = JSON.parse(readFileSync("core/schema/event.v1.json", "utf8"));
-const validate = new Ajv().compile(schema);
-if (!validate(event)) throw new Error(new Ajv().errorsText(validate.errors));
+validateEvent(event);
 ```
 
 **Surface schema field errors from the service:**
 
 ```ts
 try {
-  await client.ingestEvent({ workspaceId: "ws", event });
+    await client.ingestEvent({ workspaceId: "ws", event });
 } catch (err) {
-  if (err instanceof HeeczerApiError && err.kind === "schema") {
-    // err.message contains the field-level detail from the server envelope.
-    console.error("schema rejection:", err.message);
-  }
+    if (err instanceof HeeczerApiError && err.kind === "schema") {
+        // err.message contains the field-level detail from the server envelope.
+        console.error("schema rejection:", err.message);
+    }
 }
 ```
 
-**Batching note.** `POST /v1/events:batch` (single-transaction,
-partial-success semantics) is planned but not yet shipped — see
-[plan 0004](../../docs/plan/0004-ingestion-service.md). Until then,
-send events sequentially or in parallel with `Promise.allSettled()`.
+**Batching note.** The ingestion service exposes `POST /v1/events:batch`;
+the SDK batch helper follows the public method expansion tracked in
+[plan 0005](../../docs/plan/0005-sdk-jsts.md). Until then, call the single
+event API sequentially or in parallel with `Promise.allSettled()`.
 
 ## Contract
 

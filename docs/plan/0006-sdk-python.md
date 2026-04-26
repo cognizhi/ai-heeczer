@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-22
+- **Last reviewed:** 2026-04-25
 - **PRD:** §23
 - **ADR:** ADR-0001
 
@@ -23,13 +23,13 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 
 - [x] `HeeczerClient` async client with `healthz`, `version`, `ingest_event`, `test_score_pipeline`. (The plan's original `track`/`track_batch`/`flush`/`close` shape predates the ingestion service; HTTP-first surface is the foundation, with batching following the batch endpoint in plan 0004.)
 - [x] Both sync and async (`asyncio`) methods. `SyncHeeczerClient` wrapper added in `client.py`, exported from `__init__.py`. (session Cat-3)
-- [ ] Mode selection: `native` and `image`. (image-only today; in-process scoring depends on pyo3 binding above)
-- [ ] Pydantic v2 models for events, scores, traces. (TypedDicts today to keep the wheel stdlib-only beyond httpx)
+- [x] Mode selection: `mode="image" | "native"` is accepted by async and sync clients; image mode is implemented and native mode fails fast with an explicit pyo3/maturin binding message. Native functionality remains gated by the unchecked abi3 wheel item above. (session Apr-2026)
+- [x] Pydantic v2 models for events. `EventModel` and nested models reject unknown fields outside `meta.extensions`; `validate_event()` is exported. Score/trace output remains represented by open `TypedDict` surfaces because the Rust engine owns additive result fields.
 
 ### Tests
 
 - [x] Unit (`pytest` async; httpx.MockTransport instead of mocks per the user's "use emulation method as priority" guidance). 8/8 pass.
-- [ ] Contract: shared fixtures. (pending: needs the parity fixture rig in plan 0001 §Tests)
+- [x] Contract: shared fixtures. Pytest round-trips all shared valid fixtures and validates them with the Pydantic v2 model.
 - [ ] Parity: byte-equal output vs Rust reference.
 - [x] `mypy --strict` clean (3 source files).
 - [x] `ruff check` clean.

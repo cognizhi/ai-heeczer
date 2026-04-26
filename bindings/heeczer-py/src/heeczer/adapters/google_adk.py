@@ -105,14 +105,10 @@ def heeczer_adk_wrapper(  # noqa: PLR0913
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
                         loop.create_task(
-                            client.ingest_event(
-                                workspace_id=workspace_id, event=event
-                            )
+                            client.ingest_event(workspace_id=workspace_id, event=event)
                         )
                     else:
-                        await client.ingest_event(
-                            workspace_id=workspace_id, event=event
-                        )
+                        await client.ingest_event(workspace_id=workspace_id, event=event)
                 except Exception:  # noqa: BLE001
                     pass
 

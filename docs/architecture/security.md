@@ -4,6 +4,19 @@
 > Last reviewed: 2026-04-24
 > Owner: Security Engineer
 
+## Implemented In The Ingestion Slice
+
+- API-key middleware for protected ingestion routes.
+- SHA-256 lookup against `heec_api_keys.hashed_key`.
+- Revocation check via `heec_api_keys.revoked_at`.
+- Workspace scoping against the authenticated key.
+- Auth-failure audit rows.
+- Per-key and per-workspace rate/quota enforcement for ingestion routes.
+
+## Target Platform Controls
+
+The sections below describe the intended platform security model. Some controls, including key-management endpoints, dashboard RBAC, CORS enforcement, TLS termination, and native mTLS termination, are tracked in plan 0014 and are not fully implemented by the ingestion binary yet.
+
 ## API key authentication
 
 API keys are issued per workspace. The platform stores only the SHA-256 hash
@@ -27,9 +40,10 @@ No raw key material appears in any log, audit entry, or error response.
   disabled.
 - The dashboard sets `Strict-Transport-Security: max-age=63072000;
 includeSubDomains; preload` (HSTS) on all responses.
-- Mutual TLS (mTLS) is supported as an opt-in for ingestion endpoints.
-  Configure the server CA bundle in `HEECZER_TLS_CLIENT_CA_PATH`. When mTLS
-  is enabled, API key auth is still required in addition to the client cert.
+- Mutual TLS (mTLS) remains the recommended production ingress pattern, but
+  the Rust service does not terminate mTLS directly in the current slice. Put
+  mTLS at the edge proxy or service mesh and keep API-key auth enabled behind it.
+  Native `HEECZER_TLS_CLIENT_CA_PATH` support is a follow-up under plan 0014.
 
 ## CORS policy
 
@@ -67,26 +81,35 @@ When a limit is exceeded the server responds with:
 
 ```json
 {
-    "error": "rate_limit_exceeded",
-    "message": "Request rate exceeded. Retry after the indicated interval.",
-    "retry_after_seconds": 42
+    "ok": false,
+    "envelope_version": "1",
+    "error": {
+        "kind": "rate_limit_exceeded",
+        "message": "request rate exceeded"
+    }
 }
 ```
 
 HTTP status code `429 Too Many Requests` with a `Retry-After: 42` header
-(seconds until the bucket refills).
+(seconds until the bucket refills). Quota responses also include
+`X-Heeczer-Quota-Limit`, `X-Heeczer-Quota-Remaining`, and
+`X-Heeczer-Quota-Reset-After`.
 
 ## Idempotency
 
 ### Ingest deduplication
 
 `event_id` is the primary key of `heec_events`. A duplicate ingest request
-with an already-seen `event_id` is accepted (HTTP 200) and returns the
-original stored result. No second write occurs.
+with an already-seen `event_id` and the same normalized payload is accepted
+(HTTP 200) and returns the original stored result. No second write occurs.
+
+A duplicate `event_id` with a different normalized payload returns
+`409 conflict` and writes an `ingest_conflict` audit entry. Callers must either
+reuse the exact original event body or mint a new `event_id`.
 
 ### Batch `Idempotency-Key` header
 
-Batch ingest endpoints accept an `Idempotency-Key: <uuid>` request header.
+Batch ingest endpoints accept an opaque `Idempotency-Key` request header up to 128 characters.
 The key is cached for 24 hours. A replayed request with the same key within
 that window returns the original response byte-for-byte. After 24 hours the
 key expires and a new request will be processed normally.
@@ -128,7 +151,7 @@ The following OWASP Top 10 risks are in scope and have explicit mitigations:
 | A01 — Broken access control       | RBAC middleware; workspace-scoped queries; unit-tested          |
 | A02 — Cryptographic failures      | TLS 1.2+; SHA-256 key hashing; cosign keyless signing           |
 | A03 — Injection                   | sqlx parameterized queries; JSON schema validation on ingest    |
-| A05 — Security misconfiguration   | CORS deny-by-default; HSTS; mTLS option                         |
+| A05 — Security misconfiguration   | CORS deny-by-default; HSTS; edge/service-mesh mTLS guidance     |
 | A06 — Vulnerable components       | cargo-audit, cargo-deny, pip-audit, govulncheck, pnpm audit     |
 | A07 — Auth failures               | API key required; rotation with audit log; no key in logs       |
 | A08 — Software integrity failures | cosign keyless + SLSA provenance; SBOM on every release         |

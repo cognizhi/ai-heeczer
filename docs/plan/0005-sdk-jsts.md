@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-22
+- **Last reviewed:** 2026-04-25
 - **PRD:** §23
 - **ADR:** ADR-0001
 
@@ -16,29 +16,29 @@ Ship `@ai-heeczer/sdk` for Node.js (CJS + ESM), with native bindings to `heeczer
 
 - [x] `bindings/heeczer-js/` workspace package (path differs from the original `bindings/node/` placeholder; SDK ships HTTP-only first per plan revision below).
 - [ ] `napi-rs` build with prebuilt binaries for linux x64/arm64, macOS x64/arm64, windows x64. (deferred: HTTP-first SDK ships now; in-process scoring binding follows once parity test rig lands)
-- [ ] CJS + ESM dual export via `tshy` or equivalent. (foundation: ESM-only first; CJS dual export pending publish step)
+- [x] CJS + ESM dual export via `tsc` dual build. `package.json` exports `import` and `require`; `pnpm run build` emits `dist/index.js` and `dist/cjs/index.cjs`. (session Apr-2026)
 - [x] TypeScript types covering the envelope contract (`ScoreResult`, `IngestEventResponse`, `VersionResponse`, `HeeczerApiError` with closed `kind` enum). Exact-shape generation from JSON Schema pending.
 
 ### Public API
 
 - [x] `HeeczerClient` class with `healthz`, `version`, `ingestEvent`, `testScorePipeline`. (The plan's original `track`/`trackBatch`/`flush`/`close` shape predates the ingestion service; the HTTP-first surface is the foundation, with batching + flush + retry following the batch endpoint in plan 0004.)
-- [ ] Mode selection: `native` (in-process score) and `image` (HTTP transport). (current SDK is HTTP-only / image mode)
+- [x] Mode selection: `mode: "image" | "native"` is part of `HeeczerClientOptions`; image mode is implemented and native mode fails fast with an explicit napi-rs binding message. Native functionality remains gated by the unchecked napi-rs package item above. (session Apr-2026)
 - [x] Async `Promise<…>` return shapes throughout.
-- [ ] Configurable timeout, retry policy, transport. (only `fetch` injection today)
+- [x] Configurable timeout, retry policy, transport. (`timeoutMs`, `retry`, and `fetch` injection; transient status retry defaults to 408/429/5xx)
 - [x] `version()` reports SDK + service + engine versions.
 
 ### Validation
 
-- [ ] Local schema validation before transport. (relies on server-side validation for now)
+- [x] Local schema validation before transport. `validateEvent()` enforces the v1 required fields, closed enums, strict unknown-field placement, and range/pattern constraints without adding a runtime schema dependency.
 - [x] Typed errors mapped to the closed `kind` enum from the ingestion-service envelope.
 
 ### Tests
 
 - [x] Unit: every public method (8 vitest cases covering baseUrl handling, version, ingest happy path, error envelope mapping, non-JSON error fallback, tester header always sent, api key forwarding).
-- [ ] Contract: shared fixtures. (pending: needs the parity fixture rig in plan 0001 §Tests)
+- [x] Contract: shared fixtures. Vitest round-trips all shared valid fixtures and now also runs the local validator against them.
 - [ ] Parity: byte-equal output vs Rust reference.
 - [ ] Bench: `track()` p95 <2 ms in native mode. (depends on napi-rs binding above)
-- [ ] Packaging: `npm pack` smoke test in CI matrix.
+- [x] Packaging: `npm pack`/publish dry-run smoke is wired through `release-dry-run.yml`; local `pnpm run pack:smoke` passed on 2026-04-25.
 
 ### Docs
 

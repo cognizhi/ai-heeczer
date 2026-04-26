@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { findFixture } from "@/lib/fixture-catalog";
 
 interface PipelineRunnerProps {
   fixture: string | null;
@@ -20,6 +21,8 @@ export function PipelineRunner({ fixture, onResult }: PipelineRunnerProps) {
 
   async function handleRun() {
     if (!fixture) return;
+    const selected = findFixture(fixture);
+    if (!selected) return;
     setRunning(true);
     setError(null);
     try {
@@ -29,7 +32,7 @@ export function PipelineRunner({ fixture, onResult }: PipelineRunnerProps) {
           "Content-Type": "application/json",
           "x-heeczer-tester": "1",
         },
-        body: JSON.stringify({ fixture }),
+        body: JSON.stringify({ event: selected.event }),
       });
       if (!res.ok) {
         const body = (await res.json()) as {

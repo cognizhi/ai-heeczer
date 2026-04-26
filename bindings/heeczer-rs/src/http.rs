@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Example
 /// ```rust,no_run
-/// # #[tokio::main]
+/// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() -> Result<(), heeczer::Error> {
 /// let client = heeczer::http::Client::new("https://ingest.example.com", "my-api-key");
 /// # let event: heeczer_core::event::Event = unimplemented!();

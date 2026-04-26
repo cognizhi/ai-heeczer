@@ -13,7 +13,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { Event } from "../src/index.js";
+import {
+  HeeczerValidationError,
+  validateEvent,
+  type Event,
+} from "../src/index.js";
 
 // Load all valid fixture files as raw strings via Vite's glob import.
 // Keys are relative paths; values are raw JSON strings.
@@ -52,6 +56,7 @@ describe("Event contract: valid fixture round-trips", () => {
     it(`round-trips ${name} losslessly`, () => {
       // Parse the fixture as an Event (TypeScript cast — no runtime stripping).
       const event = JSON.parse(body) as Event;
+      validateEvent(event);
 
       // Re-serialize and re-parse for semantic comparison.
       const roundTripped = JSON.parse(JSON.stringify(event));
@@ -136,5 +141,21 @@ describe("Event contract: TypeScript unknown-field rejection", () => {
     };
     void _bad; // prevent unused variable warning
     expect(true).toBe(true);
+  });
+
+  it("runtime validator rejects unknown top-level fields before transport", () => {
+    expect(() =>
+      validateEvent({
+        spec_version: "1.0",
+        event_id: "00000000-0000-4000-8000-000000000002",
+        timestamp: "2026-04-22T10:00:00Z",
+        framework_source: "test",
+        workspace_id: "ws_ts",
+        task: { name: "t", outcome: "success" },
+        metrics: { duration_ms: 1 },
+        meta: { sdk_language: "node", sdk_version: "0.5.1" },
+        forbidden_extra_field: "value",
+      }),
+    ).toThrow(HeeczerValidationError);
   });
 });

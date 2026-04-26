@@ -31,6 +31,7 @@ fn redact_dsn(dsn: &str) -> String {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
+        .json()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
@@ -50,7 +51,17 @@ async fn main() -> anyhow::Result<()> {
     let features = Features {
         test_orchestration: cfg.features.test_orchestration,
     };
-    let state = AppState { pool, features };
+    let state = AppState {
+        pool,
+        features,
+        auth: cfg.auth,
+        rate_limit: cfg.rate_limit,
+        payload_limits: cfg.payload_limits,
+        idempotency: cfg.idempotency,
+        quotas: cfg.quotas,
+        worker: cfg.worker,
+        rate_limiter: heeczer_ingest::state::RateLimiter::default(),
+    };
 
     let addr: SocketAddr = cfg.listen.parse().context("parsing listen address")?;
     let listener = tokio::net::TcpListener::bind(addr).await?;

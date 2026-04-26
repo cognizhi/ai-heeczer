@@ -8,10 +8,12 @@ import { useState } from "react";
 import { PipelineRunner } from "@/components/test-orchestration/pipeline-runner";
 import { FixtureBrowser } from "@/components/test-orchestration/fixture-browser";
 import { GoldenDiff } from "@/components/test-orchestration/golden-diff";
+import { findFixture } from "@/lib/fixture-catalog";
 
 export default function TestOrchestrationPage() {
   const [selectedFixture, setSelectedFixture] = useState<string | null>(null);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const fixture = findFixture(selectedFixture);
 
   return (
     <div className="space-y-6">
@@ -19,10 +21,6 @@ export default function TestOrchestrationPage() {
         <h1 className="text-2xl font-bold tracking-tight mb-1">
           Test Orchestration
         </h1>
-        <p className="text-sm text-gray-500">
-          Browse fixtures, run the scoring pipeline, and diff against the golden
-          record. ADR-0012.
-        </p>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -40,7 +38,7 @@ export default function TestOrchestrationPage() {
             fixture={selectedFixture}
             onResult={setResult}
           />
-          {result !== null && <GoldenDiff result={result} />}
+          {result !== null && <GoldenDiff result={result} golden={fixture?.golden} />}
         </div>
       </div>
     </div>

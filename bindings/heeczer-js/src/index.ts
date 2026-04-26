@@ -114,6 +114,10 @@ export interface Event {
 /** Confidence band, matches the Rust `ConfidenceBand` enum. */
 export type ConfidenceBand = "Low" | "Medium" | "High";
 
+/** SDK execution mode. `image` speaks to the ingestion service over HTTP.
+ * `native` is reserved for the future napi-rs binding and fails fast today. */
+export type HeeczerMode = "image" | "native";
+
 /** Subset of the ScoreResult shape the SDK exposes as a typed surface.
  *  The wire format carries additional fields; we keep the type open via
  *  index signature so SDK consumers do not need updates when the engine
@@ -156,8 +160,14 @@ export type ApiErrorKind =
   | "scoring"
   | "storage"
   | "not_found"
+  | "unauthorized"
   | "forbidden"
-  | "feature_disabled";
+  | "conflict"
+  | "payload_too_large"
+  | "rate_limit_exceeded"
+  | "feature_disabled"
+  | "unsupported_spec_version"
+  | "unavailable";
 
 /** Typed error thrown by every client method on a non-2xx response. */
 export class HeeczerApiError extends Error {
@@ -171,14 +181,41 @@ export class HeeczerApiError extends Error {
   }
 }
 
+/** Raised before transport when an event fails the local v1 contract check. */
+export class HeeczerValidationError extends Error {
+  readonly kind = "schema" as const;
+
+  constructor(message: string) {
+    super(`heeczer schema: ${message}`);
+    this.name = "HeeczerValidationError";
+  }
+}
+
+export interface RetryPolicy {
+  /** Total attempts, including the first request. Set to 1 to disable retries. */
+  attempts?: number;
+  /** Initial backoff in milliseconds. Retries use exponential backoff. */
+  backoffMs?: number;
+  /** HTTP statuses that are safe to retry. */
+  statusCodes?: number[];
+}
+
 export interface HeeczerClientOptions {
   /** Base URL of the ingestion service, e.g. `https://ingest.example.com`. */
   baseUrl: string;
+  /** Execution mode. `image` is available today; `native` requires napi-rs. */
+  mode?: HeeczerMode;
   /** Optional API key sent as `x-heeczer-api-key`. */
   apiKey?: string;
   /** Optional fetch implementation; defaults to global `fetch`. Useful for
    *  tests and for environments without a global fetch. */
   fetch?: typeof fetch;
+  /** Request timeout in milliseconds. Defaults to 10 seconds. */
+  timeoutMs?: number;
+  /** Retry policy for transient transport failures and retryable status codes. */
+  retry?: false | RetryPolicy;
+  /** Validate canonical events locally before transport. Defaults to true. */
+  validateEvents?: boolean;
 }
 
 interface ErrorEnvelope {
@@ -192,19 +229,30 @@ export class HeeczerClient {
   readonly #baseUrl: string;
   readonly #apiKey: string | undefined;
   readonly #fetch: typeof fetch;
+  readonly #timeoutMs: number;
+  readonly #retry: Required<RetryPolicy> | null;
+  readonly #validateEvents: boolean;
 
   constructor(opts: HeeczerClientOptions) {
     if (!opts.baseUrl) {
       throw new Error("HeeczerClient: baseUrl is required");
     }
+    if ((opts.mode ?? "image") === "native") {
+      throw new Error(
+        "HeeczerClient: native mode requires the deferred napi-rs binding; use mode: 'image'",
+      );
+    }
     this.#baseUrl = opts.baseUrl.replace(/\/$/, "");
     this.#apiKey = opts.apiKey;
     this.#fetch = opts.fetch ?? globalThis.fetch.bind(globalThis);
+    this.#timeoutMs = opts.timeoutMs ?? 10_000;
+    this.#retry = normaliseRetry(opts.retry);
+    this.#validateEvents = opts.validateEvents ?? true;
   }
 
   /** Liveness probe; resolves with `true` if the service responds 2xx. */
   async healthz(): Promise<boolean> {
-    const resp = await this.#fetch(`${this.#baseUrl}/healthz`, {
+    const resp = await this.#request(`${this.#baseUrl}/healthz`, {
       method: "GET",
     });
     return resp.ok;
@@ -220,6 +268,7 @@ export class HeeczerClient {
     workspaceId: string;
     event: unknown;
   }): Promise<IngestEventResponse> {
+    if (this.#validateEvents) validateEvent(input.event);
     return this.#postJson<IngestEventResponse>("/v1/events", {
       workspace_id: input.workspaceId,
       event: input.event,
@@ -249,7 +298,7 @@ export class HeeczerClient {
   }
 
   async #getJson<T>(path: string): Promise<T> {
-    const resp = await this.#fetch(`${this.#baseUrl}${path}`, {
+    const resp = await this.#request(`${this.#baseUrl}${path}`, {
       method: "GET",
       headers: this.#headers(),
     });
@@ -261,7 +310,7 @@ export class HeeczerClient {
     body: unknown,
     extraHeaders: Record<string, string> = {},
   ): Promise<T> {
-    const resp = await this.#fetch(`${this.#baseUrl}${path}`, {
+    const resp = await this.#request(`${this.#baseUrl}${path}`, {
       method: "POST",
       headers: {
         ...this.#headers(),
@@ -271,6 +320,45 @@ export class HeeczerClient {
       body: JSON.stringify(body),
     });
     return this.#handle<T>(resp);
+  }
+
+  async #request(url: string, init: RequestInit): Promise<Response> {
+    const attempts = this.#retry?.attempts ?? 1;
+    let lastError: unknown;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.#timeoutMs);
+      try {
+        const resp = await this.#fetch(url, {
+          ...init,
+          signal: controller.signal,
+        });
+        if (!this.#shouldRetry(resp.status, attempt, attempts)) return resp;
+        lastError = new HeeczerApiError(
+          resp.status,
+          "unknown",
+          `retryable response status ${resp.status}`,
+        );
+      } catch (err) {
+        lastError = controller.signal.aborted
+          ? new HeeczerApiError(
+              0,
+              "unknown",
+              `request timed out after ${this.#timeoutMs}ms`,
+            )
+          : err;
+        if (attempt === attempts - 1) throw lastError;
+      } finally {
+        clearTimeout(timeout);
+      }
+      await sleep((this.#retry?.backoffMs ?? 0) * 2 ** attempt);
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+
+  #shouldRetry(status: number, attempt: number, attempts: number): boolean {
+    if (!this.#retry || attempt >= attempts - 1) return false;
+    return this.#retry.statusCodes.includes(status);
   }
 
   #headers(): Record<string, string> {
@@ -300,4 +388,290 @@ export class HeeczerClient {
     }
     throw new HeeczerApiError(resp.status, kind, message);
   }
+}
+
+function normaliseRetry(
+  retry: false | RetryPolicy | undefined,
+): Required<RetryPolicy> | null {
+  if (retry === false) return null;
+  return {
+    attempts: Math.max(1, retry?.attempts ?? 2),
+    backoffMs: Math.max(0, retry?.backoffMs ?? 100),
+    statusCodes: retry?.statusCodes ?? [408, 429, 500, 502, 503, 504],
+  };
+}
+
+function sleep(ms: number): Promise<void> {
+  return ms <= 0
+    ? Promise.resolve()
+    : new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const TOP_LEVEL_KEYS = new Set([
+  "spec_version",
+  "event_id",
+  "correlation_id",
+  "timestamp",
+  "framework_source",
+  "workspace_id",
+  "project_id",
+  "identity",
+  "task",
+  "metrics",
+  "context",
+  "meta",
+]);
+const IDENTITY_KEYS = new Set([
+  "user_id",
+  "team_id",
+  "business_unit_id",
+  "tier_id",
+]);
+const TASK_KEYS = new Set(["name", "category", "sub_category", "outcome"]);
+const METRICS_KEYS = new Set([
+  "duration_ms",
+  "tokens_prompt",
+  "tokens_completion",
+  "tool_call_count",
+  "workflow_steps",
+  "retries",
+  "artifact_count",
+  "output_size_proxy",
+]);
+const CONTEXT_KEYS = new Set([
+  "human_in_loop",
+  "review_required",
+  "temperature",
+  "risk_class",
+  "tags",
+]);
+const META_KEYS = new Set([
+  "sdk_language",
+  "sdk_version",
+  "scoring_profile",
+  "extensions",
+]);
+
+/** Runtime v1 event validation for the Node SDK. It mirrors the canonical
+ * schema closely enough to reject bad inputs before transport while keeping the
+ * dependency footprint small for the pre-1.0 HTTP SDK. */
+export function validateEvent(event: unknown): asserts event is Event {
+  const root = objectAt(event, "event");
+  forbidUnknown(root, TOP_LEVEL_KEYS, "event");
+  literal(root["spec_version"], "1.0", "event.spec_version");
+  string(root["event_id"], "event.event_id");
+  optionalString(root["correlation_id"], "event.correlation_id");
+  string(root["timestamp"], "event.timestamp");
+  pattern(
+    root["framework_source"],
+    /^[a-z0-9][a-z0-9_.-]*$/,
+    "event.framework_source",
+  );
+  pattern(root["workspace_id"], /^[a-zA-Z0-9_.-]+$/, "event.workspace_id");
+  optionalPattern(root["project_id"], /^[a-zA-Z0-9_.-]+$/, "event.project_id");
+
+  if (root["identity"] !== undefined && root["identity"] !== null) {
+    const identity = objectAt(root["identity"], "event.identity");
+    forbidUnknown(identity, IDENTITY_KEYS, "event.identity");
+    for (const key of IDENTITY_KEYS)
+      optionalString(identity[key], `event.identity.${key}`);
+  }
+
+  const task = objectAt(root["task"], "event.task");
+  forbidUnknown(task, TASK_KEYS, "event.task");
+  string(task["name"], "event.task.name");
+  optionalPattern(
+    task["category"],
+    /^[a-z0-9][a-z0-9_]*$/,
+    "event.task.category",
+  );
+  optionalPattern(
+    task["sub_category"],
+    /^[a-z0-9][a-z0-9_]*$/,
+    "event.task.sub_category",
+  );
+  oneOf(
+    task["outcome"],
+    ["success", "partial_success", "failure", "timeout"],
+    "event.task.outcome",
+  );
+
+  const metrics = objectAt(root["metrics"], "event.metrics");
+  forbidUnknown(metrics, METRICS_KEYS, "event.metrics");
+  integerInRange(
+    metrics["duration_ms"],
+    0,
+    86_400_000,
+    "event.metrics.duration_ms",
+  );
+  for (const key of ["tokens_prompt", "tokens_completion"] as const) {
+    optionalIntegerInRange(metrics[key], 0, 10_000_000, `event.metrics.${key}`);
+  }
+  for (const key of [
+    "tool_call_count",
+    "workflow_steps",
+    "artifact_count",
+  ] as const) {
+    optionalIntegerInRange(metrics[key], 0, 10_000, `event.metrics.${key}`);
+  }
+  optionalIntegerInRange(metrics["retries"], 0, 1_000, "event.metrics.retries");
+  optionalNumberInRange(
+    metrics["output_size_proxy"],
+    0,
+    1_000_000,
+    "event.metrics.output_size_proxy",
+  );
+
+  if (root["context"] !== undefined && root["context"] !== null) {
+    const context = objectAt(root["context"], "event.context");
+    forbidUnknown(context, CONTEXT_KEYS, "event.context");
+    optionalBoolean(context["human_in_loop"], "event.context.human_in_loop");
+    optionalBoolean(
+      context["review_required"],
+      "event.context.review_required",
+    );
+    optionalNumberInRange(
+      context["temperature"],
+      0,
+      2,
+      "event.context.temperature",
+    );
+    if (context["risk_class"] !== undefined && context["risk_class"] !== null) {
+      oneOf(
+        context["risk_class"],
+        ["low", "medium", "high"],
+        "event.context.risk_class",
+      );
+    }
+    if (context["tags"] !== undefined && context["tags"] !== null) {
+      if (!Array.isArray(context["tags"]) || context["tags"].length > 32) {
+        throw new HeeczerValidationError(
+          "event.context.tags must be an array of at most 32 strings",
+        );
+      }
+      for (const [idx, tag] of context["tags"].entries())
+        string(tag, `event.context.tags[${idx}]`);
+    }
+  }
+
+  const meta = objectAt(root["meta"], "event.meta");
+  forbidUnknown(meta, META_KEYS, "event.meta");
+  oneOf(
+    meta["sdk_language"],
+    ["rust", "node", "python", "go", "java", "cli", "test"],
+    "event.meta.sdk_language",
+  );
+  string(meta["sdk_version"], "event.meta.sdk_version");
+  optionalString(meta["scoring_profile"], "event.meta.scoring_profile");
+  if (meta["extensions"] !== undefined && meta["extensions"] !== null) {
+    objectAt(meta["extensions"], "event.meta.extensions");
+  }
+}
+
+function objectAt(value: unknown, path: string): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new HeeczerValidationError(`${path} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function forbidUnknown(
+  value: Record<string, unknown>,
+  allowed: Set<string>,
+  path: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key))
+      throw new HeeczerValidationError(`${path}.${key} is not allowed`);
+  }
+}
+
+function literal(value: unknown, expected: string, path: string): void {
+  if (value !== expected)
+    throw new HeeczerValidationError(
+      `${path} must be ${JSON.stringify(expected)}`,
+    );
+}
+
+function string(value: unknown, path: string): void {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new HeeczerValidationError(`${path} must be a non-empty string`);
+  }
+}
+
+function optionalString(value: unknown, path: string): void {
+  if (value === undefined || value === null) return;
+  string(value, path);
+}
+
+function pattern(value: unknown, re: RegExp, path: string): void {
+  string(value, path);
+  const text = value as string;
+  if (!re.test(text))
+    throw new HeeczerValidationError(`${path} has invalid format`);
+}
+
+function optionalPattern(value: unknown, re: RegExp, path: string): void {
+  if (value === undefined || value === null) return;
+  pattern(value, re, path);
+}
+
+function oneOf(value: unknown, allowed: readonly string[], path: string): void {
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    throw new HeeczerValidationError(
+      `${path} must be one of ${allowed.join(", ")}`,
+    );
+  }
+}
+
+function integerInRange(
+  value: unknown,
+  min: number,
+  max: number,
+  path: string,
+): void {
+  if (
+    !Number.isInteger(value) ||
+    (value as number) < min ||
+    (value as number) > max
+  ) {
+    throw new HeeczerValidationError(
+      `${path} must be an integer between ${min} and ${max}`,
+    );
+  }
+}
+
+function optionalIntegerInRange(
+  value: unknown,
+  min: number,
+  max: number,
+  path: string,
+): void {
+  if (value === undefined || value === null) return;
+  integerInRange(value, min, max, path);
+}
+
+function optionalNumberInRange(
+  value: unknown,
+  min: number,
+  max: number,
+  path: string,
+): void {
+  if (value === undefined || value === null) return;
+  if (
+    typeof value !== "number" ||
+    Number.isNaN(value) ||
+    value < min ||
+    value > max
+  ) {
+    throw new HeeczerValidationError(
+      `${path} must be a number between ${min} and ${max}`,
+    );
+  }
+}
+
+function optionalBoolean(value: unknown, path: string): void {
+  if (value === undefined || value === null) return;
+  if (typeof value !== "boolean")
+    throw new HeeczerValidationError(`${path} must be boolean or null`);
 }

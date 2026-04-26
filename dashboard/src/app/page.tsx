@@ -4,8 +4,12 @@
  */
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { MetricCard } from "@/components/metric-card";
+import { TrendChart } from "@/components/trend-chart";
+import { getDashboardData } from "@/lib/dashboard-data";
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const data = await getDashboardData();
+
   return (
     <div className="space-y-8">
       <section>
@@ -17,21 +21,20 @@ export default function OverviewPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* TODO (plan 0010): wire these cards to the ingestion service read API. */}
         <MetricCard
           label="Total Tasks (7d)"
-          value="—"
+          value={data.summary.totalTasks}
           unit="tasks"
         />
         <MetricCard
           label="Human-Equivalent Effort"
-          value="—"
+          value={data.summary.hours}
           unit="hours"
           disclaimer="labor-equivalent estimate"
         />
         <MetricCard
-          label="Fully-Equivalent Cost"
-          value="—"
+          label="Financial Equivalent Cost"
+          value={`$${data.summary.fec.toLocaleString()}`}
           unit="USD"
           disclaimer="labor-equivalent estimate"
         />
@@ -41,17 +44,18 @@ export default function OverviewPage() {
           </p>
           <div className="flex gap-2 flex-wrap">
             <ConfidenceBadge band="High" />
+            <span className="text-sm text-gray-500">{data.summary.confidence.High}</span>
             <ConfidenceBadge band="Medium" />
+            <span className="text-sm text-gray-500">{data.summary.confidence.Medium}</span>
             <ConfidenceBadge band="Low" />
+            <span className="text-sm text-gray-500">{data.summary.confidence.Low}</span>
           </div>
         </div>
       </section>
 
       <section className="rounded-lg border p-6">
         <h2 className="font-semibold mb-4">Trends (7d)</h2>
-        <p className="text-sm text-gray-400">
-          Chart placeholder — connect ingestion service read API.
-        </p>
+        <TrendChart points={data.trends} />
       </section>
     </div>
   );

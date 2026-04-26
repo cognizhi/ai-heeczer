@@ -15,12 +15,11 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from pydantic import ValidationError
 
-from heeczer import Event
+from heeczer import Event, EventModel, validate_event
 
-_FIXTURE_DIR = (
-    Path(__file__).parents[3] / "core" / "schema" / "fixtures" / "events" / "valid"
-)
+_FIXTURE_DIR = Path(__file__).parents[3] / "core" / "schema" / "fixtures" / "events" / "valid"
 
 
 def _load_valid_fixtures() -> list[tuple[str, str]]:
@@ -43,6 +42,7 @@ def test_valid_fixture_round_trips_losslessly(name: str, body: str) -> None:
 
     # TypedDict cast is structural — no runtime coercion; object is unchanged.
     event = cast(Event, original)
+    validate_event(original)
 
     roundtripped = json.loads(json.dumps(event))
 
@@ -113,7 +113,7 @@ def test_absent_optional_fields_remain_absent_after_round_trip() -> None:
 # ── Unknown field behaviour documentation ─────────────────────────────────────
 
 
-def test_unknown_top_level_field_not_stripped_by_cast() -> None:
+def test_unknown_top_level_field_not_stripped_by_cast_but_rejected_by_pydantic() -> None:
     """TypedDict cast() does NOT strip unknown keys at runtime.
 
     Unknown-field enforcement is the server-side JSON Schema validator's
@@ -137,3 +137,5 @@ def test_unknown_top_level_field_not_stripped_by_cast() -> None:
     assert event.get("forbidden_extra_field") == "value"
     # NOTE: mypy --strict would flag the .get() call above with a typeddict-item
     # error — that's intentional and shows the type-system is working.
+    with pytest.raises(ValidationError):
+        EventModel.model_validate(raw_with_extra)

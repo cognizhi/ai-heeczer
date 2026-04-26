@@ -39,6 +39,13 @@ Browser (React)
 | `GET /healthz` | Service health indicator in the header bar. |
 | `GET /v1/version` | Displayed in the footer as the current engine version. |
 | `POST /v1/events` (via SDK) | Future: submit ad-hoc events from the UI. |
+| `POST /v1/test/score-pipeline` | Test-orchestration pipeline runner. |
+
+Until the ingestion read APIs for aggregates, leaderboards, and queue metrics
+are available, the dashboard route layer uses deterministic local sample data
+with the same field names as the planned read contract. This keeps the UI,
+E2E tests, RBAC states, and container build shippable without inventing a
+separate BFF contract.
 
 ### Environment variables
 
@@ -46,6 +53,8 @@ Browser (React)
 |---|---|---|
 | `NEXT_PUBLIC_INGEST_URL` | `http://localhost:8080` | Base URL of `heeczer-ingest`. Set server-side only. |
 | `HEECZER_API_KEY` | _(unset)_ | Sent as `x-heeczer-api-key`. Never exposed to the browser. |
+| `HEECZER_DASHBOARD_ROLE` | `viewer` | Local/session role for RBAC-gated actions. |
+| `HEECZER_OIDC_ISSUER` | _(unset)_ | Enables OIDC provider labeling for pluggable session integration. |
 
 ## Directory structure
 
@@ -83,6 +92,10 @@ testing strategy. Summary:
 - **Vitest** (jsdom): pure component logic, hooks, utilities.
 - **Playwright**: full browser E2E against the built app + a live
   `heeczer-ingest` instance (SQLite, in CI).
+
+Current E2E coverage includes summary render, trend filter + event drill-down,
+explainability trace load, settings persistence, RBAC denial, queue health,
+and the test-orchestration fixture/run-button flow.
 
 ## Integration with CI
 

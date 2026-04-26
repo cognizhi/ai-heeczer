@@ -172,15 +172,11 @@ class HeeczerLangGraphCallback:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 loop.create_task(
-                    self._client.ingest_event(
-                        workspace_id=self._workspace_id, event=event
-                    )
+                    self._client.ingest_event(workspace_id=self._workspace_id, event=event)
                 )
             else:
                 loop.run_until_complete(
-                    self._client.ingest_event(
-                        workspace_id=self._workspace_id, event=event
-                    )
+                    self._client.ingest_event(workspace_id=self._workspace_id, event=event)
                 )
         except Exception:  # noqa: BLE001
             # Never let instrumentation crash the agent.

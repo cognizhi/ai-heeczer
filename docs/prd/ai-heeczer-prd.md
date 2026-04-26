@@ -4,10 +4,10 @@
 
 **AI Human Equivalent Effort and Cost Analyzer**
 
-**Document Version:** v1.3  
-**Status:** Draft  
-**Owner:** Product / Founding Team  
-**Primary Audience:** Product, Engineering, Platform, Finance, AI Enablement  
+**Document Version:** v1.3
+**Status:** Draft
+**Owner:** Product / Founding Team
+**Primary Audience:** Product, Engineering, Platform, Finance, AI Enablement
 **Repository Use:** Source-of-truth PRD for implementation planning, architecture, task breakdown, release automation, and AI-assisted development in GitHub/Copilot
 
 ---
@@ -100,37 +100,37 @@ It focuses specifically on **translating AI execution telemetry into human-equiv
 
 ## 6. Product Principles
 
-1. **Deterministic by default**  
+1. **Deterministic by default**
    Core scoring must be formula-based, explainable, reproducible, and versioned.
 
-2. **Configurable without becoming arbitrary**  
+2. **Configurable without becoming arbitrary**
    Organizations can tune the model, but defaults must remain sensible, documented, and safe.
 
-3. **Privacy-safe by design**  
+3. **Privacy-safe by design**
    Prompt content and model outputs are excluded by default.
 
-4. **Operational isolation by default**  
+4. **Operational isolation by default**
    Production ingestion should default to an isolated containerized service rather than sharing application process boundaries.
 
-5. **Low-friction adoption**  
+5. **Low-friction adoption**
    Developers should be able to instrument ai-heeczer in minutes and switch between native and image-based processing through configuration.
 
-6. **Cross-language parity**  
+6. **Cross-language parity**
    Equivalent inputs must yield equivalent outputs across supported SDKs.
 
-7. **Confidence-aware reporting**  
+7. **Confidence-aware reporting**
    The product must communicate uncertainty and avoid false precision.
 
-8. **Auditability is mandatory**  
+8. **Auditability is mandatory**
    Score version, tier version, rate version, and configuration changes must be traceable.
 
-9. **Release discipline is part of the product**  
+9. **Release discipline is part of the product**
    Versioning, changelogs, CI gates, and ecosystem publishing are product requirements, not optional repo hygiene.
 
-10. **TDD over retrofit testing**  
+10. **TDD over retrofit testing**
    Requirements, contracts, fixtures, and acceptance tests must be written before or alongside implementation, never treated as cleanup.
 
-11. **Executable developer experience**  
+11. **Executable developer experience**
    README, Makefile, examples, and CI must agree with one another and remain runnable.
 
 ---
@@ -188,28 +188,28 @@ When an organization runs agentic AI in production, they want to:
 
 ai-heeczer consists of eight product surfaces:
 
-1. **Cross-Language Telemetry SDKs**  
+1. **Cross-Language Telemetry SDKs**
    Lightweight SDKs for JS/TS, Python, Go, Rust, and Java.
 
-2. **Core Scoring Engine**  
+2. **Core Scoring Engine**
    Deterministic engine producing HEE, FEC, confidence score, and explainability trace.
 
-3. **heeczer Ingestion Service Image**  
+3. **heeczer Ingestion Service Image**
    A containerized ingestion service that receives events through API, hook, or queue-driven delivery, manages incoming queues, processes events, updates the database, and responds to clients.
 
-4. **Storage and Adapters Layer**  
+4. **Storage and Adapters Layer**
    Database abstraction with SQLite for local use and PostgreSQL for production.
 
-5. **Dashboard and Admin Console**  
+5. **Dashboard and Admin Console**
    A separately containerized web UI for metrics, drill-downs, configuration, governance, and queue/status observability.
 
-6. **Framework Integrations**  
+6. **Framework Integrations**
    Adapters for major frameworks such as LangGraph, Google ADK, and PydanticAI.
 
-7. **Release and Distribution Tooling**  
+7. **Release and Distribution Tooling**
    GitHub Actions-based semantic versioning and automated publish flows for all supported ecosystems.
 
-8. **Developer Experience Surface**  
+8. **Developer Experience Surface**
    Comprehensive README, examples, Makefile, local scripts, test fixtures, and contribution standards.
 
 ---
@@ -633,7 +633,7 @@ output_component   = output_size_proxy * category_output_weight
 review_component   = review_required ? category_review_weight : 0
 ```
 
-Interpretation:  
+Interpretation:
 **1 BCU is approximately 1 baseline human minute** before role and context adjustments.
 
 ### 14.2.1 Deterministic Arithmetic and Fallback Contract
@@ -1286,37 +1286,37 @@ Where UI behavior is in scope, the project shall use a suitable UI test framewor
 
 ### False Precision
 
-Risk: users interpret outputs as exact truth.  
+Risk: users interpret outputs as exact truth.
 Mitigation: confidence bands, explicit disclaimers, explainability, and calibration.
 
 ### Gaming the Model
 
-Risk: loops or retries inflate value claims.  
+Risk: loops or retries inflate value claims.
 Mitigation: caps, anomaly detection, bounded multipliers, and audit review.
 
 ### Incomplete Telemetry
 
-Risk: poor instrumentation creates misleading results.  
+Risk: poor instrumentation creates misleading results.
 Mitigation: schema validation, confidence penalties, and telemetry completeness reporting.
 
 ### Cross-Language Complexity
 
-Risk: FFI and multi-language release pipelines increase engineering burden.  
+Risk: FFI and multi-language release pipelines increase engineering burden.
 Mitigation: Rust-first architecture, shared fixtures, strong CI/CD, and release contracts.
 
 ### Misuse for Individual Surveillance
 
-Risk: organizations over-index on individual productivity scoring.  
+Risk: organizations over-index on individual productivity scoring.
 Mitigation: policy guidance, default aggregation at team/project level, and role-based visibility.
 
 ### Release Drift
 
-Risk: package versions diverge between ecosystems.  
+Risk: package versions diverge between ecosystems.
 Mitigation: one semantic release source of truth, one version per repo release, and publish verification.
 
 ### Documentation Drift
 
-Risk: README and commands become stale.  
+Risk: README and commands become stale.
 Mitigation: README examples anchored to Makefile targets, CI docs validation where feasible, and periodic release checklist enforcement.
 
 ---
@@ -1604,7 +1604,7 @@ No scoring or public contract change may be merged without:
 
 ## 39. Product Positioning Statement
 
-**ai-heeczer converts agentic AI telemetry into human-equivalent effort and cost analytics.**  
+**ai-heeczer converts agentic AI telemetry into human-equivalent effort and cost analytics.**
 It helps organizations measure AI work in the language leadership understands: time, labor, and value.
 
 ---

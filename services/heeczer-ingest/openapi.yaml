@@ -1,0 +1,227 @@
+openapi: 3.1.0
+info:
+  title: heeczer ingestion service
+  version: 1.0.0
+  description: HTTP contract for ai-heeczer image-mode ingestion (PRD 12.16, plan 0004).
+servers:
+  - url: /
+security:
+  - ApiKeyAuth: []
+paths:
+  /healthz:
+    get:
+      security: []
+      summary: Liveness probe
+      responses:
+        "200": { description: Process is alive }
+  /v1/ready:
+    get:
+      security: []
+      summary: Readiness probe
+      responses:
+        "200": { description: Database is reachable }
+        "503": { description: Database is not reachable }
+  /v1/version:
+    get:
+      security: []
+      summary: Service, scoring, and spec versions
+      responses:
+        "200": { description: Version envelope }
+  /metrics:
+    get:
+      security: []
+      summary: Prometheus metrics scrape endpoint
+      responses:
+        "200": { description: Prometheus text exposition }
+  /openapi.yaml:
+    get:
+      security: []
+      summary: OpenAPI contract
+      responses:
+        "200": { description: OpenAPI YAML }
+  /v1/events:
+    post:
+      summary: Validate, score, and persist one canonical event
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestEventRequest"
+      responses:
+        "200": { description: Event accepted or duplicate replayed }
+        "400": { description: Bad request or schema validation error }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "409": { description: Same event_id with a different normalized payload }
+        "413": { description: Single event payload exceeds 64 KiB }
+        "415":
+          description: Unsupported spec_version
+          headers:
+            Supported-Spec-Versions:
+              schema: { type: string, example: "1.0" }
+        "429": { description: Per-key rate limit or workspace quota exceeded }
+  /v1/events:batch:
+    post:
+      summary: Validate, score, and persist up to 100 events with partial-success semantics
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestBatchRequest"
+      responses:
+        "200": { description: Batch processed; individual results may contain per-event errors }
+        "400": { description: Bad request }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "409": { description: Idempotency-Key reused with a different body }
+        "413": { description: Batch payload exceeds 1 MiB }
+        "415":
+          description: Unsupported spec_version
+          headers:
+            Supported-Spec-Versions:
+              schema: { type: string, example: "1.0" }
+        "429": { description: Per-key rate limit or workspace quota exceeded }
+  /v1/events/{event_id}:
+    get:
+      summary: Fetch a stored event payload
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200": { description: Event found }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "404": { description: Event not found }
+  /v1/events/{event_id}/scores:
+    get:
+      summary: List score versions for an event
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200": { description: Score list }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "404": { description: Event not found }
+  /v1/events/{event_id}/rescore:
+    post:
+      summary: Re-score an existing event without mutating prior scores
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescoreRequest"
+      responses:
+        "200": { description: New or existing score returned }
+        "400": { description: Bad request }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "404": { description: Event not found or tombstoned }
+  /v1/jobs/{job_id}:
+    get:
+      summary: Fetch queue job status
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200": { description: Job found }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Workspace mismatch }
+        "404": { description: Job not found }
+  /v1/test/score-pipeline:
+    post:
+      summary: Feature-gated back-to-back scoring for dashboard test orchestration
+      parameters:
+        - $ref: "#/components/parameters/ApiKey"
+        - name: x-heeczer-tester
+          in: header
+          required: true
+          schema: { type: string, enum: ["1"] }
+      responses:
+        "200": { description: Score result }
+        "401": { description: Missing or invalid API key }
+        "403": { description: Tester header missing or workspace mismatch }
+        "503": { description: Feature flag disabled }
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-heeczer-api-key
+  parameters:
+    ApiKey:
+      name: x-heeczer-api-key
+      in: header
+      required: true
+      schema: { type: string }
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    WorkspaceId:
+      name: workspace_id
+      in: query
+      required: false
+      schema: { type: string, maxLength: 64 }
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [ok, envelope_version, error]
+      properties:
+        ok: { type: boolean, const: false }
+        envelope_version: { type: string, const: "1" }
+        error:
+          type: object
+          required: [kind, message]
+          properties:
+            kind: { type: string }
+            message: { type: string }
+    IngestEventRequest:
+      type: object
+      required: [workspace_id, event]
+      properties:
+        workspace_id: { type: string, maxLength: 64 }
+        event:
+          type: object
+          description: Canonical event.v1 JSON payload.
+    IngestBatchRequest:
+      type: object
+      required: [workspace_id, events]
+      properties:
+        workspace_id: { type: string, maxLength: 64 }
+        events:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            description: Canonical event.v1 JSON payload.
+    RescoreRequest:
+      type: object
+      required: [workspace_id]
+      properties:
+        workspace_id: { type: string, maxLength: 64 }
+        profile: { type: object }
+        tier_set: { type: object }
+        tier_override: { type: string }

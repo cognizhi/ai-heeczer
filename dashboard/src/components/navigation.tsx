@@ -6,7 +6,12 @@ import { clsx } from "clsx";
 
 const navItems = [
   { href: "/", label: "Overview" },
+  { href: "/trends", label: "Trends" },
+  { href: "/leaderboards", label: "Leaderboards" },
+  { href: "/queue", label: "Queue" },
+  { href: "/admin", label: "Admin" },
   { href: "/test-orchestration", label: "Test Orchestration" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function Navigation() {
@@ -18,7 +23,7 @@ export function Navigation() {
         <span className="font-semibold text-sm tracking-tight">
           ai-heeczer
         </span>
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           {navItems.map(({ href, label }) => (
             <Link
               key={href}

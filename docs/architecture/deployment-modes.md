@@ -1,120 +1,102 @@
 # Deployment Modes
 
-ai-heeczer supports two scoring deployment modes:
+ai-heeczer supports two scoring deployment modes.
 
-|              | **Native (in-process)**          | **Image (HTTP)**                        |
-| ------------ | -------------------------------- | --------------------------------------- |
-| Latency      | < 1 ms (no network hop)          | < 10 ms (local LAN)                     |
-| Isolation    | Same process as the caller       | Separate container / service            |
-| Persistence  | None (caller-managed)            | SQLite or PostgreSQL via heeczer-ingest |
-| Multi-tenant | No — single workspace per caller | Yes — `workspace_id` per request        |
-| Auth         | N/A                              | API-key middleware (plan 0004 §auth)    |
-| Scaling      | Vertical (thread pool)           | Horizontal (replica set)                |
+|              | Native (in-process)              | Image (HTTP)                              |
+| ------------ | -------------------------------- | ----------------------------------------- |
+| Latency      | < 2 ms p95 target                | < 50 ms async ack p95 target              |
+| Isolation    | Same process as caller           | Separate container / service              |
+| Persistence  | Caller-managed SQLite or adapter | heeczer-ingest storage + queue tables     |
+| Multi-tenant | Single workspace per caller      | `workspace_id` scoped by API key          |
+| Auth         | Caller responsibility            | `x-heeczer-api-key` against hashed DB row |
+| Scaling      | Host process scaling             | Horizontal service + worker replicas      |
 
----
+## Native Mode
 
-## Native mode
+The caller links `heeczer-core` or a native SDK binding directly. Scoring runs synchronously in-process with no network hop.
 
-The caller links `heeczer-core` (Rust) or the native SDK binding directly.
-Scoring runs synchronously in-process with zero network overhead.
+Use native mode for single-workspace tools, local smoke tests, offline workloads, and paths where a network hop would dominate latency.
 
-### When to use
-
-- Single-workspace CLI tools and scripts.
-- Performance-critical hot paths where < 1 ms matters.
-- Environments without network egress.
-- Development / local smoke-testing.
-
-### How it works
-
-````text
+```text
 caller binary
-  └── heeczer SDK (native feature)
-        └── heeczer-core::score()   ← pure CPU, Decimal arithmetic
-```text
-### Rust example
+  -> heeczer SDK native mode
+     -> heeczer-core::score()
+```
 
-```rust
-use heeczer::{Client, IngestInput};
+## Image Mode
 
-let client = Client::native();
-let result = client.score_event(IngestInput {
-    workspace_id: "ws_default".into(),
-    event: my_event,
-    profile: None,
-    tier_set: None,
-    tier_override: None,
-})?;
-```text
----
-
-## Image (HTTP) mode
-
-`heeczer-ingest` runs as a standalone HTTP service. Clients send events
-over `POST /v1/events`; the service validates, scores, persists, and
-returns the score envelope.
-
-### When to use
-
-- Multi-tenant SaaS deployments with many workspaces.
-- Auditable pipelines (persistent event log in PostgreSQL).
-- Dashboard-connected scoring (the Next.js dashboard reads from the same DB).
-- Language-agnostic clients (JS, Python, Go, Java, Rust all speak the same HTTP API).
-
-### How it works
+`heeczer-ingest` runs as a standalone HTTP service. Clients send canonical events to `/v1/events` or `/v1/events:batch`; the service validates, scores, persists, enforces auth/quotas/idempotency, and returns the score envelope.
 
 ```text
-SDK client (any language)
-  │
-  │ POST /v1/events  {"workspace_id": "ws_…", "event": {…}}
-  ▼
-heeczer-ingest (axum HTTP service)
-  ├── JSON schema validation (heeczer-core)
-  ├── score() (heeczer-core)
-  ├── INSERT OR IGNORE INTO scored_events (heeczer-storage / SQLx)
-  └── 200 {"ok": true, "score": {…}}
-```text
-### Persistence backends
+SDK client
+  -> POST /v1/events
+  -> heeczer-ingest
+     -> schema validation
+     -> heeczer-core::score()
+     -> heec_events + heec_scores
+```
 
-| Backend | URL format | Notes |
-|---|---|---|
-| SQLite | `sqlite:heeczer.db?mode=rwc` | Default. Single-file; fine for ≤ 100 rps. |
-| PostgreSQL | `postgres://user:pass@host/db` | Recommended for production. |
+Image mode is the production-readiness target for multi-tenant deployments, dashboard-connected scoring, and language-agnostic HTTP clients.
 
-Migrations are applied automatically at startup via `sqlx::migrate!()`.
+## Health Probes
 
-### Metrics
+Use `/healthz` for liveness and `/v1/ready` for readiness.
 
-Prometheus metrics are exposed at `GET /metrics`. Scrape interval
-recommended: 15 s. Key metrics:
+| Probe     | Endpoint    | Meaning                                    |
+| --------- | ----------- | ------------------------------------------ |
+| Liveness  | `/healthz`  | Process is alive; no dependency checks     |
+| Readiness | `/v1/ready` | Service can accept traffic; database works |
 
-| Metric | Description |
-|---|---|
-| `axum_http_requests_total` | Total HTTP requests by method, path, status. |
-| `axum_http_requests_duration_seconds` | Request latency histogram. |
-| `axum_http_requests_pending` | In-flight requests gauge. |
+Kubernetes example:
 
----
+```yaml
+livenessProbe:
+    httpGet:
+        path: /healthz
+        port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+readinessProbe:
+    httpGet:
+        path: /v1/ready
+        port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+```
 
-## Choosing a mode
+## Persistence And Queueing
 
-```text
-Need persistent event log?         → Image mode
-Multi-language callers?            → Image mode
-< 1 ms scoring latency required?   → Native mode
-No network in your environment?    → Native mode
-Local development / CI tests?      → Native mode (or in-process SQLite)
-```text
----
+SQLite remains the local/default HTTP storage backend in this slice. PostgreSQL dialect migrations exist in `core/heeczer-storage/migrations-pg/`, and ADR-0006's default queue is implemented as `PostgresJobQueue` using `FOR UPDATE SKIP LOCKED` against `heec_jobs`.
 
-## Future: queue-backed ingestion (plan 0004 §queue)
-
-ADR-0006 documents the planned NATS / Kafka queue backend. In that mode
-the flow becomes:
+Queue-backed image mode targets this flow after runtime PostgreSQL pool switching and worker startup are wired:
 
 ```text
-SDK client → POST /v1/events → heeczer-ingest → queue → scoring worker → DB
+SDK client
+  -> enqueue event/job
+  -> PostgreSQL heec_jobs
+  -> worker claim with SKIP LOCKED
+  -> score + persist
+  -> succeeded / failed / dead_letter state
+```
+
+## Metrics
+
+Prometheus metrics are exposed at `/metrics`. Scrape every 15 seconds by default.
+
+| Metric                                | Description                                     |
+| ------------------------------------- | ----------------------------------------------- |
+| `axum_http_requests_total`            | Total HTTP requests by method, path, and status |
+| `axum_http_requests_duration_seconds` | Request latency histogram                       |
+| `axum_http_requests_pending`          | In-flight requests gauge                        |
+
+Queue visibility is represented by queue stats (`pending`, `running`, `failed`, `dead_letter`, retries) from the library-level `JobQueue` implementation; exporting dedicated queue gauges and starting the worker from the binary are the next metrics/runtime wiring steps.
+
+## Choosing A Mode
+
 ```text
-The HTTP response returns immediately after enqueue; the score is
-delivered asynchronously via a webhook or polling endpoint.
-````
+Need persistent event log?       -> Image mode
+Need multi-language HTTP?        -> Image mode
+Need isolated auth/quotas?       -> Image mode
+Need offline local scoring?      -> Native mode
+Need lowest possible latency?    -> Native mode
+```

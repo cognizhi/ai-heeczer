@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-22
+- **Last reviewed:** 2026-04-25
 - **PRD:** §23
 - **ADR:** ADR-0001
 
@@ -22,12 +22,12 @@ Ship the Go SDK as a Go module that consumes the Rust core via the C ABI (`heecz
 
 - [x] `Client` struct with `Healthz`, `Version`, `IngestEvent`, `TestScorePipeline` (HTTP-first; `Track`/`TrackBatch`/`Flush`/`Close` follow the batch endpoint in plan 0004).
 - [x] Functional options (`WithAPIKey`, `WithHTTPClient`).
-- [ ] Mode selection: `native` and `image`. (image-only today; depends on cgo binding above)
+- [x] Mode selection: `WithMode(ModeImage | ModeNative)` is part of the functional-options surface; image mode is implemented and native mode fails fast with an explicit cgo binding message. Native functionality remains gated by the unchecked cgo item above. (session Apr-2026)
 
 ### Tests
 
 - [x] Unit (`go test ./...`) — 8/8 pass against `httptest.NewServer` instead of mocks (per the user's TDD-with-emulation guidance).
-- [ ] Contract: shared fixtures. (pending: needs the parity fixture rig in plan 0001 §Tests)
+- [x] Contract: shared fixtures. `go test ./...` round-trips all shared valid fixtures and enforces strict unknown top-level field rejection via `DisallowUnknownFields`.
 - [ ] Parity: byte-equal output vs Rust reference.
 - [x] `go vet ./...` clean. (`golangci-lint` + `govulncheck` to be wired in plan 0012 CI work.)
 - [x] `govulncheck` clean. (wired into `parity.yml` Go job, session Cat-3)

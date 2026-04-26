@@ -7,16 +7,16 @@ Idiomatic Rust SDK for [ai-heeczer](https://github.com/cognizhi/ai-heeczer).
 
 ## Modes
 
-| Feature flag | Description |
-| --- | --- |
+| Feature flag       | Description                                              |
+| ------------------ | -------------------------------------------------------- |
 | `native` (default) | In-process scoring via `heeczer-core`. Zero network hop. |
-| `http` | Async HTTP client targeting the ingestion service. |
+| `http`             | Async HTTP client targeting the ingestion service.       |
 
 ## Usage (native mode)
 
 ```toml
 [dependencies]
-heeczer = "0.1"
+heeczer = "0.5.1"
 ```
 
 ```rust
@@ -76,14 +76,14 @@ let result = Client::native().score_event(IngestInput {
 
 `heeczer::Error` wraps `heeczer_core::Error`. The variants are:
 
-| Variant | Cause |
-| --- | --- |
-| `Schema { path, message }` | Event failed schema validation. |
-| `MissingRequired(field)` | Required non-derivable field absent (PRD §14.2.1). |
-| `UnknownEnum { value, field }` | Closed enum received an unexpected value (e.g. bad outcome). |
-| `UnknownTier(id)` | `identity.tier_id` (or `tier_override`) does not exist in the supplied tier set. |
-| `Overflow` | Decimal arithmetic overflowed the supported range. |
-| `Json(_)` | JSON (de)serialization failure. |
+| Variant                        | Cause                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `Schema { path, message }`     | Event failed schema validation.                                                  |
+| `MissingRequired(field)`       | Required non-derivable field absent (PRD §14.2.1).                               |
+| `UnknownEnum { value, field }` | Closed enum received an unexpected value (e.g. bad outcome).                     |
+| `UnknownTier(id)`              | `identity.tier_id` (or `tier_override`) does not exist in the supplied tier set. |
+| `Overflow`                     | Decimal arithmetic overflowed the supported range.                               |
+| `Json(_)`                      | JSON (de)serialization failure.                                                  |
 
 See [`heeczer_core::Error`](https://docs.rs/heeczer-core) for the canonical definitions.
 
@@ -94,6 +94,10 @@ The HTTP-mode client (feature `http`, plan 0008 follow-up) will speak
 [ADR-0011](../../docs/adr/0011-c-abi-envelope.md) and surface the closed
 `kind` enum from the wire envelope. Native mode operates entirely on the
 local `heeczer_core::Error` enum above.
+
+Contract tests score every shared valid fixture in native mode, and the
+`http` feature has WireMock-backed coverage for envelope success and error
+responses.
 
 ## License
 

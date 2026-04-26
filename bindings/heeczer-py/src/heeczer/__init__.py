@@ -11,12 +11,24 @@ from .client import (
     EventTask,
     HeeczerApiError,
     HeeczerClient,
+    HeeczerUnsupportedModeError,
     IngestEventResponse,
+    Mode,
     Outcome,
+    RetryPolicy,
     RiskClass,
     ScoreResult,
     SyncHeeczerClient,
     VersionResponse,
+)
+from .models import (
+    EventContextModel,
+    EventIdentityModel,
+    EventMetaModel,
+    EventMetricsModel,
+    EventModel,
+    EventTaskModel,
+    validate_event,
 )
 
 __all__ = [
@@ -30,12 +42,22 @@ __all__ = [
     "EventTask",
     "HeeczerApiError",
     "HeeczerClient",
+    "HeeczerUnsupportedModeError",
     "IngestEventResponse",
+    "Mode",
     "Outcome",
     "RiskClass",
+    "RetryPolicy",
     "ScoreResult",
     "SyncHeeczerClient",
     "VersionResponse",
+    "EventContextModel",
+    "EventIdentityModel",
+    "EventMetaModel",
+    "EventMetricsModel",
+    "EventModel",
+    "EventTaskModel",
+    "validate_event",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.5.1"

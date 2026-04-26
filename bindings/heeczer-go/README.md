@@ -28,7 +28,9 @@ import (
 )
 
 client, err := heeczer.New("https://ingest.example.com",
-    heeczer.WithAPIKey(os.Getenv("HEECZER_API_KEY")))
+    heeczer.WithAPIKey(os.Getenv("HEECZER_API_KEY")),
+    heeczer.WithMode(heeczer.ModeImage),
+    heeczer.WithRetry(2, 100*time.Millisecond))
 if err != nil { /* … */ }
 
 resp, err := client.IngestEvent(ctx, "ws_default", canonicalEvent)
@@ -47,34 +49,43 @@ Every method returns `*heeczer.APIError` on a non-2xx response. The error
 carries the closed `Kind` enum mirrored from the ingestion service
 envelope:
 
-| Kind | When |
-| --- | --- |
-| `ErrSchema` | Event failed canonical schema validation. |
-| `ErrBadRequest` | Malformed JSON or missing top-level fields. |
-| `ErrScoring` | Engine rejected a normalized event (e.g. unknown tier id). |
-| `ErrStorage` | Persistence layer error. |
-| `ErrNotFound` | Read endpoint did not find the resource. |
-| `ErrForbidden` | Auth or RBAC denied the request. |
-| `ErrFeatureDisabled` | Endpoint exists but the feature flag is off. |
-| `ErrUnknown` | Non-JSON 5xx body; the raw text is in `Message`. |
+| Kind                 | When                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| `ErrSchema`          | Event failed canonical schema validation.                  |
+| `ErrBadRequest`      | Malformed JSON or missing top-level fields.                |
+| `ErrScoring`         | Engine rejected a normalized event (e.g. unknown tier id). |
+| `ErrStorage`         | Persistence layer error.                                   |
+| `ErrNotFound`        | Read endpoint did not find the resource.                   |
+| `ErrUnauthorized`    | Missing, invalid, or revoked API key.                      |
+| `ErrForbidden`       | Auth or RBAC denied the request.                           |
+| `ErrConflict`        | Duplicate idempotency key or conflicting event payload.    |
+| `ErrPayloadTooLarge` | Payload exceeded service limits.                           |
+| `ErrRateLimited`     | Per-key or workspace quota was exceeded.                   |
+| `ErrFeatureDisabled` | Endpoint exists but the feature flag is off.               |
+| `ErrUnsupportedSpec` | Event `spec_version` is not accepted.                      |
+| `ErrUnavailable`     | Readiness or dependency check failed.                      |
+| `ErrUnknown`         | Non-JSON 5xx body; the raw text is in `Message`.           |
 
 Use `heeczer.IsKind(err, heeczer.ErrSchema)` for typed branching.
 
 ## Functional options
 
-| Option | Description |
-| --- | --- |
-| `WithAPIKey(string)` | Sets the `x-heeczer-api-key` header. |
-| `WithHTTPClient(heeczer.Doer)` | Inject a custom `Doer` (e.g. `*http.Client` with a transport, or a fake in tests). |
+| Option                                              | Description                                                                        |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `WithAPIKey(string)`                                | Sets the `x-heeczer-api-key` header.                                               |
+| `WithHTTPClient(heeczer.Doer)`                      | Inject a custom `Doer` (e.g. `*http.Client` with a transport, or a fake in tests). |
+| `WithMode(heeczer.ModeImage \| heeczer.ModeNative)` | Selects image/native mode. Native fails fast until the cgo binding ships.          |
+| `WithTimeout(time.Duration)`                        | Updates the default `*http.Client` timeout.                                        |
+| `WithRetry(attempts, backoff, statuses...)`         | Retries transient transport/status failures.                                       |
 
 ## Methods
 
-| Method | HTTP | Returns |
-| --- | --- | --- |
-| `Healthz(ctx)` | `GET /healthz` | `bool, error` |
-| `Version(ctx)` | `GET /v1/version` | `*VersionResponse, error` |
-| `IngestEvent(ctx, workspaceID, event)` | `POST /v1/events` | `*IngestEventResponse, error` |
-| `TestScorePipeline(ctx, req)` | `POST /v1/test/score-pipeline` | `*TestPipelineResponse, error` (gated by the test-orchestration feature flag) |
+| Method                                 | HTTP                           | Returns                                                                       |
+| -------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `Healthz(ctx)`                         | `GET /healthz`                 | `bool, error`                                                                 |
+| `Version(ctx)`                         | `GET /v1/version`              | `*VersionResponse, error`                                                     |
+| `IngestEvent(ctx, workspaceID, event)` | `POST /v1/events`              | `*IngestEventResponse, error`                                                 |
+| `TestScorePipeline(ctx, req)`          | `POST /v1/test/score-pipeline` | `*TestPipelineResponse, error` (gated by the test-orchestration feature flag) |
 
 ## Contract
 
@@ -116,10 +127,10 @@ if heeczer.IsKind(err, heeczer.ErrSchema) {
 }
 ```
 
-**Batching note.** `POST /v1/events:batch` (single-transaction,
-partial-success semantics) is planned but not yet shipped — see
-[plan 0004](../../docs/plan/0004-ingestion-service.md). Until then,
-send events concurrently with goroutines + `errgroup`.
+**Batching note.** The ingestion service exposes `POST /v1/events:batch`;
+the SDK batch helper follows the public method expansion tracked in
+[plan 0007](../../docs/plan/0007-sdk-go.md). Until then, send events
+concurrently with goroutines + `errgroup`.
 
 ## License
 

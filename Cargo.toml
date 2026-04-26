@@ -48,6 +48,10 @@ time = { version = "0.3", features = ["serde", "parsing", "formatting", "macros"
 # UUID
 uuid = { version = "1", features = ["serde", "v4"] }
 
+# Auth / middleware
+sha2 = "0.10"
+async-trait = "0.1"
+
 # CLI
 clap = { version = "4", features = ["derive", "wrap_help"] }
 anyhow = "1"

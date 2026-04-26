@@ -1,6 +1,6 @@
 # cognizhi-heeczer (Python)
 
-Async Python client for the [ai-heeczer](https://github.com/cognizhi/ai-heeczer) ingestion service.
+Async Python client for the [ai-heeczer](https://github.com/cognizhi/ai-heeczer) ingestion service, with strict Pydantic v2 event models.
 
 > ⚠️ Pre-1.0 surface. The HTTP envelope contract (envelope_version `1`) is
 > stable; the typed wrapper API may evolve until we ship `1.0.0`.
@@ -26,6 +26,8 @@ async def main() -> None:
     async with HeeczerClient(
         base_url="https://ingest.example.com",
         api_key="…",
+        mode="image",
+        retry={"attempts": 2, "backoff_ms": 100},
     ) as client:
         result = await client.ingest_event(
             workspace_id="ws_default",
@@ -54,12 +56,14 @@ except HeeczerApiError as err:
 
 ## Configuration
 
-| Argument    | Type                               | Default  | Description                                                      |
-| ----------- | ---------------------------------- | -------- | ---------------------------------------------------------------- |
-| `base_url`  | `str`                              | required | Base URL of the ingestion service. Trailing slash is stripped.   |
-| `api_key`   | `str \| None`                      | `None`   | Sent as `x-heeczer-api-key`.                                     |
-| `timeout`   | `float`                            | `10.0`   | Per-request timeout in seconds.                                  |
-| `transport` | `httpx.AsyncBaseTransport \| None` | `None`   | Inject a custom transport (e.g. `httpx.MockTransport` in tests). |
+| Argument    | Type                               | Default      | Description                                                      |
+| ----------- | ---------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `base_url`  | `str`                              | required     | Base URL of the ingestion service. Trailing slash is stripped.   |
+| `api_key`   | `str \| None`                      | `None`       | Sent as `x-heeczer-api-key`.                                     |
+| `mode`      | `"image" \| "native"`              | `"image"`    | `native` fails fast until the pyo3/maturin binding ships.        |
+| `timeout`   | `float`                            | `10.0`       | Per-request timeout in seconds.                                  |
+| `retry`     | `RetryPolicy \| None`              | `2 attempts` | Retries transient transport/status failures.                     |
+| `transport` | `httpx.AsyncBaseTransport \| None` | `None`       | Inject a custom transport (e.g. `httpx.MockTransport` in tests). |
 
 ## Methods
 
@@ -75,16 +79,22 @@ except HeeczerApiError as err:
 `HeeczerApiError.kind` is a closed `Literal` mirroring the ingestion
 service envelope:
 
-| Kind               | When                                                       |
-| ------------------ | ---------------------------------------------------------- |
-| `schema`           | Event failed canonical schema validation.                  |
-| `bad_request`      | Malformed JSON or missing top-level fields.                |
-| `scoring`          | Engine rejected a normalized event (e.g. unknown tier id). |
-| `storage`          | Persistence layer error.                                   |
-| `not_found`        | Read endpoint did not find the resource.                   |
-| `forbidden`        | Auth or RBAC denied the request.                           |
-| `feature_disabled` | Endpoint exists but the feature flag is off.               |
-| `unknown`          | Non-JSON 5xx body; the raw text is in `api_message`.       |
+| Kind                       | When                                                       |
+| -------------------------- | ---------------------------------------------------------- |
+| `schema`                   | Event failed canonical schema validation.                  |
+| `bad_request`              | Malformed JSON or missing top-level fields.                |
+| `scoring`                  | Engine rejected a normalized event (e.g. unknown tier id). |
+| `storage`                  | Persistence layer error.                                   |
+| `not_found`                | Read endpoint did not find the resource.                   |
+| `unauthorized`             | Missing, invalid, or revoked API key.                      |
+| `forbidden`                | Auth or RBAC denied the request.                           |
+| `conflict`                 | Duplicate idempotency key or conflicting event payload.    |
+| `payload_too_large`        | Payload exceeded service limits.                           |
+| `rate_limit_exceeded`      | Per-key or workspace quota was exceeded.                   |
+| `feature_disabled`         | Endpoint exists but the feature flag is off.               |
+| `unsupported_spec_version` | Event `spec_version` is not accepted.                      |
+| `unavailable`              | Readiness or dependency check failed.                      |
+| `unknown`                  | Non-JSON 5xx body; the raw text is in `api_message`.       |
 
 ## Runnable example
 
@@ -93,18 +103,13 @@ and the cross-language index in [`examples/README.md`](../../examples/README.md)
 
 ## Common patterns
 
-**Validate locally before sending** (avoids a network round-trip on bad
-events). The schema is JSON Schema Draft 2020-12; use
-[`jsonschema`](https://python-jsonschema.readthedocs.io/) or
-[`fastjsonschema`](https://horejsek.github.io/python-fastjsonschema/):
+**Validate locally before sending** with the bundled Pydantic v2 models:
 
 ```python
-import json, jsonschema
+from heeczer import EventModel, validate_event
 
-with open("core/schema/event.v1.json") as f:
-    schema = json.load(f)
-
-jsonschema.validate(event, schema)  # raises jsonschema.ValidationError if invalid
+model = validate_event(event)
+await client.ingest_event(workspace_id="ws_default", event=model)
 ```
 
 **Surface schema field errors from the service:**
@@ -118,10 +123,10 @@ except HeeczerApiError as err:
         print("schema rejection:", err.api_message)
 ```
 
-**Batching note.** `POST /v1/events:batch` (single-transaction,
-partial-success semantics) is planned but not yet shipped — see
-[plan 0004](../../docs/plan/0004-ingestion-service.md). Until then,
-use `asyncio.gather` for concurrent sends.
+**Batching note.** The ingestion service exposes `POST /v1/events:batch`;
+the SDK batch helper follows the public method expansion tracked in
+[plan 0006](../../docs/plan/0006-sdk-python.md). Until then, use
+`asyncio.gather` for concurrent single-event sends.
 
 ## Contract
 

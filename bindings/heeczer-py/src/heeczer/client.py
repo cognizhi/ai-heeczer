@@ -13,6 +13,8 @@ from typing import Any, Literal, NotRequired, TypedDict, cast, get_args
 
 import httpx
 
+from .models import EventModel
+
 # ── Canonical event types (mirrored from core/schema/event.v1.json) ──────────
 # Mirrors heeczer_core::event (Rust) and generated per plan 0001 / ADR-0002.
 
@@ -119,10 +121,24 @@ ApiErrorKind = Literal[
     "scoring",
     "storage",
     "not_found",
+    "unauthorized",
     "forbidden",
+    "conflict",
+    "payload_too_large",
+    "rate_limit_exceeded",
     "feature_disabled",
+    "unsupported_spec_version",
+    "unavailable",
     "unknown",
 ]
+
+Mode = Literal["image", "native"]
+
+
+class RetryPolicy(TypedDict, total=False):
+    attempts: int
+    backoff_ms: int
+    status_codes: list[int]
 
 
 class ScoreResult(TypedDict, total=False):
@@ -176,6 +192,10 @@ class HeeczerApiError(Exception):
         self.api_message = message
 
 
+class HeeczerUnsupportedModeError(ValueError):
+    """Raised when native mode is requested before the pyo3 binding ships."""
+
+
 class HeeczerClient:
     """Async client for the ai-heeczer ingestion service.
 
@@ -184,19 +204,32 @@ class HeeczerClient:
     :class:`httpx.AsyncClient` transport.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         base_url: str,
         *,
         api_key: str | None = None,
+        mode: Mode = "image",
         timeout: float = 10.0,
+        retry: RetryPolicy | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         if not base_url:
             raise ValueError("base_url is required")
+        if mode == "native":
+            raise HeeczerUnsupportedModeError(
+                "native mode requires the deferred pyo3/maturin binding; use mode='image'"
+            )
         headers: dict[str, str] = {}
         if api_key:
             headers["x-heeczer-api-key"] = api_key
+        self._retry_attempts = max(1, retry.get("attempts", 2) if retry else 2)
+        self._retry_backoff_ms = max(0, retry.get("backoff_ms", 100) if retry else 100)
+        self._retry_status_codes = set(
+            retry.get("status_codes", [408, 429, 500, 502, 503, 504])
+            if retry
+            else [408, 429, 500, 502, 503, 504]
+        )
         self._client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             headers=headers,
@@ -214,18 +247,23 @@ class HeeczerClient:
         await self._client.aclose()
 
     async def healthz(self) -> bool:
-        resp = await self._client.get("/healthz")
+        resp = await self._request("GET", "/healthz")
         return resp.is_success
 
     async def version(self) -> VersionResponse:
         return await self._get_json("/v1/version")  # type: ignore[no-any-return]
 
     async def ingest_event(
-        self, *, workspace_id: str, event: dict[str, Any]
+        self, *, workspace_id: str, event: dict[str, Any] | EventModel
     ) -> IngestEventResponse:
+        event_body = (
+            event.model_dump(mode="json", exclude_none=True)
+            if isinstance(event, EventModel)
+            else event
+        )
         return await self._post_json(  # type: ignore[no-any-return]
             "/v1/events",
-            {"workspace_id": workspace_id, "event": event},
+            {"workspace_id": workspace_id, "event": event_body},
         )
 
     async def test_score_pipeline(
@@ -250,7 +288,7 @@ class HeeczerClient:
         )
 
     async def _get_json(self, path: str) -> Any:
-        resp = await self._client.get(path)
+        resp = await self._request("GET", path)
         return self._handle(resp)
 
     async def _post_json(
@@ -260,8 +298,28 @@ class HeeczerClient:
         *,
         extra_headers: dict[str, str] | None = None,
     ) -> Any:
-        resp = await self._client.post(path, json=body, headers=extra_headers or {})
+        resp = await self._request("POST", path, json=body, headers=extra_headers or {})
         return self._handle(resp)
+
+    async def _request(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+        last_exc: Exception | None = None
+        for attempt in range(self._retry_attempts):
+            try:
+                resp = await self._client.request(method, path, **kwargs)
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                if attempt == self._retry_attempts - 1:
+                    raise
+            else:
+                if (
+                    resp.status_code not in self._retry_status_codes
+                    or attempt == self._retry_attempts - 1
+                ):
+                    return resp
+            await asyncio.sleep((self._retry_backoff_ms / 1000) * (2**attempt))
+        if last_exc is not None:
+            raise last_exc
+        raise RuntimeError("heeczer retry loop ended without a response")
 
     @staticmethod
     def _handle(resp: httpx.Response) -> Any:
@@ -318,14 +376,24 @@ class SyncHeeczerClient:
             print(client.version())
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         base_url: str,
         *,
         api_key: str | None = None,
+        mode: Mode = "image",
         timeout: float = 10.0,
+        retry: RetryPolicy | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        self._async = HeeczerClient(base_url=base_url, api_key=api_key, timeout=timeout)
+        self._async = HeeczerClient(
+            base_url=base_url,
+            api_key=api_key,
+            mode=mode,
+            timeout=timeout,
+            retry=retry,
+            transport=transport,
+        )
 
     def __enter__(self) -> SyncHeeczerClient:
         return self
@@ -343,7 +411,7 @@ class SyncHeeczerClient:
         return _run(self._async.version())  # type: ignore[no-any-return]
 
     def ingest_event(
-        self, *, workspace_id: str, event: dict[str, Any]
+        self, *, workspace_id: str, event: dict[str, Any] | EventModel
     ) -> IngestEventResponse:
         return _run(self._async.ingest_event(workspace_id=workspace_id, event=event))  # type: ignore[no-any-return]
 

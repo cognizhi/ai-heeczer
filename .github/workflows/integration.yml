@@ -32,3 +32,22 @@ jobs:
         run: cargo test -p heeczer-ingest --tests
         env:
           DATABASE_URL: "sqlite::memory:"
+
+  dashboard-e2e:
+    name: dashboard Playwright E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+        working-directory: dashboard
+      - run: npx playwright install --with-deps chromium
+        working-directory: dashboard
+      - run: npm run build
+        working-directory: dashboard
+      - run: npm run test:e2e
+        working-directory: dashboard

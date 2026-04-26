@@ -32,6 +32,13 @@ func TestNewRequiresBaseURL(t *testing.T) {
 	}
 }
 
+func TestNativeModeFailsFastUntilCgoBindingShips(t *testing.T) {
+	_, err := heeczer.New("https://api.example.com", heeczer.WithMode(heeczer.ModeNative))
+	if err == nil || !strings.Contains(err.Error(), "native mode") {
+		t.Fatalf("expected native mode error, got %v", err)
+	}
+}
+
 func TestHealthzReturnsTrueOn2xx(t *testing.T) {
 	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/healthz" {
@@ -138,6 +145,27 @@ func TestBaseURLTrailingSlashStripped(t *testing.T) {
 	}
 	if !strings.HasSuffix(seenPath, "/healthz") || strings.Contains(seenPath, "//") {
 		t.Fatalf("path = %q", seenPath)
+	}
+}
+
+func TestRetryTransientStatus(t *testing.T) {
+	calls := 0
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"ok":false,"error":{"kind":"unavailable","message":"warming"}}`))
+			return
+		}
+		w.Header().Set("content-type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"envelope_version":"1"}`))
+	}, heeczer.WithRetry(2, 0))
+	ok, err := c.Healthz(context.Background())
+	if err != nil || !ok {
+		t.Fatalf("healthz: ok=%v err=%v", ok, err)
+	}
+	if calls != 2 {
+		t.Fatalf("calls=%d, want 2", calls)
 	}
 }
 

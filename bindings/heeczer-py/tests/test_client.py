@@ -8,7 +8,24 @@ from typing import Any
 import httpx
 import pytest
 
-from heeczer import HeeczerApiError, HeeczerClient, SyncHeeczerClient
+from heeczer import (
+    EventModel,
+    HeeczerApiError,
+    HeeczerClient,
+    HeeczerUnsupportedModeError,
+    SyncHeeczerClient,
+)
+
+VALID_EVENT: dict[str, Any] = {
+    "spec_version": "1.0",
+    "event_id": "00000000-0000-4000-8000-000000000101",
+    "timestamp": "2026-04-22T10:00:00Z",
+    "framework_source": "test",
+    "workspace_id": "ws_test",
+    "task": {"name": "fixture", "outcome": "success"},
+    "metrics": {"duration_ms": 100},
+    "meta": {"sdk_language": "python", "sdk_version": "0.5.1"},
+}
 
 
 def _stub(handler: Any) -> httpx.AsyncBaseTransport:
@@ -19,6 +36,12 @@ def _stub(handler: Any) -> httpx.AsyncBaseTransport:
 async def test_constructor_requires_base_url() -> None:
     with pytest.raises(ValueError, match="base_url is required"):
         HeeczerClient(base_url="")
+
+
+@pytest.mark.asyncio
+async def test_native_mode_fails_fast_until_binding_ships() -> None:
+    with pytest.raises(HeeczerUnsupportedModeError, match="native mode"):
+        HeeczerClient(base_url="https://api.example.com", mode="native")
 
 
 @pytest.mark.asyncio
@@ -85,12 +108,40 @@ async def test_ingest_event_posts_canonical_body() -> None:
         api_key="k_secret",
         transport=_stub(handler),
     ) as c:
-        r = await c.ingest_event(workspace_id="ws_test", event={"event_id": "evt-1"})
+        r = await c.ingest_event(
+            workspace_id="ws_test", event=EventModel.model_validate(VALID_EVENT)
+        )
         assert r["event_id"] == "evt-1"
         assert r["score"]["confidence_band"] == "Medium"
 
-    assert captured["body"] == {"workspace_id": "ws_test", "event": {"event_id": "evt-1"}}
+    assert captured["body"] == {"workspace_id": "ws_test", "event": VALID_EVENT}
     assert captured["headers"]["x-heeczer-api-key"] == "k_secret"
+
+
+@pytest.mark.asyncio
+async def test_retries_transient_status_codes() -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(
+                503,
+                json={
+                    "ok": False,
+                    "error": {"kind": "unavailable", "message": "warming"},
+                },
+            )
+        return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
+
+    async with HeeczerClient(
+        base_url="https://api.example.com",
+        retry={"attempts": 2, "backoff_ms": 0},
+        transport=_stub(handler),
+    ) as c:
+        assert await c.healthz() is True
+    assert calls == 2
 
 
 @pytest.mark.asyncio
@@ -187,9 +238,7 @@ def test_sync_healthz_returns_true() -> None:
     # SyncHeeczerClient uses HeeczerClient internally — inject transport via
     # the async client attribute.
     client = SyncHeeczerClient.__new__(SyncHeeczerClient)
-    client._async = HeeczerClient(
-        base_url="https://api.example.com", transport=_stub(handler)
-    )
+    client._async = HeeczerClient(base_url="https://api.example.com", transport=_stub(handler))
     assert client.healthz() is True
 
 
@@ -198,8 +247,6 @@ def test_sync_client_context_manager_closes() -> None:
         return httpx.Response(200, json={"ok": True, "envelope_version": "1"})
 
     with SyncHeeczerClient.__new__(SyncHeeczerClient) as client:
-        client._async = HeeczerClient(
-            base_url="https://api.example.com", transport=_stub(handler)
-        )
+        client._async = HeeczerClient(base_url="https://api.example.com", transport=_stub(handler))
         ok = client.healthz()
     assert ok is True
