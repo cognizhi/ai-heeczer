@@ -117,13 +117,41 @@
       "required": ["duration_ms"],
       "properties": {
         "duration_ms": { "type": "integer", "minimum": 0, "maximum": 86400000 },
-        "tokens_prompt": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000000 },
-        "tokens_completion": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000000 },
-        "tool_call_count": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
-        "workflow_steps": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
-        "retries": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000 },
-        "artifact_count": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
-        "output_size_proxy": { "type": ["number", "null"], "minimum": 0, "maximum": 1000000 }
+        "tokens_prompt": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000000
+        },
+        "tokens_completion": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000000
+        },
+        "tool_call_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "workflow_steps": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "artifact_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "output_size_proxy": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1000000
+        }
       }
     },
     "context": {
@@ -132,7 +160,11 @@
       "properties": {
         "human_in_loop": { "type": ["boolean", "null"] },
         "review_required": { "type": ["boolean", "null"] },
-        "temperature": { "type": ["number", "null"], "minimum": 0, "maximum": 2 },
+        "temperature": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 2
+        },
         "risk_class": {
           "type": ["string", "null"],
           "enum": ["low", "medium", "high", null]

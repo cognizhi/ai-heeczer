@@ -2,6 +2,7 @@
 
 - **Status:** Active
 - **Owner:** DevEx Engineer
+- **Last reviewed:** 2026-04-27
 - **PRD:** §26, §12.13, §12.21
 - **ADR:** ADR-0007, ADR-0010
 
@@ -44,6 +45,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 
 - [x] `docker-compose.dev.yml` brings up ingestion service + PostgreSQL + dashboard for local dev. (session Apr-2026)
 - [x] `services/heeczer-ingest/Dockerfile.dev` and `dashboard/Dockerfile.dev` created. (session Apr-2026)
+- [x] Per-SDK local test-stack foundations are split into [plan 0016](0016-local-sdk-test-stacks.md), with shared compose fragments, smoke fixtures, helper scripts, and Make targets under `start-test-*`, `stop-test-*`, `reset-test-*`, `logs-test-*`, `ps-test-*`, and `smoke-test-*`.
 
 ### Local CLI (`heec`, ADR-0010)
 

@@ -22,28 +22,28 @@ fully captured canonical event:
 
 ```json
 {
-  "pack_id": "reference-pack",
-  "version": "1.0.0",
-  "name": "Reference Benchmark Pack",
-  "description": "PRD §25 reference tasks used for calibration.",
-  "items": [
-    {
-      "item_id": "ci-triage",
-      "name": "CI failure triage",
-      "description": "Diagnose a flaky CI run and propose a fix plan.",
-      "task_category": "analysis",
-      "expected_human_effort_minutes": { "min": 15, "max": 45 },
-      "expected_confidence_band": "medium",
-      "telemetry_profile": {
-        "duration_ms": 12000,
-        "tokens_prompt": 3000,
-        "tokens_completion": 1200,
-        "tool_call_count": 8,
-        "workflow_steps": 6,
-        "retries": 1
-      }
-    }
-  ]
+    "pack_id": "reference-pack",
+    "version": "1.0.0",
+    "name": "Reference Benchmark Pack",
+    "description": "PRD §25 reference tasks used for calibration.",
+    "items": [
+        {
+            "item_id": "ci-triage",
+            "name": "CI failure triage",
+            "description": "Diagnose a flaky CI run and propose a fix plan.",
+            "task_category": "analysis",
+            "expected_human_effort_minutes": { "min": 15, "max": 45 },
+            "expected_confidence_band": "medium",
+            "telemetry_profile": {
+                "duration_ms": 12000,
+                "tokens_prompt": 3000,
+                "tokens_completion": 1200,
+                "tool_call_count": 8,
+                "workflow_steps": 6,
+                "retries": 1
+            }
+        }
+    ]
 }
 ```
 
@@ -97,13 +97,13 @@ math for a given pack and source profile stays unchanged.
 
 ## Metrics
 
-| Metric | Description |
-|---|---|
-| `rmse_minutes` | Root-mean-square error versus each benchmark item's expected midpoint. |
-| `mae_range_minutes` | Mean absolute distance from the expected range. `0` means every item landed in range. |
-| `mae_midpoint_minutes` | Mean absolute distance from the expected midpoint. |
-| `bias_minutes` | Signed mean error versus the expected midpoint. Positive means systematic over-estimation. |
-| `r_squared` | Coefficient of determination versus expected midpoints. |
+| Metric                 | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `rmse_minutes`         | Root-mean-square error versus each benchmark item's expected midpoint.                     |
+| `mae_range_minutes`    | Mean absolute distance from the expected range. `0` means every item landed in range.      |
+| `mae_midpoint_minutes` | Mean absolute distance from the expected midpoint.                                         |
+| `bias_minutes`         | Signed mean error versus the expected midpoint. Positive means systematic over-estimation. |
+| `r_squared`            | Coefficient of determination versus expected midpoints.                                    |
 
 Each item in the report also includes:
 
@@ -141,12 +141,12 @@ versioning policy.
 
 ## Roadmap (plan 0015)
 
-| Item | Status |
-|---|---|
-| Reference pack fixture | Shipped |
-| `heec calibrate run` CLI | Shipped |
-| RMSE / MAE / R² report output | Shipped |
-| Suggested profile artifact | Shipped |
+| Item                                | Status                    |
+| ----------------------------------- | ------------------------- |
+| Reference pack fixture              | Shipped                   |
+| `heec calibrate run` CLI            | Shipped                   |
+| RMSE / MAE / R² report output       | Shipped                   |
+| Suggested profile artifact          | Shipped                   |
 | Persisted run history + audit trail | Shipped (SQLite CLI path) |
-| Dashboard calibration page | Planned |
-| Automated calibration CI job | Planned |
+| Dashboard calibration page          | Planned                   |
+| Automated calibration CI job        | Planned                   |

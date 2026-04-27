@@ -48,6 +48,8 @@ Thumbs.db
 .tmp-*
 .env
 .env.local
+testing/compose/*/.env
+dependency-reduced-pom.xml
 .envrc
 secrets/
 

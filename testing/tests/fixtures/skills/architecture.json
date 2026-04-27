@@ -1,0 +1,31 @@
+{
+  "skill": "architecture",
+  "command": "/skill architecture",
+  "mock_script": [
+    { "tool": "web_search", "stub_output": { "results": 4, "tokens": 500 } },
+    { "tool": "plan_reviewer", "stub_output": { "notes": ["boundary", "migration"] } },
+    { "tool": "data_analyst", "stub_output": { "rows": 120, "output_size": 1.0 } },
+    { "tool": "summarizer", "stub_output": { "word_count": 260, "output_size": 0.8 } }
+  ],
+  "expected_event": {
+    "task": {
+      "category": "planning_architecture",
+      "sub_category": "architecture_review",
+      "outcome": "success"
+    },
+    "metrics": {
+      "tool_call_count": 4,
+      "workflow_steps": 2,
+      "retries": 0,
+      "artifact_count": 2,
+      "output_size_proxy": 1.8,
+      "tokens_prompt_min": 1100,
+      "tokens_completion_min": 1000
+    },
+    "context": {
+      "risk_class": "medium",
+      "human_in_loop": false,
+      "review_required": true
+    }
+  }
+}

@@ -1,0 +1,40 @@
+services:
+  chatbot-api:
+    build:
+      context: ${HEECZER_REPO_ROOT}
+      dockerfile: testing/compose/go/chatbot/Dockerfile
+    depends_on:
+      heeczer-ingest:
+        condition: service_healthy
+    environment:
+      CHATBOT_PORT: 8000
+      HEECZER_BASE_URL: http://heeczer-ingest:8080
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3-flash-preview}
+      LOCAL_MODEL_BASE_URL: ${LOCAL_MODEL_BASE_URL:-http://ollama:11434}
+      LOCAL_MODEL: ${LOCAL_MODEL:-llama3.2:1b}
+      CHATBOT_WORKSPACE_ID: ${CHATBOT_WORKSPACE_ID:-local-test-go}
+      CHATBOT_PROJECT_ID: ${CHATBOT_PROJECT_ID:-local-go}
+      CHATBOT_SCORING_PROFILE: ${CHATBOT_SCORING_PROFILE:-default}
+    ports:
+      - "127.0.0.1:${HEECZER_CHATBOT_API_PORT}:8000"
+
+  chatbot-ui:
+    build:
+      context: ${HEECZER_REPO_ROOT}
+      dockerfile: testing/compose/go/chatbot/Dockerfile
+    depends_on:
+      heeczer-ingest:
+        condition: service_healthy
+    environment:
+      CHATBOT_PORT: 8000
+      HEECZER_BASE_URL: http://heeczer-ingest:8080
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      CHATBOT_WORKSPACE_ID: ${CHATBOT_WORKSPACE_ID:-local-test-go}
+      CHATBOT_PROJECT_ID: ${CHATBOT_PROJECT_ID:-local-go}
+      CHATBOT_SCORING_PROFILE: ${CHATBOT_SCORING_PROFILE:-default}
+    ports:
+      - "127.0.0.1:${HEECZER_CHATBOT_UI_PORT}:8000"

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: heeczer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-heeczer_local_stack}
+      POSTGRES_DB: heeczer_${HEECZER_STACK}
+    ports:
+      - "127.0.0.1:${HEECZER_POSTGRES_PORT}:5432"
+    volumes:
+      - heeczer-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heeczer -d heeczer_${HEECZER_STACK}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  heeczer-pgdata:
+    name: heeczer-test-${HEECZER_STACK}-pgdata

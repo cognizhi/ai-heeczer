@@ -128,10 +128,10 @@ It focuses specifically on **translating AI execution telemetry into human-equiv
    Versioning, changelogs, CI gates, and ecosystem publishing are product requirements, not optional repo hygiene.
 
 10. **TDD over retrofit testing**
-   Requirements, contracts, fixtures, and acceptance tests must be written before or alongside implementation, never treated as cleanup.
+    Requirements, contracts, fixtures, and acceptance tests must be written before or alongside implementation, never treated as cleanup.
 
 11. **Executable developer experience**
-   README, Makefile, examples, and CI must agree with one another and remain runnable.
+    README, Makefile, examples, and CI must agree with one another and remain runnable.
 
 ---
 
@@ -518,48 +518,48 @@ The CLI's JSON output is part of the public contract (§12.15) and changes are v
 
 ```json
 {
-  "spec_version": "1.0",
-  "event_id": "uuid-v4",
-  "correlation_id": "optional-parent-task-id",
-  "timestamp": "2026-04-22T09:46:00Z",
-  "framework_source": "langgraph",
-  "workspace_id": "ws_001",
-  "project_id": "proj_001",
-  "identity": {
-    "user_id": "usr_123",
-    "team_id": "tm_456",
-    "business_unit_id": "bu_007",
-    "tier_id": "tier_mid_eng"
-  },
-  "task": {
-    "name": "generate_api_spec",
-    "category": "code_generation",
-    "sub_category": "api_design",
-    "outcome": "success"
-  },
-  "metrics": {
-    "duration_ms": 14500,
-    "tokens_prompt": 1200,
-    "tokens_completion": 4000,
-    "tool_call_count": 3,
-    "workflow_steps": 5,
-    "retries": 1,
-    "artifact_count": 4,
-    "output_size_proxy": 2.5
-  },
-  "context": {
-    "human_in_loop": false,
-    "review_required": true,
-    "temperature": 0.2,
-    "risk_class": "medium",
-    "tags": ["frontend", "jira-sync"]
-  },
-  "meta": {
-    "sdk_language": "python",
-    "sdk_version": "0.1.0",
-      "scoring_profile": "default",
-      "extensions": {}
-  }
+    "spec_version": "1.0",
+    "event_id": "uuid-v4",
+    "correlation_id": "optional-parent-task-id",
+    "timestamp": "2026-04-22T09:46:00Z",
+    "framework_source": "langgraph",
+    "workspace_id": "ws_001",
+    "project_id": "proj_001",
+    "identity": {
+        "user_id": "usr_123",
+        "team_id": "tm_456",
+        "business_unit_id": "bu_007",
+        "tier_id": "tier_mid_eng"
+    },
+    "task": {
+        "name": "generate_api_spec",
+        "category": "code_generation",
+        "sub_category": "api_design",
+        "outcome": "success"
+    },
+    "metrics": {
+        "duration_ms": 14500,
+        "tokens_prompt": 1200,
+        "tokens_completion": 4000,
+        "tool_call_count": 3,
+        "workflow_steps": 5,
+        "retries": 1,
+        "artifact_count": 4,
+        "output_size_proxy": 2.5
+    },
+    "context": {
+        "human_in_loop": false,
+        "review_required": true,
+        "temperature": 0.2,
+        "risk_class": "medium",
+        "tags": ["frontend", "jira-sync"]
+    },
+    "meta": {
+        "sdk_language": "python",
+        "sdk_version": "0.1.0",
+        "scoring_profile": "default",
+        "extensions": {}
+    }
 }
 ```
 
@@ -669,15 +669,12 @@ context_multiplier =
 
 Suggested defaults:
 
-- retry_multiplier = min(1.0 + retries * 0.25, 2.0)
+- retry_multiplier = min(1.0 + retries \* 0.25, 2.0)
 - ambiguity_multiplier = 1.1 if temperature > 0.7 else 1.0
 - risk_multiplier = 1.2 for high-risk tasks, else 1.0
 - human_in_loop_multiplier = 0.7 when substantial human review is required
-- outcome multiplier:
-  - success = 1.0
-  - partial_success = 0.6
-  - failure = 0.25
-  - timeout = 0.2
+- outcome multiplier: success = 1.0, partial_success = 0.6, failure = 0.25,
+  timeout = 0.2
 
 ### 14.5 Human Tier Adjustment
 
@@ -738,32 +735,32 @@ Every scored event must include a machine-readable explainability trace and a hu
 
 ```json
 {
-  "scoring_version": "1.0.0",
-  "bcu_breakdown": {
-    "tokens": 8.0,
-    "duration": 7.0,
-    "steps": 10.0,
-    "tools": 9.0,
-    "artifacts": 6.0,
-    "review": 4.0
-  },
-  "category_multiplier": 1.2,
-  "context_multiplier": {
-    "retry": 1.25,
-    "risk": 1.0,
-    "human_in_loop": 0.7,
-    "outcome": 1.0
-  },
-  "baseline_human_minutes": 45.36,
-  "tier": {
-    "id": "tier_mid_eng",
-    "multiplier": 1.0,
-    "hourly_rate": 75
-  },
-  "final_estimated_minutes": 45.36,
-  "financial_equivalent_cost": 56.70,
-   "confidence_score": 0.91,
-   "confidence_band": "High"
+    "scoring_version": "1.0.0",
+    "bcu_breakdown": {
+        "tokens": 8.0,
+        "duration": 7.0,
+        "steps": 10.0,
+        "tools": 9.0,
+        "artifacts": 6.0,
+        "review": 4.0
+    },
+    "category_multiplier": 1.2,
+    "context_multiplier": {
+        "retry": 1.25,
+        "risk": 1.0,
+        "human_in_loop": 0.7,
+        "outcome": 1.0
+    },
+    "baseline_human_minutes": 45.36,
+    "tier": {
+        "id": "tier_mid_eng",
+        "multiplier": 1.0,
+        "hourly_rate": 75
+    },
+    "final_estimated_minutes": 45.36,
+    "financial_equivalent_cost": 56.7,
+    "confidence_score": 0.91,
+    "confidence_band": "High"
 }
 ```
 

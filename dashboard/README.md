@@ -39,11 +39,11 @@ npm run test:e2e   # playwright (needs running server)
 
 ## Environment variables
 
-| Variable                 | Default                 | Description                                           |
-| ------------------------ | ----------------------- | ----------------------------------------------------- |
-| `NEXT_PUBLIC_INGEST_URL` | `http://localhost:8080` | Base URL of the ingestion service                     |
+| Variable                 | Default                 | Description                                                                                        |
+| ------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_INGEST_URL` | `http://localhost:8080` | Base URL of the ingestion service                                                                  |
 | `HEECZER_DASHBOARD_ROLE` | `viewer`                | Local/session role gate (`viewer`, `analyst`, `admin`, `owner`; legacy `tester` maps to `analyst`) |
-| `HEECZER_OIDC_ISSUER`    | _(unset)_               | Marks the session provider as OIDC when configured    |
+| `HEECZER_OIDC_ISSUER`    | _(unset)_               | Marks the session provider as OIDC when configured                                                 |
 
 ## Security
 

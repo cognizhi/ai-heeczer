@@ -1,6 +1,6 @@
 # Plan 14 — Security and privacy
 
-- **Status:** Active
+- **Status:** Active — partial implementation; major security controls and CI gates remain open
 - **Owner:** Security Engineer
 - **PRD:** §22, §12.17, §12.18, §12.19
 - **ADR:** ADR-0009 (release signing)

@@ -1,6 +1,6 @@
 # Plan 15 — Calibration and benchmarks
 
-- **Status:** Active (Phase 2/3 features)
+- **Status:** Active — core/CLI calibration shipped; interactive dashboard workflow still pending
 - **Owner:** Tech Lead + SDK Engineer
 - **PRD:** §25, §12.8
 - **ADR:** n/a

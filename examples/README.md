@@ -6,25 +6,29 @@ the ingestion service over HTTP. Each example is self-contained and
 intentionally short — the goal is to show the smallest path from "I have
 an event" to "I have a `ScoreResult`".
 
-| Language | Path | Mode | Run |
-| --- | --- | --- | --- |
-| Rust (in-process) | [`../bindings/heeczer-rs/examples/quickstart.rs`](../bindings/heeczer-rs/examples/quickstart.rs) | native | `cargo run -p heeczer --example quickstart` |
-| Node.js (HTTP) | [`node/quickstart.mjs`](node/quickstart.mjs) | image | `node examples/node/quickstart.mjs` |
-| Python (HTTP, async) | [`python/quickstart.py`](python/quickstart.py) | image | `uv run --project bindings/heeczer-py python examples/python/quickstart.py` |
-| Go (HTTP) | [`go/quickstart.go`](go/quickstart.go) | image | `(cd examples/go && go run .)` |
-| Java (HTTP) | [`java/Quickstart.java`](java/Quickstart.java) | image | `java --class-path <heeczer-sdk-jar> examples/java/Quickstart.java` |
-| `heec` CLI | [`cli.md`](cli.md) | native | `heec score examples/event.json` |
+| Language             | Path                                                                                             | Mode   | Run                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------- |
+| Rust (in-process)    | [`../bindings/heeczer-rs/examples/quickstart.rs`](../bindings/heeczer-rs/examples/quickstart.rs) | native | `cargo run -p heeczer --example quickstart`                                 |
+| Node.js (HTTP)       | [`node/quickstart.mjs`](node/quickstart.mjs)                                                     | image  | `node examples/node/quickstart.mjs`                                         |
+| Python (HTTP, async) | [`python/quickstart.py`](python/quickstart.py)                                                   | image  | `uv run --project bindings/heeczer-py python examples/python/quickstart.py` |
+| Go (HTTP)            | [`go/quickstart.go`](go/quickstart.go)                                                           | image  | `(cd examples/go && go run .)`                                              |
+| Java (HTTP)          | [`java/Quickstart.java`](java/Quickstart.java)                                                   | image  | `java --class-path <heeczer-sdk-jar> examples/java/Quickstart.java`         |
+| `heec` CLI           | [`cli.md`](cli.md)                                                                               | native | `heec score examples/event.json`                                            |
 
 _Mode legend: **native** runs the Rust scoring core in-process (no
 service required); **image** posts to a running ingestion service over
 HTTP. Native parity for the JS/Python/Go/Java SDKs tracks plans 0005–0007
 and 0009; until then those four SDKs are HTTP-only._
 
-All HTTP examples assume the ingestion service is running locally on
-`http://127.0.0.1:8080`. To start it:
+Want a full sandbox with a chatbot, an SDK client, ingestion, persisted storage,
+and the dashboard? Use the local per-SDK stacks in
+[`../testing/README.md`](../testing/README.md).
+
+All HTTP examples assume an unauthenticated local development ingestion service
+is running on `http://127.0.0.1:8080`. To start it:
 
 ```bash
-cargo run -p heeczer-ingest
+HEECZER_AUTH__ENABLED=false cargo run -p heeczer-ingest
 ```
 
 ## Prerequisites
@@ -32,8 +36,8 @@ cargo run -p heeczer-ingest
 - **Rust toolchain** (stable, ≥ 1.85): `rustup toolchain install stable`. The
   first `cargo build` takes ~2–3 min to compile the workspace from scratch.
 - **Port 8080** available on localhost (for HTTP examples).
-- **`HEECZER_API_KEY`**: optional. The service is permissive by default;
-  set the env-var only if you have enabled key enforcement.
+- **`HEECZER_API_KEY`**: optional only when `HEECZER_AUTH__ENABLED=false`;
+  otherwise set it to a valid key sent as `x-heeczer-api-key`.
 - **Per-language runtimes**: Node ≥ 20, Python ≥ 3.11, Go ≥ 1.22, Java ≥ 17.
 
 In a separate terminal, set `HEECZER_BASE_URL` if the service is not on
@@ -51,15 +55,15 @@ the default port and run any example above.
 - Reference valid fixtures (different categories, outcomes, frameworks):
   [`core/schema/fixtures/events/valid/`](../core/schema/fixtures/events/valid/):
 
-  | Fixture | Category | Outcome | Risk | HIL | Framework |
-  | --- | --- | --- | --- | --- | --- |
-  | `01-prd-canonical.json` | code_generation | success | medium | no | langgraph |
-  | `02-summarization-human-in-loop.json` | summarization | success | low | yes | langgraph |
-  | `03-rca-failure-high-risk.json` | root_cause_analysis | failure | high | yes | google_adk |
-  | `04-planning-architecture-partial.json` | planning_architecture | partial_success | medium | yes | langgraph |
-  | `05-regulated-decision-support.json` | regulated_decision_support | success | high | yes | google_adk |
-  | `06-drafting-timeout.json` | drafting | timeout | low | no | langgraph |
-  | `07-ci-triage-tool-heavy.json` | code_generation | success | low | no | google_adk |
+    | Fixture                                 | Category                   | Outcome         | Risk   | HIL | Framework  |
+    | --------------------------------------- | -------------------------- | --------------- | ------ | --- | ---------- |
+    | `01-prd-canonical.json`                 | code_generation            | success         | medium | no  | langgraph  |
+    | `02-summarization-human-in-loop.json`   | summarization              | success         | low    | yes | langgraph  |
+    | `03-rca-failure-high-risk.json`         | root_cause_analysis        | failure         | high   | yes | google_adk |
+    | `04-planning-architecture-partial.json` | planning_architecture      | partial_success | medium | yes | langgraph  |
+    | `05-regulated-decision-support.json`    | regulated_decision_support | success         | high   | yes | google_adk |
+    | `06-drafting-timeout.json`              | drafting                   | timeout         | low    | no  | langgraph  |
+    | `07-ci-triage-tool-heavy.json`          | code_generation            | success         | low    | no  | google_adk |
 
 - Default scoring profile: [`core/schema/profiles/default.v1.json`](../core/schema/profiles/default.v1.json).
 - Default tier set: [`core/schema/tiers/default.v1.json`](../core/schema/tiers/default.v1.json).

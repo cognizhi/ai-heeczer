@@ -62,9 +62,9 @@ except HeeczerApiError as err:
 | ----------- | ---------------------------------- | ------------ | -------------------------------------------------------------- |
 | `base_url`  | `str`                              | required     | Base URL of the ingestion service. Trailing slash is stripped. |
 | `api_key`   | `str \| None`                      | `None`       | Sent as `x-heeczer-api-key`.                                   |
-| `mode`      | `"image" \| "native"`           | `"image"`  | `native` fails fast until the pyo3/maturin binding ships.      |
+| `mode`      | `"image" \| "native"`              | `"image"`    | `native` fails fast until the pyo3/maturin binding ships.      |
 | `timeout`   | `float`                            | `10.0`       | Per-request timeout in seconds.                                |
-| `retry`     | `RetryPolicy \| None`             | `2 attempts` | Retries transient transport/status failures.                   |
+| `retry`     | `RetryPolicy \| None`              | `2 attempts` | Retries transient transport/status failures.                   |
 | `transport` | `httpx.AsyncBaseTransport \| None` | `None`       | Inject a custom transport (e.g. `httpx.MockTransport`).        |
 
 ## Methods

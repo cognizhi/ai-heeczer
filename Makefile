@@ -144,6 +144,104 @@ examples-smoke: example-rust ## smoke-test examples that don't require a running
 	@echo "examples-smoke: in-process (Rust) example passed"
 	@echo "NOTE: HTTP-mode examples (node, python, go, java) require a running ingest service"
 
+# ----- local SDK test stacks (plan 0016) ------------------------------------
+
+TEST_STACKS := js py pydanticai go java rs
+
+.PHONY: start-test-js stop-test-js reset-test-js logs-test-js ps-test-js smoke-test-js
+start-test-js: ## bring up the JS/TS SDK test stack
+	bash testing/compose/_bin/stack.sh start js
+stop-test-js: ## stop the JS/TS SDK test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop js
+reset-test-js: ## stop and DROP the JS/TS SDK test stack database
+	bash testing/compose/_bin/stack.sh reset js
+logs-test-js: ## tail logs for the JS/TS SDK test stack
+	bash testing/compose/_bin/stack.sh logs js
+ps-test-js: ## show running services for the JS/TS SDK test stack
+	bash testing/compose/_bin/stack.sh ps js
+smoke-test-js: ## run the JS/TS SDK stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke js
+
+.PHONY: start-test-py stop-test-py reset-test-py logs-test-py ps-test-py smoke-test-py
+start-test-py: ## bring up the Python SDK test stack
+	bash testing/compose/_bin/stack.sh start py
+stop-test-py: ## stop the Python SDK test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop py
+reset-test-py: ## stop and DROP the Python SDK test stack database
+	bash testing/compose/_bin/stack.sh reset py
+logs-test-py: ## tail logs for the Python SDK test stack
+	bash testing/compose/_bin/stack.sh logs py
+ps-test-py: ## show running services for the Python SDK test stack
+	bash testing/compose/_bin/stack.sh ps py
+smoke-test-py: ## run the Python SDK stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke py
+
+.PHONY: start-test-pydanticai stop-test-pydanticai reset-test-pydanticai logs-test-pydanticai ps-test-pydanticai smoke-test-pydanticai
+start-test-pydanticai: ## bring up the PydanticAI test stack
+	bash testing/compose/_bin/stack.sh start pydanticai
+stop-test-pydanticai: ## stop the PydanticAI test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop pydanticai
+reset-test-pydanticai: ## stop and DROP the PydanticAI test stack database
+	bash testing/compose/_bin/stack.sh reset pydanticai
+logs-test-pydanticai: ## tail logs for the PydanticAI test stack
+	bash testing/compose/_bin/stack.sh logs pydanticai
+ps-test-pydanticai: ## show running services for the PydanticAI test stack
+	bash testing/compose/_bin/stack.sh ps pydanticai
+smoke-test-pydanticai: ## run the PydanticAI stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke pydanticai
+
+.PHONY: start-test-go stop-test-go reset-test-go logs-test-go ps-test-go smoke-test-go
+start-test-go: ## bring up the Go SDK test stack
+	bash testing/compose/_bin/stack.sh start go
+stop-test-go: ## stop the Go SDK test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop go
+reset-test-go: ## stop and DROP the Go SDK test stack database
+	bash testing/compose/_bin/stack.sh reset go
+logs-test-go: ## tail logs for the Go SDK test stack
+	bash testing/compose/_bin/stack.sh logs go
+ps-test-go: ## show running services for the Go SDK test stack
+	bash testing/compose/_bin/stack.sh ps go
+smoke-test-go: ## run the Go SDK stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke go
+
+.PHONY: start-test-java stop-test-java reset-test-java logs-test-java ps-test-java smoke-test-java
+start-test-java: ## bring up the Java SDK test stack
+	bash testing/compose/_bin/stack.sh start java
+stop-test-java: ## stop the Java SDK test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop java
+reset-test-java: ## stop and DROP the Java SDK test stack database
+	bash testing/compose/_bin/stack.sh reset java
+logs-test-java: ## tail logs for the Java SDK test stack
+	bash testing/compose/_bin/stack.sh logs java
+ps-test-java: ## show running services for the Java SDK test stack
+	bash testing/compose/_bin/stack.sh ps java
+smoke-test-java: ## run the Java SDK stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke java
+
+.PHONY: start-test-rs stop-test-rs reset-test-rs logs-test-rs ps-test-rs smoke-test-rs
+start-test-rs: ## bring up the Rust SDK test stack
+	bash testing/compose/_bin/stack.sh start rs
+stop-test-rs: ## stop the Rust SDK test stack, keep the database
+	bash testing/compose/_bin/stack.sh stop rs
+reset-test-rs: ## stop and DROP the Rust SDK test stack database
+	bash testing/compose/_bin/stack.sh reset rs
+logs-test-rs: ## tail logs for the Rust SDK test stack
+	bash testing/compose/_bin/stack.sh logs rs
+ps-test-rs: ## show running services for the Rust SDK test stack
+	bash testing/compose/_bin/stack.sh ps rs
+smoke-test-rs: ## run the Rust SDK stack smoke tests
+	bash testing/compose/_bin/stack.sh smoke rs
+
+.PHONY: start-test-all stop-test-all reset-test-all smoke-test-stacks
+start-test-all: ## bring up every local SDK test stack
+	bash testing/compose/_bin/stack-all.sh start
+stop-test-all: ## stop every local SDK test stack, keep databases
+	bash testing/compose/_bin/stack-all.sh stop
+reset-test-all: ## DROP every local SDK test-stack database
+	bash testing/compose/_bin/stack-all.sh reset
+smoke-test-stacks: ## run smoke tests across every local SDK test stack
+	bash testing/compose/_bin/stack-all.sh smoke
+
 # ----- security --------------------------------------------------------------
 
 .PHONY: security

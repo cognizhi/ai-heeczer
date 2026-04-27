@@ -1,0 +1,30 @@
+{
+  "skill": "doc_summary",
+  "command": "/skill doc-summary",
+  "mock_script": [
+    { "tool": "document_reader", "stub_output": { "chunks": 3, "tokens": 2000 } },
+    { "tool": "summarizer", "stub_output": { "word_count": 240, "output_size": 0.8 } },
+    { "tool": "plan_reviewer", "stub_output": { "notes": ["scope", "risk"] } }
+  ],
+  "expected_event": {
+    "task": {
+      "category": "summarization",
+      "sub_category": "document_review",
+      "outcome": "success"
+    },
+    "metrics": {
+      "tool_call_count": 3,
+      "workflow_steps": 2,
+      "retries": 0,
+      "artifact_count": 1,
+      "output_size_proxy": 0.8,
+      "tokens_prompt_min": 2600,
+      "tokens_completion_min": 200
+    },
+    "context": {
+      "risk_class": "medium",
+      "human_in_loop": true,
+      "review_required": true
+    }
+  }
+}

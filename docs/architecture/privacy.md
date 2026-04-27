@@ -20,12 +20,12 @@ conversation.
 
 ## Data classification
 
-| Tier | Label        | Example fields                                                    | Handling                                        |
-| ---- | ------------ | ----------------------------------------------------------------- | ----------------------------------------------- |
+| Tier | Label        | Example fields                                                    | Handling                                                                                                       |
+| ---- | ------------ | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | 1    | Restricted   | raw prompt text, model response text, user PII beyond identifiers | Not stored; typed schema fields exclude it and `meta.extensions` rejects privacy-sensitive key names on ingest |
-| 2    | Confidential | `workspace_id`, `user_id`, API keys (hashed), audit log entries   | Encrypted at rest; access gated by RBAC admin   |
-| 3    | Internal     | `event_id`, `task.category`, `scoring_version`, score breakdowns  | Stored in append-only tables; workspace-scoped  |
-| 4    | Public       | aggregate statistics, benchmark reference payloads, schema JSON   | Published openly; no workspace attribution      |
+| 2    | Confidential | `workspace_id`, `user_id`, API keys (hashed), audit log entries   | Encrypted at rest; access gated by RBAC admin                                                                  |
+| 3    | Internal     | `event_id`, `task.category`, `scoring_version`, score breakdowns  | Stored in append-only tables; workspace-scoped                                                                 |
+| 4    | Public       | aggregate statistics, benchmark reference payloads, schema JSON   | Published openly; no workspace attribution                                                                     |
 
 ## What is collected
 

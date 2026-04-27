@@ -39,7 +39,7 @@ No raw key material appears in any log, audit entry, or error response.
 - TLS 1.2 or higher is required on all endpoints. TLS 1.0 and 1.1 are
   disabled.
 - The dashboard currently sets `Strict-Transport-Security:
-  max-age=31536000; includeSubDomains` (HSTS) on all responses.
+max-age=31536000; includeSubDomains` (HSTS) on all responses.
 - Mutual TLS (mTLS) remains the recommended production ingress pattern, but
   the Rust service does not terminate mTLS directly in the current slice. Put
   mTLS at the edge proxy or service mesh and keep API-key auth enabled behind it.

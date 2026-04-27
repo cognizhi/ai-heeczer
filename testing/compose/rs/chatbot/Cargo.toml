@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "heeczer-test-rs-chatbot"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+heeczer = { path = "../../../../bindings/heeczer-rs", default-features = false, features = ["http"] }
+heeczer-core = { path = "../../../../core/heeczer-core" }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = { version = "0.3", features = ["formatting"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+uuid = { version = "1", features = ["v4"] }

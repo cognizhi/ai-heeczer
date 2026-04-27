@@ -1,0 +1,24 @@
+services:
+  heeczer-ingest:
+    build:
+      context: ${HEECZER_REPO_ROOT}
+      dockerfile: services/heeczer-ingest/Dockerfile.dev
+    environment:
+      HEECZER_LISTEN: 0.0.0.0:8080
+      HEECZER_DATABASE_URL: sqlite:/data/heeczer.db?mode=rwc
+      HEECZER_AUTH__ENABLED: "false"
+      HEECZER_FEATURES__TEST_ORCHESTRATION: "true"
+      RUST_LOG: ${RUST_LOG:-info}
+    ports:
+      - "127.0.0.1:${HEECZER_INGEST_PORT}:8080"
+    volumes:
+      - heeczer-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/v1/ready >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  heeczer-data:
+    name: heeczer-test-${HEECZER_STACK}-data

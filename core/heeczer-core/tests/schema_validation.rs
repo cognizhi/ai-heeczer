@@ -24,6 +24,11 @@ fn load_jsons(dir: &str) -> Vec<(String, String)> {
     out
 }
 
+fn plan_0016_fixture_dir() -> PathBuf {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest.join("../../testing/tests/fixtures/skills")
+}
+
 #[test]
 fn every_valid_fixture_validates() {
     let v = EventValidator::new_v1();
@@ -39,6 +44,131 @@ fn every_edge_fixture_validates() {
     for (name, body) in load_jsons("edge") {
         v.validate_str(&body, Mode::Strict)
             .unwrap_or_else(|e| panic!("edge fixture `{name}` failed: {e}"));
+    }
+}
+
+#[test]
+fn plan_0016_skill_fixtures_materialise_valid_events() {
+    let event_validator = EventValidator::new_v1();
+    let default_profile = heeczer_core::ScoringProfile::default_v1();
+    let fixture_dir = plan_0016_fixture_dir();
+    let mut entries: Vec<_> = std::fs::read_dir(&fixture_dir)
+        .unwrap_or_else(|error| panic!("read_dir {}: {error}", fixture_dir.display()))
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| path.extension().and_then(|extension| extension.to_str()) == Some("json"))
+        .collect();
+    entries.sort();
+
+    for (index, path) in entries.iter().enumerate() {
+        let body = std::fs::read_to_string(path).unwrap();
+        let fixture: serde_json::Value = serde_json::from_str(&body).unwrap();
+        let skill = fixture["skill"].as_str().expect("skill key");
+        let expected = &fixture["expected_event"];
+        let category = expected["task"]["category"]
+            .as_str()
+            .expect("task.category");
+        assert!(
+            default_profile.category_multipliers.contains_key(category),
+            "Plan 0016 skill fixture `{skill}` uses category `{category}` not present in the default scoring profile"
+        );
+
+        let metrics = &expected["metrics"];
+        let mut task = expected["task"].clone();
+        task["name"] = serde_json::json!(format!("{skill}: local stack turn"));
+        let mut context = expected["context"].clone();
+        context["tags"] = serde_json::json!(["local-stack", "test", skill]);
+        let tool_trace: Vec<_> = fixture["mock_script"]
+            .as_array()
+            .expect("mock_script array")
+            .iter()
+            .map(|step| step["tool"].clone())
+            .collect();
+        let mut expected_workflow_steps = 0;
+        let mut expected_artifact_count = 0;
+        let mut expected_output_size = 0.0;
+        for tool in &tool_trace {
+            match tool.as_str().expect("tool name") {
+                "web_search" | "code_executor" | "document_reader" | "plan_reviewer" => {
+                    expected_workflow_steps += 1;
+                }
+                _ => {}
+            }
+            match tool.as_str().expect("tool name") {
+                "code_executor" | "data_analyst" | "summarizer" | "diff_generator" => {
+                    expected_artifact_count += 1;
+                }
+                _ => {}
+            }
+            expected_output_size += match tool.as_str().expect("tool name") {
+                "code_executor" => 0.5,
+                "data_analyst" => 1.0,
+                "summarizer" => 0.8,
+                "diff_generator" => 0.3,
+                _ => 0.0,
+            };
+        }
+        assert_eq!(
+            metrics["tool_call_count"]
+                .as_u64()
+                .expect("tool_call_count"),
+            tool_trace.len() as u64,
+            "Plan 0016 skill fixture `{skill}` has inconsistent tool_call_count"
+        );
+        assert_eq!(
+            metrics["workflow_steps"].as_u64().expect("workflow_steps"),
+            expected_workflow_steps,
+            "Plan 0016 skill fixture `{skill}` has inconsistent workflow_steps"
+        );
+        assert_eq!(
+            metrics["artifact_count"].as_u64().expect("artifact_count"),
+            expected_artifact_count,
+            "Plan 0016 skill fixture `{skill}` has inconsistent artifact_count"
+        );
+        let output_size = metrics["output_size_proxy"]
+            .as_f64()
+            .expect("output_size_proxy");
+        assert!(
+            (output_size - expected_output_size).abs() < 0.000_001,
+            "Plan 0016 skill fixture `{skill}` has inconsistent output_size_proxy"
+        );
+        let event = serde_json::json!({
+            "spec_version": "1.0",
+            "event_id": format!("00000000-0000-4000-8000-{index:012}"),
+            "correlation_id": format!("test-session:{index}"),
+            "timestamp": "2026-04-27T00:00:00Z",
+            "framework_source": "chatbot-test",
+            "workspace_id": "local-test-contract",
+            "task": task,
+            "metrics": {
+                "duration_ms": 1234,
+                "tokens_prompt": metrics["tokens_prompt_min"],
+                "tokens_completion": metrics["tokens_completion_min"],
+                "tool_call_count": metrics["tool_call_count"],
+                "workflow_steps": metrics["workflow_steps"],
+                "retries": metrics["retries"],
+                "artifact_count": metrics["artifact_count"],
+                "output_size_proxy": metrics["output_size_proxy"]
+            },
+            "context": context,
+            "meta": {
+                "sdk_language": "test",
+                "sdk_version": "0.0.0",
+                "scoring_profile": "default",
+                "extensions": {
+                    "chatbot.skill": skill,
+                    "chatbot.turn": 1,
+                    "chatbot.tool_trace": tool_trace
+                }
+            }
+        });
+        event_validator
+            .validate(&event, Mode::Strict)
+            .unwrap_or_else(|error| {
+                panic!(
+                    "Plan 0016 skill fixture `{}` materialised an invalid event: {error}",
+                    path.display()
+                )
+            });
     }
 }
 

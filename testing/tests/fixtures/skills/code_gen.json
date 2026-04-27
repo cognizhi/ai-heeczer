@@ -1,0 +1,30 @@
+{
+  "skill": "code_gen",
+  "command": "/skill code-gen",
+  "mock_script": [
+    { "tool": "code_executor", "stub_output": { "exit_code": 0, "output_size": 0.5 } },
+    { "tool": "diff_generator", "stub_output": { "files_changed": 2, "output_size": 0.3 } },
+    { "tool": "summarizer", "stub_output": { "word_count": 180, "output_size": 0.8 } }
+  ],
+  "expected_event": {
+    "task": {
+      "category": "code_generation",
+      "sub_category": "api_design",
+      "outcome": "success"
+    },
+    "metrics": {
+      "tool_call_count": 3,
+      "workflow_steps": 1,
+      "retries": 0,
+      "artifact_count": 3,
+      "output_size_proxy": 1.6,
+      "tokens_prompt_min": 600,
+      "tokens_completion_min": 200
+    },
+    "context": {
+      "risk_class": "medium",
+      "human_in_loop": false,
+      "review_required": false
+    }
+  }
+}

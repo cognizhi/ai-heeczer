@@ -1,0 +1,33 @@
+{
+  "skill": "compliance",
+  "command": "/skill compliance",
+  "mock_script": [
+    { "tool": "document_reader", "stub_output": { "chunks": 4, "tokens": 2400 } },
+    { "tool": "risk_checker", "stub_output": { "risk_score": 0.85 } },
+    { "tool": "plan_reviewer", "stub_output": { "notes": ["regulated", "needs approval"] } },
+    { "tool": "summarizer", "stub_output": { "word_count": 320, "output_size": 0.8 } }
+  ],
+  "expected_event": {
+    "task": {
+      "category": "regulated_decision_support",
+      "sub_category": "compliance_briefing",
+      "outcome": "success"
+    },
+    "metrics": {
+      "tool_call_count": 4,
+      "workflow_steps": 2,
+      "retries": 0,
+      "artifact_count": 1,
+      "output_size_proxy": 0.8,
+      "tokens_prompt_min": 3000,
+      "tokens_completion_min": 200
+    },
+    "context": {
+      "risk_class": "high",
+      "human_in_loop": true,
+      "review_required": true,
+      "temperature": 0.0
+    },
+    "score_intent": "higher_than_ci_triage"
+  }
+}

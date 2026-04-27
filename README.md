@@ -47,8 +47,9 @@ service, a dashboard, and the operational tooling to ship them.
 
 ## Status
 
-This is the **foundation slice** of the project (plans 0001–0003, 0013).
-It contains:
+This repository includes the foundation slice (plans 0001–0003, 0013) plus
+iterative SDK, ingestion, dashboard, calibration, and local test-stack work
+through plan 0016. It contains:
 
 | Crate                                      | Purpose                                     |
 | ------------------------------------------ | ------------------------------------------- |
@@ -57,8 +58,8 @@ It contains:
 | [`heeczer-storage`](core/heeczer-storage)  | SQLite/Postgres storage and migrations      |
 | [`heeczer-cli`](core/heeczer-cli) (`heec`) | First-class local developer CLI (ADR-0010)  |
 
-Plans 0004–0012, 0014, and 0015 are tracked under [`docs/plan/`](docs/plan/) and
-land iteratively on top of this foundation.
+Plans 0004–0016 are tracked under [`docs/plan/`](docs/plan/) and land
+iteratively on top of this foundation.
 
 ## Quickstart
 
@@ -90,6 +91,21 @@ heec score core/schema/fixtures/events/valid/01-prd-canonical.json --format pret
 ```
 
 The full target catalogue is in the [`Makefile`](Makefile); run `make help`.
+
+## Try a local SDK stack
+
+For a fuller sandbox with a chatbot, an SDK client, the ingestion service,
+persisted storage, and the dashboard, use the opt-in local stacks from
+[`testing/README.md`](testing/README.md):
+
+```bash
+cp testing/compose/js/.env.example testing/compose/js/.env
+make start-test-js
+make smoke-test-js
+```
+
+Each SDK has its own port band, so `js`, `py`, `pydanticai`, `go`, `java`, and
+`rs` stacks can run side by side when your machine has enough room.
 
 ## Language SDKs
 
@@ -137,7 +153,7 @@ starting with [`docs/architecture/system-overview.md`](docs/architecture/system-
 | `core/schema/`   | JSON schemas + golden fixtures               |
 | `docs/research/` | Scoring model paper and calibration analysis |
 | `docs/adr/`      | Architecture Decision Records                |
-| `docs/plan/`     | Implementation plans 0000–0015               |
+| `docs/plan/`     | Implementation plans 0000–0016               |
 | `docs/agents/`   | Agent harness and operating rules            |
 | `.github/`       | CI workflows + agent role files              |
 

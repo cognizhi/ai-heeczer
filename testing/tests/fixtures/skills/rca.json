@@ -1,0 +1,31 @@
+{
+  "skill": "rca",
+  "command": "/skill rca",
+  "mock_script": [
+    { "tool": "web_search", "stub_output": { "results": 3, "tokens": 500 } },
+    { "tool": "code_executor", "stub_output": { "exit_code": 1, "output_size": 0.5 } },
+    { "tool": "diff_generator", "stub_output": { "files_changed": 1, "output_size": 0.3 } }
+  ],
+  "expected_event": {
+    "task": {
+      "category": "root_cause_analysis",
+      "sub_category": "debugging",
+      "outcome": "success"
+    },
+    "metrics": {
+      "tool_call_count": 3,
+      "workflow_steps": 2,
+      "retries": 1,
+      "artifact_count": 2,
+      "output_size_proxy": 0.8,
+      "tokens_prompt_min": 1100,
+      "tokens_completion_min": 200
+    },
+    "context": {
+      "risk_class": "high",
+      "human_in_loop": true,
+      "review_required": true
+    },
+    "score_intent": "higher_than_ci_triage"
+  }
+}
