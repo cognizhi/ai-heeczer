@@ -5,6 +5,14 @@
 
 ### Features
 
+* **ci:** add byte-equal SDK parity and release workflow hardening ([f5427f6](https://github.com/cognizhi/ai-heeczer/commit/f5427f6ae7c1befaa704fcdcab6c20eebe4b2a55))
+* land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
+
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-js-v0.5.1...heeczer-js-v0.5.1) (2026-04-27)
+
+
+### Features
+
 * land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
 
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-js-v0.5.1...heeczer-js-v0.5.1) (2026-04-25)
