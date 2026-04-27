@@ -17,10 +17,13 @@ Usage::
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import time
 import uuid
 from collections.abc import Callable
+from contextlib import suppress
+from datetime import UTC, datetime
 from typing import Any, TypeVar
 
 from heeczer.client import HeeczerClient
@@ -46,6 +49,7 @@ def heeczer_adk_wrapper(  # noqa: PLR0913
     def decorator(fn: F) -> F:
         @functools.wraps(fn)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            started_at = datetime.now(UTC)
             start = time.monotonic()
             outcome = "success"
             error_summary: str | None = None
@@ -74,6 +78,7 @@ def heeczer_adk_wrapper(  # noqa: PLR0913
                 event: dict[str, Any] = {
                     "spec_version": "1.0",
                     "event_id": event_id,
+                    "timestamp": started_at.isoformat(),
                     "framework_source": framework_source,
                     "workspace_id": workspace_id,
                     "task": {
@@ -99,19 +104,20 @@ def heeczer_adk_wrapper(  # noqa: PLR0913
                 if error_summary:
                     event["meta"]["extensions"] = {"error_summary": error_summary}
 
-                import asyncio  # noqa: PLC0415
-
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        loop.create_task(
-                            client.ingest_event(workspace_id=workspace_id, event=event)
-                        )
-                    else:
-                        await client.ingest_event(workspace_id=workspace_id, event=event)
+                    loop = asyncio.get_running_loop()
+                    task = loop.create_task(
+                        client.ingest_event(workspace_id=workspace_id, event=event)
+                    )
+                    task.add_done_callback(_discard_task_exception)
                 except Exception:  # noqa: BLE001
                     pass
 
         return wrapper  # type: ignore[return-value]
 
     return decorator
+
+
+def _discard_task_exception(task: asyncio.Task[Any]) -> None:
+    with suppress(Exception):
+        task.exception()

@@ -1,5 +1,9 @@
 # Integration mapping reference
 
+> Status: active reference
+> Last reviewed: 2026-04-27
+> Owner: SDK Engineer
+
 This document describes how each supported framework's native telemetry maps to
 the canonical ai-heeczer event schema.
 
@@ -28,9 +32,20 @@ the canonical ai-heeczer event schema.
 | Exception                        | `task.outcome = "failure"`  |                             |
 | `task_name` parameter            | `task.name`                 | Provided at decoration time |
 
+## PydanticAI
+
+| PydanticAI concept             | ai-heeczer field            | Notes                                               |
+| ------------------------------ | --------------------------- | --------------------------------------------------- |
+| `Agent.run()` / `run_sync()`   | event boundary              | One canonical event emitted per agent invocation    |
+| `result.usage().input_tokens`  | `metrics.tokens_prompt`     | Falls back to `prompt_tokens` if present            |
+| `result.usage().output_tokens` | `metrics.tokens_completion` | Falls back to `completion_tokens` if present        |
+| `result.usage().tool_calls`    | `metrics.tool_call_count`   | Uses usage count or list length when exposed        |
+| `result.usage().retries`       | `metrics.retries`           | Included only when surfaced by the result/usage API |
+| agent `name` / `task_name`     | `task.name`                 | Explicit `task_name` overrides the agent name       |
+| Raised exception               | `task.outcome = "failure"` | Error summary stored under `meta.extensions`        |
+
 ## Future adapters
 
-- **PydanticAI**: instrument `Agent.run()` / `Agent.run_sync()` hooks.
 - **Langfuse**: webhook adapter consuming Langfuse `trace.create` events.
 - **OpenTelemetry bridge**: map OTel spans with `gen_ai.*` semantic conventions.
 - **Generic webhook**: POST adapter for custom telemetry pipelines.

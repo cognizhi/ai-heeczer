@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **sdk-py:** add a duck-typed PydanticAI adapter for `run()` and `run_sync()` instrumentation
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.5.1...heeczer-py-v0.5.1) (2026-04-27)
 
 

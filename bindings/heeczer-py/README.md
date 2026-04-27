@@ -11,16 +11,17 @@ Async Python client for the [ai-heeczer](https://github.com/cognizhi/ai-heeczer)
 > Until then, install from source: `uv sync --project bindings/heeczer-py`.
 
 ```bash
-uv add cognizhi-heeczer
+uv sync --project bindings/heeczer-py
 ```
 
-Requires Python ≥ 3.11.
+Requires Python >= 3.11.
 
 ## Usage
 
 ```python
 import asyncio
 from heeczer import HeeczerClient
+
 
 async def main() -> None:
     async with HeeczerClient(
@@ -31,9 +32,10 @@ async def main() -> None:
     ) as client:
         result = await client.ingest_event(
             workspace_id="ws_default",
-            event=canonical_event,  # see core/schema/event.v1.json
+            event=canonical_event,
         )
         print(result["score"]["final_estimated_minutes"])
+
 
 asyncio.run(main())
 ```
@@ -56,14 +58,14 @@ except HeeczerApiError as err:
 
 ## Configuration
 
-| Argument    | Type                               | Default      | Description                                                      |
-| ----------- | ---------------------------------- | ------------ | ---------------------------------------------------------------- |
-| `base_url`  | `str`                              | required     | Base URL of the ingestion service. Trailing slash is stripped.   |
-| `api_key`   | `str \| None`                      | `None`       | Sent as `x-heeczer-api-key`.                                     |
-| `mode`      | `"image" \| "native"`              | `"image"`    | `native` fails fast until the pyo3/maturin binding ships.        |
-| `timeout`   | `float`                            | `10.0`       | Per-request timeout in seconds.                                  |
-| `retry`     | `RetryPolicy \| None`              | `2 attempts` | Retries transient transport/status failures.                     |
-| `transport` | `httpx.AsyncBaseTransport \| None` | `None`       | Inject a custom transport (e.g. `httpx.MockTransport` in tests). |
+| Argument    | Type                               | Default      | Description                                                    |
+| ----------- | ---------------------------------- | ------------ | -------------------------------------------------------------- |
+| `base_url`  | `str`                              | required     | Base URL of the ingestion service. Trailing slash is stripped. |
+| `api_key`   | `str \| None`                      | `None`       | Sent as `x-heeczer-api-key`.                                   |
+| `mode`      | `"image" \| "native"`           | `"image"`  | `native` fails fast until the pyo3/maturin binding ships.      |
+| `timeout`   | `float`                            | `10.0`       | Per-request timeout in seconds.                                |
+| `retry`     | `RetryPolicy \| None`             | `2 attempts` | Retries transient transport/status failures.                   |
+| `transport` | `httpx.AsyncBaseTransport \| None` | `None`       | Inject a custom transport (e.g. `httpx.MockTransport`).        |
 
 ## Methods
 
@@ -106,7 +108,7 @@ and the cross-language index in [`examples/README.md`](../../examples/README.md)
 **Validate locally before sending** with the bundled Pydantic v2 models:
 
 ```python
-from heeczer import EventModel, validate_event
+from heeczer import validate_event
 
 model = validate_event(event)
 await client.ingest_event(workspace_id="ws_default", event=model)
@@ -119,7 +121,6 @@ try:
     await client.ingest_event(workspace_id="ws", event=event)
 except HeeczerApiError as err:
     if err.kind == "schema":
-        # err.api_message contains the field-level detail from the server envelope.
         print("schema rejection:", err.api_message)
 ```
 
@@ -150,7 +151,7 @@ with SyncHeeczerClient(base_url="https://ingest.example.com", api_key="…") as 
 
 `SyncHeeczerClient` exposes the same methods as `HeeczerClient`
 (`healthz`, `version`, `ingest_event`, `test_score_pipeline`),
-all blocking. Internally it calls `asyncio.get_event_loop().run_until_complete()`.
+all blocking. Internally it uses `asyncio.run()` when no loop is active.
 Do **not** mix it with an already-running asyncio loop (e.g. inside
 `async def`); use `HeeczerClient` directly there instead.
 
@@ -158,62 +159,78 @@ Do **not** mix it with an already-running asyncio loop (e.g. inside
 
 ### LangGraph
 
-Wrap `SyncHeeczerClient` inside a custom LangGraph node to record each
-agent step's cost before passing control downstream:
+Use the duck-typed callback handler to emit one canonical event per node run:
 
 ```python
-from langgraph.graph import StateGraph
-from heeczer import SyncHeeczerClient
-from typing import TypedDict
+from heeczer import HeeczerClient
+from heeczer.adapters.langgraph import HeeczerLangGraphCallback
 
-class AgentState(TypedDict):
-    event: dict
-    score: dict | None
+client = HeeczerClient(base_url="http://localhost:8080")
+callback = HeeczerLangGraphCallback(client=client, workspace_id="ws_default")
 
-def heeczer_node(state: AgentState) -> AgentState:
-    with SyncHeeczerClient(base_url="http://localhost:3000") as client:
-        resp = client.ingest_event(
-            workspace_id="ws_default",
-            event=state["event"],
-        )
-    return {**state, "score": resp["score"]}
-
-builder = StateGraph(AgentState)
-builder.add_node("heeczer", heeczer_node)
-```
-
-In async LangGraph graphs call the `async` client instead:
-
-```python
-async def heeczer_node(state: AgentState) -> AgentState:
-    async with HeeczerClient(base_url="http://localhost:3000") as client:
-        resp = await client.ingest_event(
-            workspace_id="ws_default",
-            event=state["event"],
-        )
-    return {**state, "score": resp["score"]}
+graph.invoke({"messages": [...]}, config={"callbacks": [callback]})
 ```
 
 ### Google ADK
 
-Google's Agent Development Kit (ADK) uses an async event-loop internally.
-Use `HeeczerClient` directly in ADK tool callbacks:
+Wrap the async ADK entrypoint with the provided decorator:
 
 ```python
-from google.adk.tools import FunctionTool
 from heeczer import HeeczerClient
+from heeczer.adapters.google_adk import heeczer_adk_wrapper
 
-async def record_step(workspace_id: str, event: dict) -> dict:
-    """Record an agent step with heeczer and return the score."""
-    async with HeeczerClient(base_url="http://localhost:3000") as client:
-        return await client.ingest_event(workspace_id=workspace_id, event=event)
+client = HeeczerClient(base_url="http://localhost:8080")
 
-heeczer_tool = FunctionTool(record_step)
+
+@heeczer_adk_wrapper(client=client, workspace_id="ws_default", task_name="support_agent")
+async def run_agent(inputs: dict) -> dict:
+    ...
 ```
 
-Attach `heeczer_tool` to your ADK `Agent` via `tools=[heeczer_tool]`.
-The return value of `record_step` is serialised by ADK and forwarded as
-the tool response to the model.
+### PydanticAI
+
+Wrap a PydanticAI agent-like object to instrument `run()` and `run_sync()`
+without taking a hard dependency on `pydantic_ai` inside ai-heeczer itself.
+
+Async usage:
+
+```python
+from pydantic_ai import Agent
+
+from heeczer import HeeczerClient
+from heeczer.adapters.pydantic_ai import instrument_pydanticai_agent
+
+
+async def main() -> None:
+    client = HeeczerClient(base_url="http://localhost:8080")
+    agent = Agent("openai:gpt-5.2", name="support_agent")
+    instrumented = instrument_pydanticai_agent(
+        agent=agent,
+        client=client,
+        workspace_id="ws_default",
+    )
+    result = await instrumented.run("Summarize the ticket")
+    print(result.output)
+```
+
+Sync usage:
+
+```python
+from pydantic_ai import Agent
+
+from heeczer import SyncHeeczerClient
+from heeczer.adapters.pydantic_ai import instrument_pydanticai_agent
+
+client = SyncHeeczerClient(base_url="http://localhost:8080")
+agent = Agent("openai:gpt-5.2", name="support_agent")
+instrumented = instrument_pydanticai_agent(
+    agent=agent,
+    client=client,
+    workspace_id="ws_default",
+)
+result = instrumented.run_sync("Summarize the ticket")
+print(result.output)
+```
 
 ## Development
 

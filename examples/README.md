@@ -10,7 +10,7 @@ an event" to "I have a `ScoreResult`".
 | --- | --- | --- | --- |
 | Rust (in-process) | [`../bindings/heeczer-rs/examples/quickstart.rs`](../bindings/heeczer-rs/examples/quickstart.rs) | native | `cargo run -p heeczer --example quickstart` |
 | Node.js (HTTP) | [`node/quickstart.mjs`](node/quickstart.mjs) | image | `node examples/node/quickstart.mjs` |
-| Python (HTTP, async) | [`python/quickstart.py`](python/quickstart.py) | image | `uv run examples/python/quickstart.py` |
+| Python (HTTP, async) | [`python/quickstart.py`](python/quickstart.py) | image | `uv run --project bindings/heeczer-py python examples/python/quickstart.py` |
 | Go (HTTP) | [`go/quickstart.go`](go/quickstart.go) | image | `(cd examples/go && go run .)` |
 | Java (HTTP) | [`java/Quickstart.java`](java/Quickstart.java) | image | `java --class-path <heeczer-sdk-jar> examples/java/Quickstart.java` |
 | `heec` CLI | [`cli.md`](cli.md) | native | `heec score examples/event.json` |
@@ -27,7 +27,7 @@ All HTTP examples assume the ingestion service is running locally on
 cargo run -p heeczer-ingest
 ```
 
-### Prerequisites
+## Prerequisites
 
 - **Rust toolchain** (stable, ≥ 1.85): `rustup toolchain install stable`. The
   first `cargo build` takes ~2–3 min to compile the workspace from scratch.
@@ -38,6 +38,12 @@ cargo run -p heeczer-ingest
 
 In a separate terminal, set `HEECZER_BASE_URL` if the service is not on
 the default port and run any example above.
+
+## Framework adapter examples
+
+- [`langgraph/README.md`](langgraph/README.md) shows the LangGraph callback handler.
+- [`google-adk/README.md`](google-adk/README.md) shows the Google ADK decorator wrapper.
+- [`pydanticai/README.md`](pydanticai/README.md) shows the PydanticAI `run()` / `run_sync()` wrapper.
 
 ## Where the schema lives
 

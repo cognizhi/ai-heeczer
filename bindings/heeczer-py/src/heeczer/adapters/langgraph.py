@@ -23,7 +23,9 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from heeczer.client import HeeczerClient
@@ -35,6 +37,7 @@ class NodeRunContext:
 
     node_name: str
     run_id: str
+    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     start_time: float = field(default_factory=time.monotonic)
     tokens_prompt: int = 0
     tokens_completion: int = 0
@@ -144,6 +147,7 @@ class HeeczerLangGraphCallback:
         event: dict[str, Any] = {
             "spec_version": "1.0",
             "event_id": event_id,
+            "timestamp": ctx.started_at.isoformat(),
             "framework_source": self._framework_source,
             "workspace_id": self._workspace_id,
             "task": {
@@ -169,15 +173,22 @@ class HeeczerLangGraphCallback:
             event["meta"]["extensions"] = {"error_summary": ctx.error[:256]}
 
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                asyncio.run(
                     self._client.ingest_event(workspace_id=self._workspace_id, event=event)
                 )
             else:
-                loop.run_until_complete(
+                task = loop.create_task(
                     self._client.ingest_event(workspace_id=self._workspace_id, event=event)
                 )
+                task.add_done_callback(_discard_task_exception)
         except Exception:  # noqa: BLE001
             # Never let instrumentation crash the agent.
             pass
+
+
+def _discard_task_exception(task: asyncio.Task[Any]) -> None:
+    with suppress(Exception):
+        task.exception()

@@ -350,8 +350,20 @@ class HeeczerClient:
 
 
 def _run(coro: Any) -> Any:
-    """Run a coroutine in a new event loop (for sync wrapper methods)."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    """Run a coroutine for sync wrapper methods.
+
+    Python 3.12 no longer guarantees a current loop in sync contexts, so the
+    sync facade uses ``asyncio.run()`` when no loop is active.
+    """
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    raise RuntimeError(
+        "SyncHeeczerClient cannot be used while an asyncio event loop is running; "
+        "use HeeczerClient instead"
+    )
 
 
 class SyncHeeczerClient:
