@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/cognizhi/ai-heeczer/compare/dashboard-v0.4.0...dashboard-v0.5.0) (2026-04-27)
+
+
+### Features
+
+* complete java native mode and dashboard validation ([557e385](https://github.com/cognizhi/ai-heeczer/commit/557e3852a23b442c47cc3e827a632f46a4144289))
+* land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
+
 ## [0.4.0](https://github.com/cognizhi/ai-heeczer/compare/dashboard-v0.3.0...dashboard-v0.4.0) (2026-04-24)
 
 
