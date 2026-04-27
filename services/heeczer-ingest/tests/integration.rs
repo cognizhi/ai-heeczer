@@ -143,6 +143,36 @@ async fn ingest_event_rejects_invalid_payload() {
 }
 
 #[tokio::test]
+async fn ingest_event_rejects_prompt_or_output_content_fields() {
+    let app = router_with_features(Features::default()).await;
+    let mut event: Value =
+        serde_json::from_str(&std::fs::read_to_string(CANONICAL).unwrap()).unwrap();
+    event["meta"]["extensions"] = json!({
+        "prompt_text": "never store prompt bodies",
+        "nested": { "output_text": "never store model output bodies" }
+    });
+    let body = json!({
+        "workspace_id": "ws_test",
+        "event": event,
+    });
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/events")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    let body = body_json(resp).await;
+    assert_eq!(body["error"]["kind"], "schema");
+}
+
+#[tokio::test]
 async fn ingest_event_requires_workspace_id() {
     let app = router_with_features(Features::default()).await;
     let event: Value = serde_json::from_str(&std::fs::read_to_string(CANONICAL).unwrap()).unwrap();

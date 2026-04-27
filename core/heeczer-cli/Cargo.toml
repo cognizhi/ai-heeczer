@@ -21,6 +21,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 sqlx-core = { workspace = true }
 tokio = { workspace = true }
+time = { workspace = true }
 include_dir = "0.7"
 
 [dev-dependencies]

@@ -15,6 +15,28 @@
     "metrics",
     "meta"
   ],
+  "$defs": {
+    "extensionNode": {
+      "anyOf": [
+        {
+          "type": ["string", "number", "boolean", "null"]
+        },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/extensionNode" }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "pattern": "^(?:[Pp][Rr][Oo][Mm][Pp][Tt](?:[^A-Za-z0-9]*?(?:[Tt][Ee][Xx][Tt]|[Cc][Oo][Nn][Tt][Ee][Nn][Tt]))?|[Rr][Aa][Ww][^A-Za-z0-9]*[Pp][Rr][Oo][Mm][Pp][Tt]|[Ss][Yy][Ss][Tt][Ee][Mm][^A-Za-z0-9]*[Pp][Rr][Oo][Mm][Pp][Tt]|[Oo][Uu][Tt][Pp][Uu][Tt](?:[^A-Za-z0-9]*?(?:[Tt][Ee][Xx][Tt]|[Cc][Oo][Nn][Tt][Ee][Nn][Tt]))?|[Mm][Oo][Dd][Ee][Ll][^A-Za-z0-9]*[Oo][Uu][Tt][Pp][Uu][Tt]|[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ii][Oo][Nn](?:[^A-Za-z0-9]*?[Tt][Ee][Xx][Tt])?|[Rr][Ee][Ss][Pp][Oo][Nn][Ss][Ee][^A-Za-z0-9]*?(?:[Tt][Ee][Xx][Tt]|[Cc][Oo][Nn][Tt][Ee][Nn][Tt])|(?:[Ff][Ii][Ll][Ee][^A-Za-z0-9]*?)?[Aa][Tt][Tt][Aa][Cc][Hh][Mm][Ee][Nn][Tt][Ss]?|[Ss][Ee][Cc][Rr][Ee][Tt][Ss]?|[Aa][Cc][Cc][Ee][Ss][Ss][^A-Za-z0-9]*?[Tt][Oo][Kk][Ee][Nn][Ss]?|[Aa][Pp][Ii][^A-Za-z0-9]*?[Kk][Ee][Yy][Ss]?)$"
+            }
+          },
+          "additionalProperties": { "$ref": "#/$defs/extensionNode" }
+        }
+      ]
+    }
+  },
   "properties": {
     "spec_version": {
       "type": "string",
@@ -135,8 +157,8 @@
         "scoring_profile": { "type": ["string", "null"], "maxLength": 64 },
         "extensions": {
           "type": ["object", "null"],
-          "description": "Sole permitted location for unknown fields per PRD §13 Schema Rules.",
-          "additionalProperties": true
+          "description": "Sole permitted location for unknown fields per PRD §13 Schema Rules. Privacy-sensitive extension key names for prompt, output, attachment, secret, token, and API-key-like content are rejected recursively.",
+          "additionalProperties": { "$ref": "#/$defs/extensionNode" }
         }
       }
     }

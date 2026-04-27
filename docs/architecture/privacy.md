@@ -6,10 +6,11 @@
 
 ## Privacy by default
 
-ai-heeczer is designed so that no sensitive content ever enters any schema
-field, log line, or audit entry. The schema validates and rejects any field
-that would carry prompt text, model output, or user-generated content
-(PRD §22). Only metrics and metadata are recorded.
+ai-heeczer is designed so that persisted events contain telemetry and metadata,
+not raw prompt or model content. The canonical event schema leaves no open
+content fields outside `meta.extensions`, and `meta.extensions` now rejects
+privacy-sensitive key names for prompt, output, attachment, secret, token, and
+API-key-like content (PRD §22).
 
 The core assertion: **what an AI agent said or was told is never stored**.
 What is stored is only the telemetry envelope — token counts, durations,
@@ -21,7 +22,7 @@ conversation.
 
 | Tier | Label        | Example fields                                                    | Handling                                        |
 | ---- | ------------ | ----------------------------------------------------------------- | ----------------------------------------------- |
-| 1    | Restricted   | raw prompt text, model response text, user PII beyond identifiers | Not stored; schema validation rejects on ingest |
+| 1    | Restricted   | raw prompt text, model response text, user PII beyond identifiers | Not stored; typed schema fields exclude it and `meta.extensions` rejects privacy-sensitive key names on ingest |
 | 2    | Confidential | `workspace_id`, `user_id`, API keys (hashed), audit log entries   | Encrypted at rest; access gated by RBAC admin   |
 | 3    | Internal     | `event_id`, `task.category`, `scoring_version`, score breakdowns  | Stored in append-only tables; workspace-scoped  |
 | 4    | Public       | aggregate statistics, benchmark reference payloads, schema JSON   | Published openly; no workspace attribution      |

@@ -200,6 +200,151 @@ fn bench_p95_budget_breach_exits_nonzero() {
 }
 
 #[test]
+fn calibrate_run_reference_pack_outputs_report_and_versioned_profile() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let output_profile = dir.path().join("calibrated-profile.json");
+
+    heec()
+        .args([
+            "calibrate",
+            "run",
+            "--pack",
+            "reference-pack",
+            "--profile",
+            "default",
+            "--output-profile",
+            output_profile.to_str().expect("utf-8 path"),
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"pack_id\":\"reference-pack\""))
+        .stdout(predicate::str::contains(
+            "\"suggested_profile_version\":\"1.0.1\"",
+        ))
+        .stdout(predicate::str::contains(
+            "\"item_id\":\"long-doc-summarize\"",
+        ));
+
+    let written: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(output_profile).expect("profile written"))
+            .expect("written profile JSON");
+    assert_eq!(written["profile_id"], "default");
+    assert_eq!(written["version"], "1.0.1");
+    assert!(written["superseded_at"].is_null());
+}
+
+#[test]
+fn calibrate_run_persists_run_and_audit_log_when_database_url_supplied() {
+    use sqlx_core::query_as::query_as;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let db = dir.path().join("heec.sqlite");
+    let url = format!("sqlite://{}?mode=rwc", db.display());
+
+    heec()
+        .args([
+            "calibrate",
+            "run",
+            "--pack",
+            "reference-pack",
+            "--profile",
+            "default",
+            "--database-url",
+            &url,
+            "--workspace",
+            "default",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\"pack_id\":\"reference-pack\""));
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    rt.block_on(async {
+        let pool = heeczer_storage::sqlite::open(&url).await.expect("open sqlite");
+        let run_count: (i64,) = query_as("SELECT COUNT(*) FROM heec_calibration_runs")
+            .fetch_one(&pool)
+            .await
+            .expect("calibration run count");
+        assert_eq!(run_count.0, 1);
+
+        let pack_workspace: (Option<String>,) = query_as(
+            "SELECT workspace_id FROM heec_benchmark_packs WHERE pack_id = 'reference-pack' AND version = '1.0.0'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("benchmark pack row");
+        assert!(pack_workspace.0.is_none(), "reference packs should persist as shared rows");
+
+        let audit_count: (i64,) = query_as(
+            "SELECT COUNT(*) FROM heec_audit_log WHERE action = 'calibration_run_completed' AND target_table = 'heec_calibration_runs'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("audit count");
+        assert_eq!(audit_count.0, 1);
+
+        let profile_audit_count: (i64,) = query_as(
+            "SELECT COUNT(*) FROM heec_audit_log WHERE action = 'scoring_profile_calibrated' AND target_table = 'heec_scoring_profiles'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("profile audit count");
+        assert_eq!(profile_audit_count.0, 1);
+    });
+}
+
+#[test]
+fn calibrate_run_persists_append_only_profile_versions_on_repeat_runs() {
+    use sqlx_core::query_as::query_as;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let db = dir.path().join("heec.sqlite");
+    let url = format!("sqlite://{}?mode=rwc", db.display());
+
+    for _ in 0..2 {
+        heec()
+            .args([
+                "calibrate",
+                "run",
+                "--pack",
+                "reference-pack",
+                "--profile",
+                "default",
+                "--database-url",
+                &url,
+                "--workspace",
+                "default",
+            ])
+            .assert()
+            .success();
+    }
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    rt.block_on(async {
+        let pool = heeczer_storage::sqlite::open(&url).await.expect("open sqlite");
+        let versions: Vec<(String,)> = query_as(
+            "SELECT version FROM heec_scoring_profiles WHERE workspace_id = 'default' AND scoring_profile_id = 'default' ORDER BY version ASC",
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("persisted profile versions");
+        assert_eq!(versions, vec![("1.0.1".to_string(),), ("1.0.2".to_string(),)]);
+
+        let run_count: (i64,) = query_as("SELECT COUNT(*) FROM heec_calibration_runs")
+            .fetch_one(&pool)
+            .await
+            .expect("run count");
+        assert_eq!(run_count.0, 2);
+    });
+}
+
+#[test]
 fn replay_missing_event_id_errors() {
     let dir = tempfile::tempdir().expect("tempdir");
     let db = dir.path().join("heec.sqlite");

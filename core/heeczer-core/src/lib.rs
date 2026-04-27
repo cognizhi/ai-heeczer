@@ -20,6 +20,7 @@
 
 #![cfg_attr(not(test), warn(missing_docs))]
 
+pub mod calibration;
 pub mod confidence;
 pub mod error;
 pub mod event;
@@ -31,6 +32,9 @@ pub mod scoring;
 pub mod tier;
 pub mod version;
 
+pub use calibration::{
+    build_suggested_profile, run_calibration, BenchmarkPack, CalibrationRunReport,
+};
 pub use error::{Error, Result};
 pub use event::Event;
 pub use explain::{BcuBreakdown, ContextMultiplierTrace, ScoreResult, TierTrace};

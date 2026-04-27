@@ -1,114 +1,152 @@
 # Calibration Architecture
 
-Calibration is the process of tuning the scoring parameters — tier
-boundaries, BCU multipliers, and confidence weights — to match observed
-real-world effort data. Plan 0015 tracks the full calibration roadmap.
+Calibration tunes the scoring profile against known human-effort baselines.
+The current Plan 0015 implementation ships a deterministic reference-pack
+workflow that synthesizes canonical events from telemetry profiles, scores
+them with the Rust core, reports calibration drift, suggests category
+multiplier updates, and can persist completed runs for audit review.
 
 ## Goals
 
-1. **Accuracy** — scored estimates should converge with actual recorded effort.
-2. **Reproducibility** — every calibration run is deterministic given the
-   same input data and reference pack.
-3. **Auditability** — parameter changes are versioned and linked to the data
-   that drove them.
-
----
+1. **Accuracy** — estimates should converge toward expected human effort.
+2. **Reproducibility** — the pure calibration math is deterministic for the same pack and source profile.
+3. **Auditability** — calibration runs and suggested profiles can be stored alongside an audit entry.
 
 ## Data model
 
 ### Reference pack
 
-A _reference pack_ is a JSON document that pairs canonical events with
-ground-truth effort measurements:
+A reference pack is a versioned JSON document that describes representative
+tasks using expected effort bounds plus synthetic telemetry, rather than a
+fully captured canonical event:
 
-````json
+```json
 {
-  "pack_id": "ref_v1_2024q4",
-  "schema_version": "1",
-  "created_at": "2024-12-01T00:00:00Z",
-  "entries": [
+  "pack_id": "reference-pack",
+  "version": "1.0.0",
+  "name": "Reference Benchmark Pack",
+  "description": "PRD §25 reference tasks used for calibration.",
+  "items": [
     {
-      "event": { /* canonical event — event.v1.json */ },
-      "actual_minutes": 42
+      "item_id": "ci-triage",
+      "name": "CI failure triage",
+      "description": "Diagnose a flaky CI run and propose a fix plan.",
+      "task_category": "analysis",
+      "expected_human_effort_minutes": { "min": 15, "max": 45 },
+      "expected_confidence_band": "medium",
+      "telemetry_profile": {
+        "duration_ms": 12000,
+        "tokens_prompt": 3000,
+        "tokens_completion": 1200,
+        "tool_call_count": 8,
+        "workflow_steps": 6,
+        "retries": 1
+      }
     }
   ]
 }
-```text
-Reference packs are stored under `core/schema/profiles/` (sample packs)
-and loaded by the calibration CLI sub-command (plan 0015).
+```
 
-### Scoring profile
+The embedded reference pack lives at `core/schema/fixtures/calibration/reference-pack-v1.json`.
 
-A *scoring profile* (`scoring_profile.v1.json`) contains the multipliers
-and thresholds that `heeczer-core::score()` applies. Profiles are versioned
-by `scoring_version`.
+### Persisted records
 
-### Tier set
+When the CLI is given `--database-url`, it persists:
 
-A *tier set* (`tier_set.v1.json`) maps event categories to BCU ranges.
-Tier sets are versioned independently from scoring profiles.
+- `heec_benchmark_packs` for the shared pack definition (`workspace_id = NULL`)
+- `heec_calibration_runs` for the completed report JSON
+- `heec_scoring_profiles` for the suggested next profile version
+- `heec_audit_log` for both `scoring_profile_calibrated` and `calibration_run_completed`
 
----
+The current persistence path is SQLite-backed because the CLI uses the embedded
+storage migrator directly.
 
 ## Calibration workflow
 
 ```text
-reference pack (actual_minutes per event)
+reference pack (telemetry profiles + expected ranges)
   │
   ▼
-heec calibrate --pack <path/to/pack.json> --profile <path/to/profile.json>
+heec calibrate run --pack reference-pack --profile default
   │
-  ├── score each event with the current profile
-  ├── compute RMSE between estimated_minutes and actual_minutes
-  ├── gradient-descent or grid-search over multiplier space
-  └── write updated profile to <output>.json + calibration report
-```text
-The calibration sub-command is implemented in `core/heeczer-cli`
-(plan 0015 §CLI calibration).
+  ├── synthesize deterministic canonical events from each telemetry profile
+  ├── score each event with the selected profile and default tiers
+  ├── compute per-item deltas against the expected range and midpoint
+  ├── summarize RMSE / MAE / bias / R² across the pack
+  ├── suggest category-multiplier updates from category-level drift
+  └── optionally write a newly versioned suggested profile artifact
+```
 
----
+Implemented CLI surface:
+
+```text
+heec calibrate run \
+  --pack <reference-pack|path/to/pack.json> \
+  --profile <default|path/to/profile.json> \
+  [--output-profile path/to/calibrated-profile.json] \
+  [--database-url sqlite:///tmp/heec.sqlite?mode=rwc] \
+  [--workspace default]
+```
+
+The command emits a JSON report to stdout. `--output-profile` writes a patch-
+bumped profile file; the source profile is never mutated in place. When the
+same workspace persists repeated calibration runs, the CLI allocates the next
+unused patch version so suggested profiles remain append-only. Persisted
+reports may therefore vary by workspace database state even when the scoring
+math for a given pack and source profile stays unchanged.
 
 ## Metrics
 
 | Metric | Description |
 |---|---|
-| RMSE | Root-mean-square error between estimated and actual minutes. |
-| MAE | Mean absolute error (minutes). |
-| R² | Coefficient of determination; 1.0 = perfect fit. |
-| Bias | Signed mean error; positive = systematic over-estimation. |
+| `rmse_minutes` | Root-mean-square error versus each benchmark item's expected midpoint. |
+| `mae_range_minutes` | Mean absolute distance from the expected range. `0` means every item landed in range. |
+| `mae_midpoint_minutes` | Mean absolute distance from the expected midpoint. |
+| `bias_minutes` | Signed mean error versus the expected midpoint. Positive means systematic over-estimation. |
+| `r_squared` | Coefficient of determination versus expected midpoints. |
 
----
+Each item in the report also includes:
+
+- estimated minutes
+- signed delta from the expected range
+- signed delta from the expected midpoint
+- expected vs actual confidence band
+- the full `ScoreResult` for explainability
+
+## Suggested adjustments
+
+The current implementation suggests category multiplier updates only. For each
+category present in the pack, the calibration engine computes a median
+calibration factor from:
+
+```text
+expected midpoint minutes / estimated minutes
+```
+
+That factor is multiplied by the current category multiplier. If the category
+does not already exist in the profile, the engine uses the `uncategorized`
+multiplier as the starting point and marks the suggestion as adding a new
+category.
 
 ## Versioning policy
 
 - Scoring profiles follow [semantic versioning](https://semver.org/).
-  A change to a multiplier is a **patch**; a new top-level field is a
-  **minor**; removal of a field is a **major**.
-- Tier sets are versioned independently.
-- `ScoreResult.scoring_version` and `ScoreResult.spec_version` always
-  reflect the profile and tier set versions used, enabling reproducibility
-  of historical scores.
+  Multiplier-only changes are emitted as a patch bump.
+- Tier sets remain versioned independently.
+- `ScoreResult.scoring_version` and `ScoreResult.spec_version` continue to pin
+  the exact core and canonical-event versions used for each item score.
 
-See [ADR-0003](../adr/0003-scoring-versioning.md) for the full versioning
-policy.
-
----
-
-## Reference pack format schema
-
-The reference pack format will be published as a JSON Schema alongside the
-canonical event schema in `core/schema/` once the calibration CLI lands
-(plan 0015 §schema).
-
----
+See [ADR-0003](../adr/0003-scoring-versioning.md) for the underlying profile
+versioning policy.
 
 ## Roadmap (plan 0015)
 
 | Item | Status |
 |---|---|
-| Reference pack format definition | Planned |
-| `heec calibrate` CLI sub-command | Planned |
-| RMSE / MAE / R² report output | Planned |
+| Reference pack fixture | Shipped |
+| `heec calibrate run` CLI | Shipped |
+| RMSE / MAE / R² report output | Shipped |
+| Suggested profile artifact | Shipped |
+| Persisted run history + audit trail | Shipped (SQLite CLI path) |
+| Dashboard calibration page | Planned |
 | Automated calibration CI job | Planned |
-| Sample reference pack for `01-prd-canonical` fixture | Planned |
-````

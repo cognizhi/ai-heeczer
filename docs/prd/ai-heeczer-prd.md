@@ -970,7 +970,7 @@ Required capabilities:
 
 Constraints:
 
-- view is RBAC-gated (`Tester`, `Admin`); test-orchestration endpoints sit behind a `features.test_orchestration` feature flag so production deployments can disable them
+- view is RBAC-gated (`Analyst`, `Admin`, `Owner`; legacy `Tester` aliases to `Analyst`); test-orchestration endpoints sit behind a `features.test_orchestration` feature flag so production deployments can disable them
 - never mutates `heec_events` or `heec_scores` outside the append-only contract (§20)
 - every test-orchestration call emits a structured audit-log entry (§22)
 

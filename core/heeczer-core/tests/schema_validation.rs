@@ -91,6 +91,57 @@ fn extensions_passthrough_is_valid() {
     v.validate_str(body, Mode::Strict).unwrap();
 }
 
+#[test]
+fn extensions_reject_privacy_sensitive_content_fields() {
+    let v = EventValidator::new_v1();
+    let prompt_body = r#"{
+        "spec_version": "1.0",
+        "event_id": "00000000-0000-4000-8000-0000000000fd",
+        "timestamp": "2026-04-22T10:00:00Z",
+        "framework_source": "test",
+        "workspace_id": "ws_x",
+        "task": { "name": "t", "outcome": "success" },
+        "metrics": { "duration_ms": 1 },
+        "meta": {
+            "sdk_language": "test",
+            "sdk_version": "0.0.0",
+            "extensions": { "prompt_text": "never store raw prompt content" }
+        }
+    }"#;
+    let output_body = r#"{
+        "spec_version": "1.0",
+        "event_id": "00000000-0000-4000-8000-0000000000fc",
+        "timestamp": "2026-04-22T10:00:00Z",
+        "framework_source": "test",
+        "workspace_id": "ws_x",
+        "task": { "name": "t", "outcome": "success" },
+        "metrics": { "duration_ms": 1 },
+        "meta": {
+            "sdk_language": "test",
+            "sdk_version": "0.0.0",
+            "extensions": { "nested": { "output_text": "never store model output" } }
+        }
+    }"#;
+    let secret_body = r#"{
+        "spec_version": "1.0",
+        "event_id": "00000000-0000-4000-8000-0000000000fb",
+        "timestamp": "2026-04-22T10:00:00Z",
+        "framework_source": "test",
+        "workspace_id": "ws_x",
+        "task": { "name": "t", "outcome": "success" },
+        "metrics": { "duration_ms": 1 },
+        "meta": {
+            "sdk_language": "test",
+            "sdk_version": "0.0.0",
+            "extensions": { "apiKeys": ["k1"], "nested": { "file_attachments": ["/tmp/x"] } }
+        }
+    }"#;
+
+    assert!(v.validate_str(prompt_body, Mode::Strict).is_err());
+    assert!(v.validate_str(output_body, Mode::Strict).is_err());
+    assert!(v.validate_str(secret_body, Mode::Strict).is_err());
+}
+
 // ---- ProfileValidator (foundation backlog) ---------------------------------
 
 #[test]

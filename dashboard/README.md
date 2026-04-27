@@ -42,7 +42,7 @@ npm run test:e2e   # playwright (needs running server)
 | Variable                 | Default                 | Description                                           |
 | ------------------------ | ----------------------- | ----------------------------------------------------- |
 | `NEXT_PUBLIC_INGEST_URL` | `http://localhost:8080` | Base URL of the ingestion service                     |
-| `HEECZER_DASHBOARD_ROLE` | `viewer`                | Local/session role gate (`viewer`, `tester`, `admin`) |
+| `HEECZER_DASHBOARD_ROLE` | `viewer`                | Local/session role gate (`viewer`, `analyst`, `admin`, `owner`; legacy `tester` maps to `analyst`) |
 | `HEECZER_OIDC_ISSUER`    | _(unset)_               | Marks the session provider as OIDC when configured    |
 
 ## Security

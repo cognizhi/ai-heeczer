@@ -54,6 +54,7 @@ impl EventValidator {
                 message: err.to_string(),
             });
         }
+        reject_privacy_sensitive_extensions(value)?;
         Ok(())
     }
 
@@ -68,6 +69,82 @@ impl Default for EventValidator {
     fn default() -> Self {
         Self::new_v1()
     }
+}
+
+fn reject_privacy_sensitive_extensions(value: &serde_json::Value) -> Result<()> {
+    let Some(extensions) = value.get("meta").and_then(|meta| meta.get("extensions")) else {
+        return Ok(());
+    };
+
+    if let Some(path) = find_privacy_sensitive_path(extensions, "/meta/extensions") {
+        return Err(Error::Schema {
+            path,
+            message: "privacy-sensitive content fields are not allowed; store only telemetry and metadata".into(),
+        });
+    }
+
+    Ok(())
+}
+
+fn find_privacy_sensitive_path(value: &serde_json::Value, path: &str) -> Option<String> {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (key, child) in map {
+                let child_path = format!("{path}/{}", escape_json_pointer_segment(key));
+                if is_privacy_sensitive_extension_key(key) && !child.is_null() {
+                    return Some(child_path);
+                }
+                if let Some(found) = find_privacy_sensitive_path(child, &child_path) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        serde_json::Value::Array(items) => items.iter().enumerate().find_map(|(index, child)| {
+            find_privacy_sensitive_path(child, &format!("{path}/{index}"))
+        }),
+        _ => None,
+    }
+}
+
+fn is_privacy_sensitive_extension_key(key: &str) -> bool {
+    matches!(
+        normalize_extension_key(key).as_str(),
+        "prompt"
+            | "prompttext"
+            | "promptcontent"
+            | "rawprompt"
+            | "systemprompt"
+            | "output"
+            | "outputtext"
+            | "outputcontent"
+            | "modeloutput"
+            | "completion"
+            | "completiontext"
+            | "responsetext"
+            | "responsecontent"
+            | "attachment"
+            | "attachments"
+            | "fileattachment"
+            | "fileattachments"
+            | "secret"
+            | "secrets"
+            | "accesstoken"
+            | "accesstokens"
+            | "apikey"
+            | "apikeys"
+    )
+}
+
+fn normalize_extension_key(key: &str) -> String {
+    key.chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|ch| ch.to_ascii_lowercase())
+        .collect()
+}
+
+fn escape_json_pointer_segment(segment: &str) -> String {
+    segment.replace('~', "~0").replace('/', "~1")
 }
 
 /// Compile-once scoring-profile-schema validator. Mirrors [`EventValidator`].

@@ -51,6 +51,15 @@ test.describe("Overview page", () => {
     ).toBeDisabled();
   });
 
+  test("admin calibration help page renders denied state", async ({ page }) => {
+    await page.goto("/admin/calibration");
+    await expect(
+      page.getByRole("heading", { name: "Calibration Guide" }),
+    ).toBeVisible();
+    await expect(page.getByText("Admin or owner role required")).toBeVisible();
+    await expect(page.getByText("Run the reference pack")).toBeVisible();
+  });
+
   test("queue health page renders operational counters", async ({ page }) => {
     await page.goto("/queue");
     await expect(

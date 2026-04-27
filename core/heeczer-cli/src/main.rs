@@ -1,6 +1,7 @@
 //! `heec` — local developer CLI for the ai-heeczer scoring core. See ADR-0010.
 
 use std::io::{Read, Write};
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
@@ -8,11 +9,15 @@ use std::time::{Duration, Instant};
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use heeczer_core::{
+    build_suggested_profile, run_calibration,
     schema::{EventValidator, Mode, ProfileValidator, TierSetValidator},
-    score, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
+    score, BenchmarkPack, Event, ScoringProfile, TierSet, SCORING_VERSION, SPEC_VERSION,
 };
 use include_dir::{include_dir, Dir};
+use sqlx_core::query::query;
 use sqlx_core::query_as::query_as;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 
 /// Bundled fixture tree, embedded at compile time (PRD §12.21, ADR-0010).
 /// The path is relative to this Cargo manifest. Using a manifest-relative
@@ -262,14 +267,26 @@ fn main() -> Result<()> {
 #[derive(Debug, Subcommand)]
 enum CalibrateCmd {
     /// Run calibration against a benchmark pack and scoring profile.
-    Run {
-        /// Benchmark pack id to run against.
-        #[arg(long)]
-        pack: String,
-        /// Scoring profile id to calibrate.
-        #[arg(long)]
-        profile: String,
-    },
+    Run(CalibrateRunArgs),
+}
+
+#[derive(Debug, Parser)]
+struct CalibrateRunArgs {
+    /// Benchmark pack id (`reference-pack`) or JSON path.
+    #[arg(long)]
+    pack: String,
+    /// Scoring profile id (`default`) or JSON path.
+    #[arg(long)]
+    profile: String,
+    /// Optional output file for a newly versioned suggested profile.
+    #[arg(long)]
+    output_profile: Option<PathBuf>,
+    /// Optional SQLite database URL for persisting pack, profile, run, and audit rows.
+    #[arg(long)]
+    database_url: Option<String>,
+    /// Workspace id to associate with persisted calibration rows.
+    #[arg(long, default_value = "default")]
+    workspace: String,
 }
 
 fn read_input(arg: &str) -> Result<String> {
@@ -470,15 +487,250 @@ fn cmd_version() -> Result<()> {
 
 fn cmd_calibrate(sub: CalibrateCmd) -> Result<()> {
     match sub {
-        CalibrateCmd::Run { pack, profile } => {
-            // Calibration workflow not yet implemented (plan 0015, PRD §25).
-            // Track progress at docs/plan/0015-calibration-benchmarks.md.
-            println!(
-                "calibration not yet implemented (pack={pack}, profile={profile}); \
-                see docs/plan/0015-calibration-benchmarks.md"
+        CalibrateCmd::Run(args) => {
+            let pack = resolve_benchmark_pack(&args.pack)?;
+            let profile = resolve_scoring_profile(&args.profile)?;
+            let mut report = run_calibration(&pack, &profile, &TierSet::default_v1())
+                .map_err(|e| anyhow::anyhow!("calibration failed: {e}"))?;
+            let effective_at = OffsetDateTime::now_utc()
+                .format(&Rfc3339)
+                .context("formatting suggested profile effective_at")?;
+            let mut suggested_profile = build_suggested_profile(
+                &profile,
+                &report.suggested_category_multipliers,
+                &effective_at,
             );
+
+            if let Some(database_url) = &args.database_url {
+                let persisted_version = next_persisted_profile_version(
+                    database_url,
+                    &args.workspace,
+                    &suggested_profile.profile_id,
+                    &suggested_profile.version,
+                )?;
+                suggested_profile.version.clone_from(&persisted_version);
+                report.suggested_profile_version = persisted_version;
+            }
+
+            if let Some(path) = &args.output_profile {
+                let body = serde_json::to_string_pretty(&suggested_profile)?;
+                std::fs::write(path, body)
+                    .with_context(|| format!("writing suggested profile {}", path.display()))?;
+            }
+
+            if let Some(database_url) = &args.database_url {
+                persist_calibration_run(
+                    database_url,
+                    &args.workspace,
+                    &pack,
+                    &report,
+                    &suggested_profile,
+                    &effective_at,
+                )?;
+            }
+
+            serde_json::to_writer(std::io::stdout().lock(), &report)?;
+            println!();
             Ok(())
         }
+    }
+}
+
+fn resolve_benchmark_pack(arg: &str) -> Result<BenchmarkPack> {
+    if Path::new(arg).is_file() {
+        let body = std::fs::read_to_string(arg).with_context(|| format!("reading pack {arg}"))?;
+        return serde_json::from_str(&body).context("materialising BenchmarkPack");
+    }
+
+    match arg {
+        "reference-pack" | "reference-pack-v1" => Ok(BenchmarkPack::reference_v1()),
+        other => {
+            bail!("unknown benchmark pack `{other}`; use `reference-pack` or pass a JSON path")
+        }
+    }
+}
+
+fn resolve_scoring_profile(arg: &str) -> Result<ScoringProfile> {
+    if Path::new(arg).is_file() {
+        let body =
+            std::fs::read_to_string(arg).with_context(|| format!("reading profile {arg}"))?;
+        profile_validator()
+            .validate_str(&body, Mode::Strict)
+            .map_err(|e| anyhow::anyhow!("scoring profile schema validation failed: {e}"))?;
+        return serde_json::from_str(&body).context("materialising ScoringProfile");
+    }
+
+    match arg {
+        "default" => Ok(ScoringProfile::default_v1()),
+        other => bail!("unknown scoring profile `{other}`; use `default` or pass a JSON path"),
+    }
+}
+
+fn persist_calibration_run(
+    database_url: &str,
+    workspace: &str,
+    pack: &BenchmarkPack,
+    report: &heeczer_core::CalibrationRunReport,
+    suggested_profile: &ScoringProfile,
+    effective_at: &str,
+) -> Result<()> {
+    if !database_url.starts_with("sqlite:") {
+        bail!("calibration persistence currently supports only sqlite database URLs");
+    }
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(async move {
+        let pool = heeczer_storage::sqlite::open(database_url).await?;
+        heeczer_storage::sqlite::migrate(&pool).await?;
+
+        let now = OffsetDateTime::now_utc()
+            .format(&Rfc3339)
+            .context("formatting calibration timestamp")?;
+        let stamp = OffsetDateTime::now_utc().unix_timestamp_nanos();
+        let run_id = format!("calibration-{stamp}");
+        let audit_id = format!("audit-calibration-{stamp}");
+        let pack_items_json = serde_json::to_string(&pack.items)?;
+        let report_json = serde_json::to_string(report)?;
+        let profile_json = serde_json::to_string(suggested_profile)?;
+        let profile_target = format!("{}@{}", suggested_profile.profile_id, suggested_profile.version);
+        let audit_payload = serde_json::to_string(&serde_json::json!({
+            "pack_id": report.pack_id,
+            "pack_version": report.pack_version,
+            "profile_id": report.profile_id,
+            "profile_version": report.profile_version,
+            "suggested_profile_version": report.suggested_profile_version,
+            "summary": report.summary,
+        }))?;
+
+        query("INSERT OR IGNORE INTO heec_workspaces (workspace_id, display_name) VALUES (?1, ?2)")
+            .bind(workspace)
+            .bind(workspace)
+            .execute(&pool)
+            .await?;
+        query(
+            "INSERT OR IGNORE INTO heec_benchmark_packs \
+             (pack_id, workspace_id, version, name, description, items_json) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        )
+        .bind(&pack.pack_id)
+        .bind(Option::<String>::None)
+        .bind(&pack.version)
+        .bind(&pack.name)
+        .bind(&pack.description)
+        .bind(pack_items_json)
+        .execute(&pool)
+        .await?;
+        query(
+            "INSERT INTO heec_scoring_profiles \
+             (scoring_profile_id, version, workspace_id, profile_json, effective_at, superseded_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
+        )
+        .bind(&suggested_profile.profile_id)
+        .bind(&suggested_profile.version)
+        .bind(workspace)
+        .bind(profile_json)
+        .bind(effective_at)
+        .execute(&pool)
+        .await?;
+        query(
+            "INSERT INTO heec_audit_log \
+             (audit_id, workspace_id, actor, action, target_table, target_id, payload_json) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )
+        .bind(format!("audit-profile-{stamp}"))
+        .bind(workspace)
+        .bind("heec-cli")
+        .bind("scoring_profile_calibrated")
+        .bind("heec_scoring_profiles")
+        .bind(&profile_target)
+        .bind(serde_json::to_string(&serde_json::json!({
+            "profile_id": suggested_profile.profile_id,
+            "profile_version": suggested_profile.version,
+            "effective_at": effective_at,
+            "pack_id": report.pack_id,
+            "pack_version": report.pack_version,
+        }))?)
+        .execute(&pool)
+        .await?;
+        query(
+            "INSERT INTO heec_calibration_runs \
+             (run_id, workspace_id, pack_id, pack_version, profile_id, profile_version, results_json, status, started_at, finished_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'complete', ?8, ?8)",
+        )
+        .bind(&run_id)
+        .bind(workspace)
+        .bind(&report.pack_id)
+        .bind(&report.pack_version)
+        .bind(&report.profile_id)
+        .bind(&report.profile_version)
+        .bind(report_json)
+        .bind(&now)
+        .execute(&pool)
+        .await?;
+        query(
+            "INSERT INTO heec_audit_log \
+             (audit_id, workspace_id, actor, action, target_table, target_id, payload_json) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )
+        .bind(&audit_id)
+        .bind(workspace)
+        .bind("heec-cli")
+        .bind("calibration_run_completed")
+        .bind("heec_calibration_runs")
+        .bind(&run_id)
+        .bind(audit_payload)
+        .execute(&pool)
+        .await?;
+
+        Ok::<(), anyhow::Error>(())
+    })?;
+    Ok(())
+}
+
+fn next_persisted_profile_version(
+    database_url: &str,
+    workspace: &str,
+    profile_id: &str,
+    candidate_version: &str,
+) -> Result<String> {
+    if !database_url.starts_with("sqlite:") {
+        bail!("calibration persistence currently supports only sqlite database URLs");
+    }
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(async move {
+        let pool = heeczer_storage::sqlite::open(database_url).await?;
+        heeczer_storage::sqlite::migrate(&pool).await?;
+        let rows: Vec<(String,)> = query_as(
+            "SELECT version FROM heec_scoring_profiles WHERE workspace_id = ?1 AND scoring_profile_id = ?2",
+        )
+        .bind(workspace)
+        .bind(profile_id)
+        .fetch_all(&pool)
+        .await?;
+
+        let mut next = candidate_version.to_string();
+        let existing: Vec<String> = rows.into_iter().map(|(version,)| version).collect();
+        while existing.iter().any(|version| version == &next) {
+            next = bump_patch_version(&next);
+        }
+        Ok::<String, anyhow::Error>(next)
+    })
+}
+
+fn bump_patch_version(version: &str) -> String {
+    let mut parts = version.split('.');
+    let major = parts.next().and_then(|value| value.parse::<u64>().ok());
+    let minor = parts.next().and_then(|value| value.parse::<u64>().ok());
+    let patch = parts.next().and_then(|value| value.parse::<u64>().ok());
+    if let (Some(major), Some(minor), Some(patch), None) = (major, minor, patch, parts.next()) {
+        format!("{major}.{minor}.{}", patch + 1)
+    } else {
+        format!("{version}.1")
     }
 }
 
