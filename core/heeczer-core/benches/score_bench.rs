@@ -1,5 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use heeczer_core::{score, Event, ScoringProfile, TierSet};
+use std::hint::black_box;
 
 fn load_canonical() -> Event {
     let body = std::fs::read_to_string(
