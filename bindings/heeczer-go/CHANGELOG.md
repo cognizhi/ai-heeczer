@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* preserve full `ScoreResult` JSON for parity and additive engine fields
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-go-v0.5.1...heeczer-go-v0.5.1) (2026-04-27)
 
 

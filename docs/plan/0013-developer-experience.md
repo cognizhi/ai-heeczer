@@ -13,7 +13,7 @@ Make the repo trivially easy to clone, bootstrap, test, and contribute to.
 
 ### Makefile (PRD §12.13)
 
-- [x] Targets: `bootstrap`, `format`, `lint`, `unit-test`, `integration-test`, `contract-test`, `parity-test`, `ui-test`, `migration-test`, `benchmark-smoke`, `test`, `build`, `release-dry-run`, `docs`, `clean`. (PR #1)
+- [x] Targets: `bootstrap`, `format`, `lint`, `unit-test`, `integration-test`, `contract-test`, `parity-test`, `ui-test`, `migration-test`, `benchmark-smoke`, `test`, `build`, `release-dry-run`, `docs`, `clean`. `make test` now includes the real byte-equal SDK parity gate. (PR #1; parity gate wired Apr-2026)
 - [x] Help target `make help` lists every target with one-line description. (PR #1)
 - [x] Idempotent `bootstrap` detects existing toolchains, refreshes Rust stable, and installs `cargo-audit` / `cargo-deny` when missing.
 - [x] `make security-ci` mirrors the Rust security CI jobs by fresh-installing `cargo-audit` / `cargo-deny` into a temp root before running the scans.

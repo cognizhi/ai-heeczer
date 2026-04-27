@@ -129,6 +129,24 @@ func TestTestScorePipelineSendsTesterHeader(t *testing.T) {
 	}
 }
 
+func TestScoreResultPreservesAdditiveFieldsOnMarshal(t *testing.T) {
+	raw := []byte(`{"scoring_version":"1.0.0","spec_version":"1.0","scoring_profile":"default","bcu_breakdown":{"tokens":"1"},"category":"uncategorized","final_estimated_minutes":"1","estimated_hours":"0.02","estimated_days":"0.00","financial_equivalent_cost":"1","confidence_score":"0.5","confidence_band":"Medium","human_summary":"ok"}`)
+	var score heeczer.ScoreResult
+	if err := json.Unmarshal(raw, &score); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	encoded, err := json.Marshal(score)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if string(encoded) != string(raw) {
+		t.Fatalf("score result did not preserve raw JSON\nwant: %s\n got: %s", raw, encoded)
+	}
+	if score.JSON() != string(raw) {
+		t.Fatalf("ScoreResult.JSON() = %s", score.JSON())
+	}
+}
+
 func TestBaseURLTrailingSlashStripped(t *testing.T) {
 	var seenPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

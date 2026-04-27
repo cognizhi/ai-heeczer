@@ -89,6 +89,27 @@ jobs:
       - run: uv tool run twine check dist/*
         working-directory: bindings/heeczer-py
 
+  go-module-tag-dry-run:
+    name: Go module tag dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: "1.26"
+          cache-dependency-path: bindings/heeczer-go/go.mod
+      - name: validate module path and canonical tag shape
+        run: |
+          module_path="$(GOWORK=off go list -m)"
+          test "${module_path}" = "github.com/cognizhi/ai-heeczer/bindings/heeczer-go"
+          version="$(jq -r '."bindings/heeczer-go"' ../../.github/release-please-manifest.json)"
+          canonical_tag="bindings/heeczer-go/v${version}"
+          git check-ref-format "refs/tags/${canonical_tag}"
+          echo "would publish Go module tag ${canonical_tag}"
+        working-directory: bindings/heeczer-go
+      - run: go test ./...
+        working-directory: bindings/heeczer-go
+
   maven-central-dry-run:
     name: maven deploy (dry run)
     runs-on: ubuntu-latest

@@ -57,6 +57,41 @@ type ScoreResult struct {
 	ConfidenceScore         string         `json:"confidence_score"`
 	ConfidenceBand          ConfidenceBand `json:"confidence_band"`
 	HumanSummary            string         `json:"human_summary"`
+	rawJSON                 json.RawMessage
+}
+
+// UnmarshalJSON keeps the original score object so additive engine fields are
+// preserved for parity checks and re-serialization while still populating the
+// typed convenience fields above.
+func (s *ScoreResult) UnmarshalJSON(data []byte) error {
+	type scoreResultAlias ScoreResult
+	var decoded scoreResultAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*s = ScoreResult(decoded)
+	s.rawJSON = append(s.rawJSON[:0], data...)
+	return nil
+}
+
+// MarshalJSON returns the original score object when this value came from the
+// wire, preserving additive fields and their byte-stable order.
+func (s ScoreResult) MarshalJSON() ([]byte, error) {
+	if len(s.rawJSON) > 0 {
+		return append([]byte(nil), s.rawJSON...), nil
+	}
+	type scoreResultAlias ScoreResult
+	return json.Marshal(scoreResultAlias(s))
+}
+
+// JSON returns the score result as compact JSON, including additive engine
+// fields when the result was decoded from an API response.
+func (s ScoreResult) JSON() string {
+	raw, err := json.Marshal(s)
+	if err != nil {
+		return "{}"
+	}
+	return string(raw)
 }
 
 // IngestEventResponse is returned by Client.IngestEvent.

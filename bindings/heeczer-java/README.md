@@ -113,7 +113,9 @@ try {
 
 The SDK speaks `envelope_version: "1"` to the ingestion service per
 [ADR-0011](../../docs/adr/0011-c-abi-envelope.md). Additive fields land
-without breaking the typed surface.
+without breaking the typed surface. `ScoreResult.toJson()` returns compact JSON
+for the full score object as received from the API, including additive engine
+fields such as the explainability trace.
 
 ## Runnable example
 

@@ -91,7 +91,10 @@ Use `heeczer.IsKind(err, heeczer.ErrSchema)` for typed branching.
 
 The SDK speaks `envelope_version: "1"` to the ingestion service per
 [ADR-0011](../../docs/adr/0011-c-abi-envelope.md). Additive fields land
-without breaking the typed surface.
+without breaking the typed surface. `ScoreResult` keeps the raw score object
+when decoded from the API, so `json.Marshal(resp.Score)` and
+`resp.Score.JSON()` include additive engine fields such as the explainability
+trace.
 
 ## Runnable example
 

@@ -18,10 +18,10 @@ for ai-heeczer. The CI/CD design is documented in ADR-0009 and
     2. `npm publish --provenance` — publishes `@cognizhi/heeczer-sdk` to npm.
     3. `pypa/gh-action-pypi-publish` — publishes `heeczer-py` to PyPI.
     4. `mvn deploy` — publishes `com.cognizhi:heeczer-sdk` to Maven Central via Sonatype.
-    5. `git tag go/vX.Y.Z` — pushes the Go module tag.
+    5. `git tag bindings/heeczer-go/vX.Y.Z` — pushes the canonical Go submodule tag after the release-please trigger tag `heeczer-go-vX.Y.Z` fires.
     6. `gh release create` — creates the GitHub Release with the SBOM,
        SLSA provenance, and binary attachments.
-4. All steps run with `concurrency: { group: release, cancel-in-progress: false }`.
+4. Each tag run uses `concurrency: { group: release-<tag>, cancel-in-progress: false }` so linked-version component tags cannot cancel one another while still preventing duplicate publishes for the same tag.
 
 The PyPI publish step uses a container action backed by GHCR. Pin it to an
 official action release tag or to the commit behind that release tag; an
@@ -60,7 +60,8 @@ Inputs:
 
 The workflow checks out the requested tag and reruns only the selected target.
 Use `all` only when the failed run was a root Rust release tag and multiple
-downstream targets still need recovery.
+downstream targets still need recovery; the Go resume step derives
+`bindings/heeczer-go/vX.Y.Z` from `vX.Y.Z` in that path.
 
 ### Step 3: verify
 
@@ -70,7 +71,7 @@ After `release-resume.yml` completes:
 - **npm**: `npm view @cognizhi/heeczer-sdk version` should show the new version.
 - **PyPI**: `pip index versions heeczer-py` should list the new version.
 - **Maven Central**: check [search.maven.org](https://search.maven.org/search?q=g:com.cognizhi+a:heeczer-sdk).
-- **Go**: `go list -m cognizhi.com/heeczer-go@vX.Y.Z` should resolve.
+- **Go**: `go list -m github.com/cognizhi/ai-heeczer/bindings/heeczer-go@vX.Y.Z` should resolve.
 - **GitHub Release**: the release page should be complete with all assets attached.
 
 ---

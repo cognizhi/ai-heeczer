@@ -53,7 +53,7 @@ Enforce the privacy-by-default and security-by-default posture from PRD §22, pl
 - [ ] CodeQL on Rust/JS/Python/Go/Java.
 - [ ] cargo-audit, npm audit, pip-audit, govulncheck, OWASP dep-check.
 - [ ] Trivy on container images.
-- [ ] gitleaks on every PR.
+- [ ] betterleaks on every PR.
 - [x] cosign keyless signing of release artifacts. (`sign-artifacts` job in `release.yml`, session Apr-2026)
 - [x] CycloneDX SBOM on every GitHub Release. (`generate-sbom` job in `release.yml`, session Apr-2026)
 - [ ] SLSA Build Level 3 provenance attestation.

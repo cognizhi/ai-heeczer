@@ -128,7 +128,7 @@ verifies the stored row count and response body are identical.
 | `pip-audit`      | Python dependencies           | CI on every push             |
 | `govulncheck`    | Go dependencies               | CI on every push             |
 | Trivy            | Container images              | On release image build       |
-| gitleaks         | Secrets in source             | On every PR                  |
+| betterleaks      | Secrets in source             | On every PR                  |
 | cosign (keyless) | Release artifacts             | On every GitHub Release      |
 | CycloneDX SBOM   | All languages                 | Generated per GitHub Release |
 

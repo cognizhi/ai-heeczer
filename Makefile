@@ -66,8 +66,8 @@ contract-test: ## schema and CLI contract tests
 	cargo test --workspace --test schema_validation --test golden_scoring
 
 .PHONY: parity-test
-parity-test: ## cross-language parity (will run SDK matrices once SDKs land)
-	@echo "parity-test: SDK matrices land in plans 0005-0009"
+parity-test: ## cross-language byte-equal SDK parity
+	bash scripts/run-parity.sh
 
 .PHONY: migration-test
 migration-test: ## storage migration tests on every supported backend
@@ -82,7 +82,7 @@ benchmark-smoke: ## smoke-run criterion benchmarks (PRD §29)
 	@echo "benchmark-smoke: lands with plan 0015"
 
 .PHONY: test
-test: format-check lint unit-test integration-test contract-test migration-test ## full local test gate
+test: format-check lint unit-test integration-test contract-test migration-test parity-test ## full local test gate
 
 # ----- build / release -------------------------------------------------------
 

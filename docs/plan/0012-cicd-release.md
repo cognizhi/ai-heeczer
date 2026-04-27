@@ -18,21 +18,21 @@ Stand up the GitHub Actions pipeline as the single quality gate and release cont
 - [x] `unit.yml` — per-ecosystem unit tests (`ci.yml`: Rust, JS vitest via pnpm, Python pytest, Go test, Java mvn test).
 - [x] `integration.yml` — ingestion service end-to-end with SQLite. (session Apr-2026)
 - [x] `contract.yml` — schema validation across bindings. (session Apr-2026)
-- [x] `parity.yml` — fixture-driven parity across bindings (per-SDK test suites). (session Apr-2026)
+- [x] `parity.yml` — fixture-driven byte-equal parity across the Rust reference scorer and every SDK binding. (session Apr-2026)
 - [x] `migration.yml` — SQLite migration tests + PG file presence check. (session Apr-2026)
 - [ ] `ui.yml` — Playwright E2E for dashboard.
 - [x] `bench-smoke.yml` — CLI smoke benchmark with 30s budget. (session Apr-2026)
-- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, gitleaks, cargo-deny in `ci.yml`; Rust security checks are green locally after narrowing storage deps away from the unused `sqlx-mysql`/`rsa` path, switching the Rust SDK HTTP client to native cert roots, and codifying the remaining unavoidable duplicate-version exceptions in `deny.toml` so `cargo deny check` runs warning-free. `codeql.yml` now runs an explicit Maven compile for `bindings/heeczer-java` between CodeQL `init` and `analyze` so Java analysis does not fail with "no source code seen during the build."
+- [x] `security.yml` — CodeQL (`codeql.yml`), cargo-audit, betterleaks, cargo-deny in `ci.yml`; Rust security checks are green locally after narrowing storage deps away from the unused `sqlx-mysql`/`rsa` path, switching the Rust SDK HTTP client to native cert roots, and codifying the remaining unavoidable duplicate-version exceptions in `deny.toml` so `cargo deny check` runs warning-free. `codeql.yml` now runs an explicit Maven compile for `bindings/heeczer-java` between CodeQL `init` and `analyze` so Java analysis does not fail with "no source code seen during the build."
 - [x] `workflow-defuser.yml` — daily scheduled/manual PR-only automation that scans `.github/workflows` for non-SHA action refs, only pins actions whose resolved release or commit is at least 14 days old, and reuses the existing automation branch/PR when present instead of creating a fresh review branch; because GitHub suppresses workflow fan-out for repository-token PR events, maintainers may need to rerun required checks manually on the generated PR.
 - [x] `docs.yml` — markdown lint + rustdoc build. (session Apr-2026)
 - [x] `.markdownlint.yml` created at repo root. (session Apr-2026)
-- [x] `release-dry-run.yml` — release-please dry-run, publish dry-runs for Rust, npm, PyPI. (session Apr-2026)
+- [x] `release-dry-run.yml` — release-please dry-run, publish dry-runs for Rust, npm, PyPI, Maven Central, and Go module tag-shape validation. (session Apr-2026)
 
 ### Release workflows
 
 - [x] `release-please.yml` — manifest-mode PR creation on push to main; `concurrency: { group: release-please, cancel-in-progress: false }`. The Rust workspace release anchor uses a non-published root package plus concrete member crate versions/internal path-version dependencies so `release-please` can update Cargo manifests while preserving the plain `vX.Y.Z` Rust tag contract.
-- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@cognizhi/heeczer-sdk` via pnpm before `npm publish`, and the Go tag path keys cache off `go.mod`; `concurrency: { group: release, cancel-in-progress: false }`.
-- [x] `release-resume.yml` — workflow_dispatch resume for partial publish; same `release` concurrency group. (session Apr-2026)
+- [x] `release.yml` — on tag push: build, test, publish to npm/PyPI/crates.io/Maven Central/Go tag, GitHub Release; the npm path installs/tests/builds `@cognizhi/heeczer-sdk` via pnpm before `npm publish`, the Go tag path keys cache off `go.mod`, and the root GitHub Release waits for crates.io publish; `concurrency: { group: release-<tag>, cancel-in-progress: false }` prevents duplicate publishes for the same tag without suppressing linked component tags.
+- [x] `release-resume.yml` — workflow_dispatch resume for partial publish; same per-tag release concurrency group, with Go resume able to create or verify `bindings/heeczer-go/vX.Y.Z` from root, component, or canonical Go tags, and Rust resume skips crates that already reached crates.io. (session Apr-2026)
 
 ### Branch protection
 

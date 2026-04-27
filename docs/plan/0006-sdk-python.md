@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-25
+- **Last reviewed:** 2026-04-27
 - **PRD:** §23
 - **ADR:** ADR-0001
 
@@ -15,7 +15,7 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 ### Package
 
 - [x] `bindings/heeczer-py/` package with `pyproject.toml` (uv-managed, hatchling backend, Python ≥ 3.11 since the test fixtures use modern type syntax). Path differs from the original `bindings/python/` placeholder.
-- [ ] abi3 wheels for cpython 3.10+, manylinux/musllinux/macos/windows. (deferred: HTTP-first SDK ships now; pyo3/maturin in-process binding follows once parity test rig + napi-rs sibling land)
+- [ ] abi3 wheels for cpython 3.10+, manylinux/musllinux/macos/windows. (deferred: HTTP-first SDK ships now; pyo3/maturin in-process binding follows after the HTTP parity gate is stable)
 - [x] `py.typed` marker shipped; types inline in `client.py` via `TypedDict` + `Literal` (closed `kind` enum).
 - [x] Adapter module `heeczer.adapters` added with LangGraph and Google ADK adapters. (session Apr-2026)
 
@@ -30,7 +30,7 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 
 - [x] Unit (`pytest` async; httpx.MockTransport instead of mocks per the user's "use emulation method as priority" guidance). 8/8 pass.
 - [x] Contract: shared fixtures. Pytest round-trips all shared valid fixtures and validates them with the Pydantic v2 model.
-- [ ] Parity: byte-equal output vs Rust reference.
+- [x] Parity: byte-equal output vs Rust reference. `parity.yml` now generates Rust CLI reference `ScoreResult` JSON, starts `heeczer-ingest` with test orchestration enabled, and runs `bindings/heeczer-py/scripts/parity.py` against every shared valid fixture. (session Apr-2026)
 - [x] `mypy --strict` clean (3 source files).
 - [x] `ruff check` clean.
 - [ ] Packaging: `maturin build --release` smoke test. (depends on pyo3 binding above)
@@ -42,5 +42,5 @@ Ship `ai-heeczer` on PyPI with `pyo3` + `maturin` packaging and `abi3` wheels, i
 
 ## Acceptance
 
-- Parity job green.
+- Parity job green for the HTTP/image SDK surface.
 - abi3 wheels publish on release via PyPI trusted publishing (ADR-0009).

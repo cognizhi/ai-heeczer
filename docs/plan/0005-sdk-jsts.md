@@ -2,7 +2,7 @@
 
 - **Status:** Active
 - **Owner:** SDK Engineer
-- **Last reviewed:** 2026-04-25
+- **Last reviewed:** 2026-04-27
 - **PRD:** §23
 - **ADR:** ADR-0001
 
@@ -15,7 +15,7 @@ Ship `@ai-heeczer/sdk` for Node.js (CJS + ESM), with native bindings to `heeczer
 ### Package
 
 - [x] `bindings/heeczer-js/` workspace package (path differs from the original `bindings/node/` placeholder; SDK ships HTTP-only first per plan revision below).
-- [ ] `napi-rs` build with prebuilt binaries for linux x64/arm64, macOS x64/arm64, windows x64. (deferred: HTTP-first SDK ships now; in-process scoring binding follows once parity test rig lands)
+- [ ] `napi-rs` build with prebuilt binaries for linux x64/arm64, macOS x64/arm64, windows x64. (deferred: HTTP-first SDK ships now; in-process scoring binding follows after the HTTP parity gate is stable)
 - [x] CJS + ESM dual export via `tsc` dual build. `package.json` exports `import` and `require`; `pnpm run build` emits `dist/index.js` and `dist/cjs/index.cjs`. (session Apr-2026)
 - [x] TypeScript types covering the envelope contract (`ScoreResult`, `IngestEventResponse`, `VersionResponse`, `HeeczerApiError` with closed `kind` enum). Exact-shape generation from JSON Schema pending.
 
@@ -36,7 +36,7 @@ Ship `@ai-heeczer/sdk` for Node.js (CJS + ESM), with native bindings to `heeczer
 
 - [x] Unit: every public method (8 vitest cases covering baseUrl handling, version, ingest happy path, error envelope mapping, non-JSON error fallback, tester header always sent, api key forwarding).
 - [x] Contract: shared fixtures. Vitest round-trips all shared valid fixtures and now also runs the local validator against them.
-- [ ] Parity: byte-equal output vs Rust reference.
+- [x] Parity: byte-equal output vs Rust reference. `parity.yml` now generates Rust CLI reference `ScoreResult` JSON, starts `heeczer-ingest` with test orchestration enabled, and runs `bindings/heeczer-js/scripts/parity.mjs` against every shared valid fixture. (session Apr-2026)
 - [ ] Bench: `track()` p95 <2 ms in native mode. (depends on napi-rs binding above)
 - [x] Packaging: `npm pack`/publish dry-run smoke is wired through `release-dry-run.yml`; local `pnpm run pack:smoke` passed on 2026-04-25.
 
@@ -48,5 +48,5 @@ Ship `@ai-heeczer/sdk` for Node.js (CJS + ESM), with native bindings to `heeczer
 
 ## Acceptance
 
-- Parity job green.
+- Parity job green for the HTTP/image SDK surface.
 - Prebuilt binaries publish on release.

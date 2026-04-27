@@ -325,6 +325,19 @@ class HeeczerClientTest {
         }
 
         @Test
+        void scoreResultPreservesAdditiveFieldsForJsonParity() throws Exception {
+                String raw = """
+                                {"scoring_version":"1.0.0","spec_version":"1.0","scoring_profile":"default","bcu_breakdown":{"tokens":"1"},"category":"uncategorized","final_estimated_minutes":"1","estimated_hours":"0.02","estimated_days":"0.00","financial_equivalent_cost":"1","confidence_score":"0.5","confidence_band":"Medium","human_summary":"ok"}
+                                """.strip();
+                ScoreResult score = new ObjectMapper().readValue(raw, ScoreResult.class);
+
+                assertEquals("1.0.0", score.scoringVersion);
+                assertEquals(ConfidenceBand.Medium, score.confidenceBand);
+                assertTrue(score.extras().containsKey("bcu_breakdown"));
+                assertEquals(raw, score.toJson());
+        }
+
+        @Test
         void baseUrlTrailingSlashIsNormalised() throws Exception {
                 var c = new HeeczerClient.Builder("http://localhost:" + wm.port() + "/").build();
                 wm.stubFor(get("/healthz").willReturn(ok()));

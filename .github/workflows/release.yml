@@ -15,7 +15,7 @@ permissions:
   packages: write # required for GHCR
 
 concurrency:
-  group: release
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -173,15 +173,35 @@ jobs:
     name: tag (heeczer-go)
     runs-on: ubuntu-latest
     if: startsWith(github.ref_name, 'heeczer-go-v')
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26"
           cache-dependency-path: bindings/heeczer-go/go.mod
       - run: go test ./...
         working-directory: bindings/heeczer-go
-      # Go modules are versioned via git tags; no further publish step needed.
+      - name: create canonical Go module tag
+        run: |
+          version="${GITHUB_REF_NAME#heeczer-go-v}"
+          canonical_tag="bindings/heeczer-go/v${version}"
+          existing_sha="$(git ls-remote --tags origin "refs/tags/${canonical_tag}" | awk '{print $1}')"
+          if [[ -n "${existing_sha}" ]]; then
+            if [[ "${existing_sha}" != "${GITHUB_SHA}" ]]; then
+              echo "${canonical_tag} already points at ${existing_sha}, expected ${GITHUB_SHA}" >&2
+              exit 1
+            fi
+            echo "${canonical_tag} already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${canonical_tag}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${canonical_tag}"
 
   # ── Java SDK ──────────────────────────────────────────────────────────────────
   publish-maven:
@@ -219,7 +239,7 @@ jobs:
   github-release:
     name: GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-rust, generate-sbom, sign-artifacts]
+    needs: [build-rust, generate-sbom, sign-artifacts, publish-crates]
     if: startsWith(github.ref_name, 'v')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

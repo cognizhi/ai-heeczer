@@ -13,21 +13,21 @@ References: [ADR-0009](../adr/0009-release-control-plane.md), [plan 0012](../pla
 
 ## Workflow catalog
 
-| Workflow file          | Trigger                             | Purpose                                                                                                                           | Status  |
-| ---------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `ci.yml`               | push to `main`, all PRs             | Rust fmt/clippy/test; JS typecheck/vitest; Python mypy/ruff/pytest; Go vet/test; Java mvn test; cargo-audit; cargo-deny; gitleaks | Active  |
-| `codeql.yml`           | push to `main`, all PRs             | CodeQL static analysis (Rust, JS, Python, Go, Java)                                                                               | Active  |
-| `integration.yml`      | push to `main`, all PRs             | Ingestion service end-to-end with SQLite + PostgreSQL                                                                             | Planned |
-| `contract.yml`         | push to `main`, all PRs             | Schema validation across all five language bindings                                                                               | Planned |
-| `parity.yml`           | push to `main`, all PRs             | Fixture-driven scoring parity across bindings                                                                                     | Planned |
-| `migration.yml`        | push to `main`, all PRs             | Fresh-install + incremental-upgrade on SQLite + PostgreSQL                                                                        | Planned |
-| `bench-smoke.yml`      | push to `main`                      | Throughput baseline: `track()` p95, ack p95, enqueue                                                                              | Planned |
-| `docs.yml`             | push to `main`, all PRs             | Markdown lint, link check, `rustdoc`                                                                                              | Planned |
-| `release-dry-run.yml`  | all PRs                             | `release-please` manifest dry-run; package publish dry-run per ecosystem                                                          | Planned |
-| `release-please.yml`   | push to `main`                      | Manifest-mode release PR creation; GitHub App token for tag permissions                                                           | Active  |
-| `release.yml`          | tag push (all ecosystem tags)       | Build, test, sign (cosign), SBOM (CycloneDX), publish per ecosystem, GitHub Release                                               | Active  |
-| `release-resume.yml`   | `workflow_dispatch`                 | Resume a partial publish without minting a new version                                                                            | Planned |
-| `workflow-defuser.yml` | daily schedule, `workflow_dispatch` | Pin non-SHA action refs to resolved SHA; reuses existing automation branch                                                        | Active  |
+| Workflow file          | Trigger                             | Purpose                                                                                                                              | Status  |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `ci.yml`               | push to `main`, all PRs             | Rust fmt/clippy/test; JS typecheck/vitest; Python mypy/ruff/pytest; Go vet/test; Java mvn test; cargo-audit; cargo-deny; betterleaks | Active  |
+| `codeql.yml`           | push to `main`, all PRs             | CodeQL static analysis (Rust, JS, Python, Go, Java)                                                                                  | Active  |
+| `integration.yml`      | push to `main`, all PRs             | Ingestion service end-to-end with SQLite + PostgreSQL                                                                                | Planned |
+| `contract.yml`         | push to `main`, all PRs             | Schema validation across all five language bindings                                                                                  | Planned |
+| `parity.yml`           | push to `main`, all PRs             | Fixture-driven byte-equal scoring parity across Rust reference output and all SDK bindings                                            | Active  |
+| `migration.yml`        | push to `main`, all PRs             | Fresh-install + incremental-upgrade on SQLite + PostgreSQL                                                                           | Planned |
+| `bench-smoke.yml`      | push to `main`                      | Throughput baseline: `track()` p95, ack p95, enqueue                                                                                 | Planned |
+| `docs.yml`             | push to `main`, all PRs             | Markdown lint, link check, `rustdoc`                                                                                                 | Planned |
+| `release-dry-run.yml`  | all PRs                             | `release-please` manifest dry-run; package publish/tag dry-run per ecosystem                                                         | Active  |
+| `release-please.yml`   | push to `main`                      | Manifest-mode release PR creation; GitHub App token for tag permissions                                                              | Active  |
+| `release.yml`          | tag push (all ecosystem tags)       | Build, test, sign (cosign), SBOM (CycloneDX), publish per ecosystem, GitHub Release                                                  | Active  |
+| `release-resume.yml`   | `workflow_dispatch`                 | Resume a partial publish without minting a new version                                                                               | Active  |
+| `workflow-defuser.yml` | daily schedule, `workflow_dispatch` | Pin non-SHA action refs to resolved SHA; reuses existing automation branch                                                           | Active  |
 
 ---
 
@@ -65,7 +65,7 @@ Each ecosystem has its own tag prefix so `release.yml` jobs can filter using
 | Rust       | `v*.*.*`                | `v1.2.3`              | crates.io         |
 | npm        | `heeczer-js-v*.*.*`     | `heeczer-js-v1.2.3`   | npm (OIDC)        |
 | PyPI       | `heeczer-py-v*.*.*`     | `heeczer-py-v1.2.3`   | PyPI (OIDC)       |
-| Go module  | `heeczer-go-v*.*.*`     | `heeczer-go-v1.2.3`   | GitHub + Go proxy |
+| Go module  | `heeczer-go-v*.*.*` triggers release; `bindings/heeczer-go/v*.*.*` is pushed for the Go proxy | `heeczer-go-v1.2.3` → `bindings/heeczer-go/v1.2.3` | GitHub + Go proxy |
 | Maven      | `heeczer-java-v*.*.*`   | `heeczer-java-v1.2.3` | Maven Central     |
 | CLI binary | `v*.*.*` (same as Rust) | `v1.2.3`              | GitHub Release    |
 
@@ -155,17 +155,29 @@ Configure these in **Settings → Branches → Branch protection rules**:
 
 ### Currently active required jobs
 
-| Job name                   | Workflow     | Ecosystem                               |
-| -------------------------- | ------------ | --------------------------------------- |
-| `format-check`             | `ci.yml`     | Rust                                    |
-| `lint (clippy)`            | `ci.yml`     | Rust                                    |
-| `unit + integration tests` | `ci.yml`     | Rust                                    |
-| `js-ci`                    | `ci.yml`     | JavaScript                              |
-| `py-ci`                    | `ci.yml`     | Python                                  |
-| `go-ci`                    | `ci.yml`     | Go                                      |
-| `java-ci`                  | `ci.yml`     | Java                                    |
-| `security`                 | `ci.yml`     | All (cargo-audit, cargo-deny, gitleaks) |
-| `analyze (Rust)`           | `codeql.yml` | Rust                                    |
+| Job name                   | Workflow     | Ecosystem                                  |
+| -------------------------- | ------------ | ------------------------------------------ |
+| `format-check`             | `ci.yml`     | Rust                                       |
+| `lint (clippy)`            | `ci.yml`     | Rust                                       |
+| `unit + integration tests` | `ci.yml`     | Rust                                       |
+| `js-ci`                    | `ci.yml`     | JavaScript                                 |
+| `py-ci`                    | `ci.yml`     | Python                                     |
+| `go-ci`                    | `ci.yml`     | Go                                         |
+| `java-ci`                  | `ci.yml`     | Java                                       |
+| `security`                 | `ci.yml`     | All (cargo-audit, cargo-deny, betterleaks) |
+| `analyze (Rust)`           | `codeql.yml` | Rust                                       |
+| `Rust reference scorer`    | `parity.yml` | SDK parity reference artifacts             |
+| `Rust SDK parity (heeczer)` | `parity.yml` | Rust SDK                                   |
+| `JS SDK parity (@cognizhi/heeczer-sdk)` | `parity.yml` | JavaScript SDK                  |
+| `Python SDK parity (heeczer-py)` | `parity.yml` | Python SDK                              |
+| `Go SDK parity (heeczer-go)` | `parity.yml` | Go SDK                                    |
+| `Java SDK parity (heeczer-java)` | `parity.yml` | Java SDK                              |
+| `release-please (dry run)` | `release-dry-run.yml` | Release manifest                     |
+| `cargo publish --dry-run` | `release-dry-run.yml` | Rust crates                             |
+| `pnpm pack (dry run)` | `release-dry-run.yml` | npm SDK                                  |
+| `uv build + twine check` | `release-dry-run.yml` | PyPI SDK                                |
+| `Go module tag dry run` | `release-dry-run.yml` | Go SDK                                   |
+| `maven deploy (dry run)` | `release-dry-run.yml` | Maven SDK                              |
 
 ### Required once planned workflows ship
 
@@ -173,7 +185,6 @@ Configure these in **Settings → Branches → Branch protection rules**:
 | ------------- | ----------------- |
 | `integration` | `integration.yml` |
 | `contract`    | `contract.yml`    |
-| `parity`      | `parity.yml`      |
 | `migration`   | `migration.yml`   |
 
 ### Required reviewers
@@ -207,4 +218,4 @@ If `release.yml` publishes some ecosystems but fails on others:
 1. The failed jobs appear in the Actions run summary.
 2. Do **not** create a new release or bump the version.
 3. Trigger `release-resume.yml` via `workflow_dispatch`, specifying the tag and the failed ecosystems.
-4. `release-resume.yml` shares the `release` concurrency group (`cancel-in-progress: false`) to prevent double-publishing.
+4. `release-resume.yml` shares the per-tag release concurrency group (`release-<tag>`, `cancel-in-progress: false`) to prevent double-publishing for the same release tag without canceling linked component releases.

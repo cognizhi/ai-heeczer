@@ -38,29 +38,29 @@ Every behavior change follows this exact loop. No exceptions.
 5. **Implement** — minimum code to pass the test. No drive-by refactors.
 6. **All required tests green** locally (`make test`).
 7. **Docs** — update every doc the change affects:
-   - README (root or per-package)
-   - architecture docs
-   - relevant ADR (or write a new one)
-   - relevant `docs/plan/*` file (status/checklist/backlog/links) — mandatory for every relevant change, not just at completion
-   - per-binding CHANGELOG when public surface changes
-   - release impact note ([template](../../.github/RELEASE_IMPACT_TEMPLATE.md)) if package contract changed (PRD §27)
+    - README (root or per-package)
+    - architecture docs
+    - relevant ADR (or write a new one)
+    - relevant `docs/plan/*` file (status/checklist/backlog/links) — mandatory for every relevant change, not just at completion
+    - per-binding CHANGELOG when public surface changes
+    - release impact note ([template](../../.github/RELEASE_IMPACT_TEMPLATE.md)) if package contract changed (PRD §27)
 8. **CI** — every test layer used has a corresponding required GitHub Actions job. If you added a new layer, add the job in the same PR and update branch protection requirements in the PR description.
 9. **Conventional commits** — required for `release-please` to compute the version (ADR-0009).
 10. **Mark plan checklist item done** with a link to the merged PR.
 
 ## 3. Mandatory updates per change type
 
-| Change touches… | Must also update |
-| --- | --- |
-| Scoring math | `scoring_version`, golden fixtures, all SDK parity tests, ADR-0003, scoring section in README |
-| Event schema | `spec_version` or new `event.vN.json`, ADR-0002, all SDK fixtures, schema docs |
+| Change touches…    | Must also update                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Scoring math       | `scoring_version`, golden fixtures, all SDK parity tests, ADR-0003, scoring section in README                 |
+| Event schema       | `spec_version` or new `event.vN.json`, ADR-0002, all SDK fixtures, schema docs                                |
 | HTTP ingestion API | URL prefix version per PRD §12.16, OpenAPI doc, ingestion service README, dashboard data contract if affected |
-| SDK public API | per-binding README, per-binding CHANGELOG, parity tests, examples |
-| Database schema | migration script (SQLite + PostgreSQL paths), migration test, `heec_schema_migrations`, data-model doc |
-| Dashboard UI | Playwright E2E for the affected critical flow, screenshots in docs if UX language changes |
-| CI/CD | release runbook, branch protection list, ADR-0009 if release flow changes |
-| Dependencies | license check, security audit run, SBOM regeneration on next release |
-| Makefile | README quickstart, CI jobs that invoke the target, `docs/plan/0013-developer-experience.md` |
+| SDK public API     | per-binding README, per-binding CHANGELOG, parity tests, examples                                             |
+| Database schema    | migration script (SQLite + PostgreSQL paths), migration test, `heec_schema_migrations`, data-model doc        |
+| Dashboard UI       | Playwright E2E for the affected critical flow, screenshots in docs if UX language changes                     |
+| CI/CD              | release runbook, branch protection list, ADR-0009 if release flow changes                                     |
+| Dependencies       | license check, security audit run, SBOM regeneration on next release                                          |
+| Makefile           | README quickstart, CI jobs that invoke the target, `docs/plan/0013-developer-experience.md`                   |
 
 If a change maps to an existing plan slice and the corresponding `docs/plan/*` file is not updated in the same PR, the change is incomplete.
 
@@ -92,7 +92,7 @@ A change is "done" only when CI says so. Required jobs include, at minimum:
 - `migration-test` (SQLite + PostgreSQL)
 - `ui-test` (Playwright) when dashboard scope is touched
 - `benchmark-smoke` (`track()` p95, ack p95, enqueue throughput)
-- `security` (CodeQL, Trivy, language-specific audit, gitleaks)
+- `security` (CodeQL, Trivy, language-specific audit, betterleaks)
 - `release-dry-run` (`release-please` manifest computation, publish dry-run)
 
 Any new test layer added by a PR is added to required jobs in the same PR.

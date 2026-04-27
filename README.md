@@ -73,7 +73,7 @@ For a full local setup:
 # install the latest stable Rust toolchain plus local security tooling
 make bootstrap
 
-# build & test the entire workspace
+# build & test the entire workspace, including cross-language SDK parity
 make test
 
 # mirror the Rust security CI jobs, including fresh cargo-audit/cargo-deny installs

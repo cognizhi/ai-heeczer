@@ -17,7 +17,8 @@ concurrency:
 # (.github/dependabot.yml) keeps these current. The `# vX.Y.Z` comment is the
 # resolved tag for human review only — Dependabot edits both the SHA and tag.
 jobs:
-  # Step 1: build the Rust reference scorer and validate fixture outputs.
+  # Step 1: build the Rust reference scorer, score fixtures, and package the
+  # ingestion service binary used by HTTP-mode SDK parity jobs.
   rust-reference:
     name: Rust reference scorer
     runs-on: ubuntu-latest
@@ -27,8 +28,8 @@ jobs:
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
-      - name: build heec CLI
-        run: cargo build -p heeczer-cli --release
+      - name: build heec CLI + ingest service
+        run: cargo build -p heeczer-cli -p heeczer-ingest --release
       - name: score fixtures → /tmp/parity/
         run: |
           mkdir -p /tmp/parity
@@ -38,11 +39,39 @@ jobs:
             ./target/release/heec score "$f" --format json > "/tmp/parity/${name}.json"
           done
           echo "Scored $(ls /tmp/parity/*.json | wc -l) fixture(s)"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity/*.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: heeczer-ingest-linux-x64
+          path: target/release/heeczer-ingest
 
-  # Step 2: JS/TS SDK parity — validates ingest paths via httptest.
+  parity-rust:
+    name: Rust SDK parity (heeczer)
+    runs-on: ubuntu-latest
+    needs: [rust-reference]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity
+      - name: compare Rust SDK output to reference
+        run: cargo test -p heeczer --test parity
+        env:
+          HEECZER_PARITY_REFERENCE_DIR: /tmp/parity
+
+  # Step 2: JS/TS SDK parity against the live test-orchestration route.
   parity-js:
     name: JS SDK parity (@cognizhi/heeczer-sdk)
     runs-on: ubuntu-latest
+    needs: [rust-reference]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -53,20 +82,72 @@ jobs:
           node-version: "22"
           cache: pnpm
           cache-dependency-path: bindings/heeczer-js/pnpm-lock.yaml
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: heeczer-ingest-linux-x64
+          path: /tmp/heeczer-ingest-bin
+      - name: start ingest service
+        run: |
+          chmod +x /tmp/heeczer-ingest-bin/heeczer-ingest
+          HEECZER_LISTEN=127.0.0.1:18080 \
+          HEECZER_AUTH__ENABLED=false \
+          HEECZER_FEATURES__TEST_ORCHESTRATION=true \
+          HEECZER_DATABASE_URL=sqlite:/tmp/heeczer-js-parity.db?mode=rwc \
+            /tmp/heeczer-ingest-bin/heeczer-ingest > /tmp/heeczer-ingest.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18080/v1/ready; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/heeczer-ingest.log
+          exit 1
       - run: pnpm install --frozen-lockfile
+        working-directory: bindings/heeczer-js
+      - run: pnpm run build
         working-directory: bindings/heeczer-js
       - run: pnpm test
         working-directory: bindings/heeczer-js
+      - run: node scripts/parity.mjs
+        working-directory: bindings/heeczer-js
+        env:
+          HEECZER_PARITY_BASE_URL: http://127.0.0.1:18080
+          HEECZER_PARITY_REFERENCE_DIR: /tmp/parity
 
-  # Step 3: Python SDK parity — validates ingest paths via pytest + httptest.
+  # Step 3: Python SDK parity against the live test-orchestration route.
   parity-python:
     name: Python SDK parity (heeczer-py)
     runs-on: ubuntu-latest
+    needs: [rust-reference]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
           python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: heeczer-ingest-linux-x64
+          path: /tmp/heeczer-ingest-bin
+      - name: start ingest service
+        run: |
+          chmod +x /tmp/heeczer-ingest-bin/heeczer-ingest
+          HEECZER_LISTEN=127.0.0.1:18080 \
+          HEECZER_AUTH__ENABLED=false \
+          HEECZER_FEATURES__TEST_ORCHESTRATION=true \
+          HEECZER_DATABASE_URL=sqlite:/tmp/heeczer-python-parity.db?mode=rwc \
+            /tmp/heeczer-ingest-bin/heeczer-ingest > /tmp/heeczer-ingest.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18080/v1/ready; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/heeczer-ingest.log
+          exit 1
       # release-please uses "-SNAPSHOT" placeholders which violate PEP 440.
       # Normalise to ".dev0" so uv can parse the version on pre-release branches.
       - name: normalize snapshot version (PEP 440)
@@ -76,29 +157,63 @@ jobs:
         working-directory: bindings/heeczer-py
       - run: uv run pytest
         working-directory: bindings/heeczer-py
+      - run: uv run python scripts/parity.py
+        working-directory: bindings/heeczer-py
+        env:
+          HEECZER_PARITY_BASE_URL: http://127.0.0.1:18080
+          HEECZER_PARITY_REFERENCE_DIR: /tmp/parity
 
-  # Step 4: Go SDK parity — validates ingest paths via httptest.
+  # Step 4: Go SDK parity against the live test-orchestration route.
   parity-go:
     name: Go SDK parity (heeczer-go)
     runs-on: ubuntu-latest
+    needs: [rust-reference]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26"
           cache-dependency-path: bindings/heeczer-go/go.mod
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: heeczer-ingest-linux-x64
+          path: /tmp/heeczer-ingest-bin
+      - name: start ingest service
+        run: |
+          chmod +x /tmp/heeczer-ingest-bin/heeczer-ingest
+          HEECZER_LISTEN=127.0.0.1:18080 \
+          HEECZER_AUTH__ENABLED=false \
+          HEECZER_FEATURES__TEST_ORCHESTRATION=true \
+          HEECZER_DATABASE_URL=sqlite:/tmp/heeczer-go-parity.db?mode=rwc \
+            /tmp/heeczer-ingest-bin/heeczer-ingest > /tmp/heeczer-ingest.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18080/v1/ready; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/heeczer-ingest.log
+          exit 1
       - run: go test ./...
         working-directory: bindings/heeczer-go
+      - run: go run ./cmd/parity
+        working-directory: bindings/heeczer-go
+        env:
+          HEECZER_PARITY_BASE_URL: http://127.0.0.1:18080
+          HEECZER_PARITY_REFERENCE_DIR: /tmp/parity
       - name: govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
         working-directory: bindings/heeczer-go
 
-  # Step 5: Java SDK parity — validates ingest paths via WireMock.
+  # Step 5: Java SDK parity against the live test-orchestration route.
   parity-java:
     name: Java SDK parity (heeczer-java)
     runs-on: ubuntu-latest
+    needs: [rust-reference]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -106,5 +221,32 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: parity-reference
+          path: /tmp/parity
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: heeczer-ingest-linux-x64
+          path: /tmp/heeczer-ingest-bin
+      - name: start ingest service
+        run: |
+          chmod +x /tmp/heeczer-ingest-bin/heeczer-ingest
+          HEECZER_LISTEN=127.0.0.1:18080 \
+          HEECZER_AUTH__ENABLED=false \
+          HEECZER_FEATURES__TEST_ORCHESTRATION=true \
+          HEECZER_DATABASE_URL=sqlite:/tmp/heeczer-java-parity.db?mode=rwc \
+            /tmp/heeczer-ingest-bin/heeczer-ingest > /tmp/heeczer-ingest.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18080/v1/ready; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/heeczer-ingest.log
+          exit 1
       - run: mvn -q test
         working-directory: bindings/heeczer-java
+      - run: mvn -q -Dtest=ParityTest test
+        working-directory: bindings/heeczer-java
+        env:
+          HEECZER_PARITY_BASE_URL: http://127.0.0.1:18080
+          HEECZER_PARITY_REFERENCE_DIR: /tmp/parity

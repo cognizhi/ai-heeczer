@@ -25,9 +25,9 @@ permissions:
   id-token: write # required for OIDC trusted publishing (PyPI, npm, cosign)
   packages: write # required for GHCR
 
-# Shares the release concurrency group so a resume cannot race a live release.
+# Shares the per-tag release concurrency group so a resume cannot race the same live release.
 concurrency:
-  group: release
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 # All third-party Actions are pinned to a 40-char commit SHA per
@@ -44,24 +44,40 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.tag }}
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
-      - name: publish heeczer-core
-        run: cargo publish -p heeczer-core
+      - name: publish heeczer-core if needed
+        run: |
+          set -euo pipefail
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "heeczer-core") | .version')"
+          if curl -fsSL -H "User-Agent: cognizhi-ai-heeczer-release-resume" "https://crates.io/api/v1/crates/heeczer-core/${version}" >/dev/null; then
+            echo "heeczer-core ${version} is already published"
+            exit 0
+          fi
+          cargo publish -p heeczer-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       - name: wait for heeczer-core to appear
         run: |
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "heeczer-core") | .version')"
           for i in {1..30}; do
-            cargo search heeczer-core --limit 1 | grep heeczer-core && exit 0
+            curl -fsSL -H "User-Agent: cognizhi-ai-heeczer-release-resume" "https://crates.io/api/v1/crates/heeczer-core/${version}" >/dev/null && exit 0
             sleep 10
           done
-          echo "heeczer-core did not appear in index in time"
+          echo "heeczer-core ${version} did not appear in index in time"
           exit 1
-      - name: publish heeczer (Rust SDK)
-        run: cargo publish -p heeczer
+      - name: publish heeczer if needed
+        run: |
+          set -euo pipefail
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "heeczer") | .version')"
+          if curl -fsSL -H "User-Agent: cognizhi-ai-heeczer-release-resume" "https://crates.io/api/v1/crates/heeczer/${version}" >/dev/null; then
+            echo "heeczer ${version} is already published"
+            exit 0
+          fi
+          cargo publish -p heeczer
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -122,13 +138,40 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.tag }}
+          fetch-depth: 0
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26"
           cache-dependency-path: bindings/heeczer-go/go.mod
       - run: go test ./...
         working-directory: bindings/heeczer-go
-      # Go modules are versioned via git tags; no further publish step needed.
+      - name: create or verify canonical Go module tag
+        run: |
+          input_tag="${{ inputs.tag }}"
+          case "${input_tag}" in
+            v*) version="${input_tag#v}" ;;
+            heeczer-go-v*) version="${input_tag#heeczer-go-v}" ;;
+            bindings/heeczer-go/v*) version="${input_tag#bindings/heeczer-go/v}" ;;
+            *)
+              echo "Go resume expects vX.Y.Z, heeczer-go-vX.Y.Z, or bindings/heeczer-go/vX.Y.Z, got ${input_tag}" >&2
+              exit 1
+              ;;
+          esac
+          canonical_tag="bindings/heeczer-go/v${version}"
+          head_sha="$(git rev-parse HEAD)"
+          existing_sha="$(git ls-remote --tags origin "refs/tags/${canonical_tag}" | awk '{print $1}')"
+          if [[ -n "${existing_sha}" ]]; then
+            if [[ "${existing_sha}" != "${head_sha}" ]]; then
+              echo "${canonical_tag} already points at ${existing_sha}, expected ${head_sha}" >&2
+              exit 1
+            fi
+            echo "${canonical_tag} already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${canonical_tag}" "${head_sha}"
+          git push origin "refs/tags/${canonical_tag}"
 
   # ── Java SDK ──────────────────────────────────────────────────────────────────
   resume-java:
