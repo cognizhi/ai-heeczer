@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.5.1...heeczer-py-v0.5.1) (2026-04-27)
+
+
+### Features
+
+* land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.5.1...heeczer-py-v0.5.1) (2026-04-25)
 
 

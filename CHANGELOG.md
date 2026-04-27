@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/v0.5.1...v0.5.1) (2026-04-27)
+
+
+### Features
+
+* land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
+* **scoring:** complete plan 0002 — valgrind CI, max-input golden test, rustdoc ([0971366](https://github.com/cognizhi/ai-heeczer/commit/097136624945cd8aaacb4ef40c5afd0ed3e62ec1))
+* **storage:** add hard-delete event admin command with tombstone-backed protection ([8560e06](https://github.com/cognizhi/ai-heeczer/commit/8560e0656e3f2247ea0860953e38d050665d8385))
+* **storage:** audit-log PII redaction for hard-deleted events (PRD §12.17) ([08c909b](https://github.com/cognizhi/ai-heeczer/commit/08c909bafff28f910d37e8729724db9033b4033f))
+
+
+### Bug Fixes
+
+* use std hint black_box in score bench ([57a88a9](https://github.com/cognizhi/ai-heeczer/commit/57a88a901fab0963e899f62e06b4b5a0102b7da5))
+
 ## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/v0.5.1...v0.5.1) (2026-04-25)
 
 
