@@ -88,14 +88,14 @@ Each stack:
 
 Components:
 
-| Service          | Image source                             | Purpose                                                  |
-| ---------------- | ---------------------------------------- | -------------------------------------------------------- |
-| `chatbot-ui`     | per-SDK `Dockerfile`                     | Minimal browser UI (or curlable HTTP) for chatting.      |
-| `chatbot-api`    | per-SDK `Dockerfile`                     | Calls chosen LLM provider, wraps each turn with the SDK. |
-| `heeczer-ingest` | built from `services/heeczer-ingest`     | Validates + scores + persists events.                    |
-| `dashboard`      | built from `dashboard/`                  | Read-only Next.js dashboard.                             |
+| Service          | Image source                             | Purpose                                                                         |
+| ---------------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `chatbot-ui`     | per-SDK `Dockerfile`                     | Minimal browser UI (or curlable HTTP) for chatting.                             |
+| `chatbot-api`    | per-SDK `Dockerfile`                     | Calls chosen LLM provider, wraps each turn with the SDK.                        |
+| `heeczer-ingest` | built from `services/heeczer-ingest`     | Validates + scores + persists events.                                           |
+| `dashboard`      | built from `dashboard/`                  | Read-only Next.js dashboard.                                                    |
 | `postgres`       | upstream `postgres:16-alpine`            | Reserved follow-up fragment until HTTP runtime PostgreSQL pool switching lands. |
-| `ollama`         | upstream `ollama/ollama` (profile-gated) | Local model host. Off by default.                        |
+| `ollama`         | upstream `ollama/ollama` (profile-gated) | Local model host. Off by default.                                               |
 
 ### 4.2 Port allocation matrix
 

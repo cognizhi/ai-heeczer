@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 public final class Catalogue {
-    private Catalogue() {}
+    private Catalogue() {
+    }
 
-    public record ToolTraceEntry(String tool_name, int invoked_at_ms, double output_size) {}
+    public record ToolTraceEntry(String tool_name, int invoked_at_ms, double output_size) {
+    }
 
     private static final Map<String, Double> OUTPUT_SIZES = Map.of(
             "web_search", 0.0,

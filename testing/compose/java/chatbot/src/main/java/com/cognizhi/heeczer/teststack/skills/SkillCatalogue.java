@@ -16,10 +16,12 @@ public final class SkillCatalogue {
             "doc-summary", "doc_summary",
             "ci-triage", "ci_triage");
 
-    private SkillCatalogue() {}
+    private SkillCatalogue() {
+    }
 
     public static String normalize(String rawSkill) {
-        String selected = rawSkill == null || rawSkill.isBlank() ? "code_gen" : rawSkill.replaceFirst("^/skill\\s+", "").trim();
+        String selected = rawSkill == null || rawSkill.isBlank() ? "code_gen"
+                : rawSkill.replaceFirst("^/skill\\s+", "").trim();
         return ALIASES.getOrDefault(selected, selected);
     }
 

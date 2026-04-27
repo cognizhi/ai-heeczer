@@ -1,10 +1,22 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { randomUUID } from "node:crypto";
 
 import { HeeczerClient } from "@cognizhi/heeczer-sdk";
 
-import { activeTools, loadSkill, type SkillFixture } from "./skills/catalogue.js";
-import { functionSchemas, traceForTools, type ToolTraceEntry } from "./tools/catalogue.js";
+import {
+  activeTools,
+  loadSkill,
+  type SkillFixture,
+} from "./skills/catalogue.js";
+import {
+  functionSchemas,
+  traceForTools,
+  type ToolTraceEntry,
+} from "./tools/catalogue.js";
 
 const port = Number(process.env["CHATBOT_PORT"] ?? "8000");
 const sdkVersion = process.env["CHATBOT_SDK_VERSION"] ?? "0.5.1";
@@ -54,18 +66,24 @@ function html(res: ServerResponse): void {
   res.end(body);
 }
 
-async function callProvider(fixture: SkillFixture, prompt: string, provider: string): Promise<ProviderUsage> {
+async function callProvider(
+  fixture: SkillFixture,
+  prompt: string,
+  provider: string,
+): Promise<ProviderUsage> {
   if (provider === "mock") {
     return {
       prompt_tokens: fixture.expected_event.metrics["tokens_prompt_min"],
-      completion_tokens: fixture.expected_event.metrics["tokens_completion_min"],
+      completion_tokens:
+        fixture.expected_event.metrics["tokens_completion_min"],
       text: `Mock ${fixture.skill} turn completed.`,
     };
   }
 
   if (provider === "openrouter" || provider === "gemini") {
     const isGemini = provider === "gemini";
-    const apiKey = process.env[isGemini ? "GEMINI_API_KEY" : "OPENROUTER_API_KEY"];
+    const apiKey =
+      process.env[isGemini ? "GEMINI_API_KEY" : "OPENROUTER_API_KEY"];
     const model = process.env[isGemini ? "GEMINI_MODEL" : "OPENROUTER_MODEL"];
     if (!apiKey || !model || apiKey.includes("changeme")) {
       throw new Error(`${provider} requires an API key and model`);
@@ -82,41 +100,64 @@ async function callProvider(fixture: SkillFixture, prompt: string, provider: str
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: `Run the ${fixture.skill} local-stack scenario without revealing raw prompts.` },
+          {
+            role: "system",
+            content: `Run the ${fixture.skill} local-stack scenario without revealing raw prompts.`,
+          },
           { role: "user", content: prompt },
         ],
         tools: functionSchemas(activeTools(fixture)),
         tool_choice: "auto",
       }),
     });
-    if (!response.ok) throw new Error(`${provider} returned HTTP ${response.status}`);
+    if (!response.ok)
+      throw new Error(`${provider} returned HTTP ${response.status}`);
     const body = (await response.json()) as any;
     return {
       prompt_tokens: body.usage?.prompt_tokens ?? null,
       completion_tokens: body.usage?.completion_tokens ?? null,
-      text: body.choices?.[0]?.message?.content ?? `${provider} completed ${fixture.skill}.`,
+      text:
+        body.choices?.[0]?.message?.content ??
+        `${provider} completed ${fixture.skill}.`,
     };
   }
 
   if (provider === "local") {
-    const baseUrl = process.env["LOCAL_MODEL_BASE_URL"] ?? "http://ollama:11434";
+    const baseUrl =
+      process.env["LOCAL_MODEL_BASE_URL"] ?? "http://ollama:11434";
     const model = process.env["LOCAL_MODEL"] ?? "llama3.2:1b";
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/chat`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ model, stream: false, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
-    if (!response.ok) throw new Error(`local model returned HTTP ${response.status}`);
+    if (!response.ok)
+      throw new Error(`local model returned HTTP ${response.status}`);
     const body = (await response.json()) as any;
-    return { prompt_tokens: null, completion_tokens: null, text: body.message?.content ?? "Local model completed." };
+    return {
+      prompt_tokens: null,
+      completion_tokens: null,
+      text: body.message?.content ?? "Local model completed.",
+    };
   }
 
   throw new Error(`unsupported provider ${provider}`);
 }
 
-function buildEvent(fixture: SkillFixture, usage: ProviderUsage, toolTrace: ToolTraceEntry[]) {
+function buildEvent(
+  fixture: SkillFixture,
+  usage: ProviderUsage,
+  toolTrace: ToolTraceEntry[],
+) {
   const metrics = fixture.expected_event.metrics;
-  const context = { ...fixture.expected_event.context } as Record<string, unknown>;
+  const context = { ...fixture.expected_event.context } as Record<
+    string,
+    unknown
+  >;
   context["tags"] = ["local-stack", "js", fixture.skill];
   const projectId = process.env["CHATBOT_PROJECT_ID"];
   return {
@@ -155,7 +196,10 @@ function buildEvent(fixture: SkillFixture, usage: ProviderUsage, toolTrace: Tool
   };
 }
 
-async function handleChat(req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function handleChat(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
   const body = await readBody(req);
   const fixture = loadSkill(body.skill);
   const provider = body.provider ?? process.env["LLM_PROVIDER"] ?? "mock";
@@ -178,12 +222,17 @@ async function handleChat(req: IncomingMessage, res: ServerResponse): Promise<vo
 const server = createServer((req, res) => {
   void (async () => {
     try {
-      if (req.method === "GET" && req.url === "/healthz") return json(res, 200, { ok: true });
+      if (req.method === "GET" && req.url === "/healthz")
+        return json(res, 200, { ok: true });
       if (req.method === "GET" && req.url === "/") return html(res);
-      if (req.method === "POST" && req.url === "/chat") return await handleChat(req, res);
+      if (req.method === "POST" && req.url === "/chat")
+        return await handleChat(req, res);
       return json(res, 404, { ok: false, error: "not_found" });
     } catch (error) {
-      return json(res, 500, { ok: false, error: error instanceof Error ? error.message : String(error) });
+      return json(res, 500, {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   })();
 });

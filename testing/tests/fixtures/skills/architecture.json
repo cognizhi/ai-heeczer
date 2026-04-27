@@ -3,9 +3,18 @@
   "command": "/skill architecture",
   "mock_script": [
     { "tool": "web_search", "stub_output": { "results": 4, "tokens": 500 } },
-    { "tool": "plan_reviewer", "stub_output": { "notes": ["boundary", "migration"] } },
-    { "tool": "data_analyst", "stub_output": { "rows": 120, "output_size": 1.0 } },
-    { "tool": "summarizer", "stub_output": { "word_count": 260, "output_size": 0.8 } }
+    {
+      "tool": "plan_reviewer",
+      "stub_output": { "notes": ["boundary", "migration"] }
+    },
+    {
+      "tool": "data_analyst",
+      "stub_output": { "rows": 120, "output_size": 1.0 }
+    },
+    {
+      "tool": "summarizer",
+      "stub_output": { "word_count": 260, "output_size": 0.8 }
+    }
   ],
   "expected_event": {
     "task": {

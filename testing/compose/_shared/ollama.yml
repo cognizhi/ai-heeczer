@@ -1,6 +1,6 @@
 services:
   ollama:
-    image: ollama/ollama:0.6.8
+    image: ollama/ollama:0.21.2
     profiles: ["local-model"]
     ports:
       - "127.0.0.1:${HEECZER_OLLAMA_PORT}:11434"

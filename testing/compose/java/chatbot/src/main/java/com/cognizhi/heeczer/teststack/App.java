@@ -29,9 +29,11 @@ public final class App {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String WORKSPACE_ID = env("CHATBOT_WORKSPACE_ID", "local-test-java");
     private static final String SCORING_PROFILE = env("CHATBOT_SCORING_PROFILE", "default");
-    private static final HeeczerClient HEECZER = new HeeczerClient.Builder(env("HEECZER_BASE_URL", "http://heeczer-ingest:8080")).build();
+    private static final HeeczerClient HEECZER = new HeeczerClient.Builder(
+            env("HEECZER_BASE_URL", "http://heeczer-ingest:8080")).build();
 
-    private App() {}
+    private App() {
+    }
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(env("CHATBOT_PORT", "8000"));
@@ -91,7 +93,9 @@ public final class App {
     private static ProviderUsage callProvider(JsonNode fixture, String prompt, String provider) throws Exception {
         if ("mock".equals(provider)) {
             JsonNode metrics = fixture.path("expected_event").path("metrics");
-            return new ProviderUsage(metrics.path("tokens_prompt_min").asInt(), metrics.path("tokens_completion_min").asInt(), "Mock " + fixture.path("skill").asText() + " turn completed.");
+            return new ProviderUsage(metrics.path("tokens_prompt_min").asInt(),
+                    metrics.path("tokens_completion_min").asInt(),
+                    "Mock " + fixture.path("skill").asText() + " turn completed.");
         }
         if ("openrouter".equals(provider) || "gemini".equals(provider)) {
             boolean gemini = "gemini".equals(provider);
@@ -106,7 +110,8 @@ public final class App {
             ObjectNode body = MAPPER.createObjectNode();
             body.put("model", model);
             ArrayNode messages = body.putArray("messages");
-            messages.addObject().put("role", "system").put("content", "Run the " + fixture.path("skill").asText() + " local-stack scenario without revealing raw prompts.");
+            messages.addObject().put("role", "system").put("content", "Run the " + fixture.path("skill").asText()
+                    + " local-stack scenario without revealing raw prompts.");
             messages.addObject().put("role", "user").put("content", prompt);
             body.set("tools", MAPPER.valueToTree(Catalogue.functionSchemas(SkillCatalogue.activeTools(fixture))));
             body.put("tool_choice", "auto");
@@ -115,14 +120,16 @@ public final class App {
                     .header("content-type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
                     .build();
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request,
+                    HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 throw new IOException(provider + " returned HTTP " + response.statusCode());
             }
             JsonNode payload = MAPPER.readTree(response.body());
             JsonNode usage = payload.path("usage");
             JsonNode message = payload.path("choices").path(0).path("message");
-            return new ProviderUsage(nullableNumber(usage, "prompt_tokens"), nullableNumber(usage, "completion_tokens"), message.path("content").asText(provider + " completed " + fixture.path("skill").asText() + "."));
+            return new ProviderUsage(nullableNumber(usage, "prompt_tokens"), nullableNumber(usage, "completion_tokens"),
+                    message.path("content").asText(provider + " completed " + fixture.path("skill").asText() + "."));
         }
         if ("local".equals(provider)) {
             String baseUrl = env("LOCAL_MODEL_BASE_URL", "http://ollama:11434").replaceFirst("/+$", "");
@@ -136,7 +143,8 @@ public final class App {
                     .header("content-type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
                     .build();
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request,
+                    HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 throw new IOException("local model returned HTTP " + response.statusCode());
             }
@@ -147,7 +155,8 @@ public final class App {
         throw new IllegalArgumentException("unsupported provider " + provider);
     }
 
-    private static ObjectNode buildEvent(JsonNode fixture, ProviderUsage usage, List<Catalogue.ToolTraceEntry> toolTrace, long startedAt) {
+    private static ObjectNode buildEvent(JsonNode fixture, ProviderUsage usage,
+            List<Catalogue.ToolTraceEntry> toolTrace, long startedAt) {
         JsonNode expected = fixture.path("expected_event");
         JsonNode metrics = expected.path("metrics");
         ObjectNode context = expected.path("context").deepCopy();
@@ -233,5 +242,6 @@ public final class App {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    private record ProviderUsage(Object promptTokens, Object completionTokens, String text) {}
+    private record ProviderUsage(Object promptTokens, Object completionTokens, String text) {
+    }
 }

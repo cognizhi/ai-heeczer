@@ -2,8 +2,14 @@
   "skill": "doc_summary",
   "command": "/skill doc-summary",
   "mock_script": [
-    { "tool": "document_reader", "stub_output": { "chunks": 3, "tokens": 2000 } },
-    { "tool": "summarizer", "stub_output": { "word_count": 240, "output_size": 0.8 } },
+    {
+      "tool": "document_reader",
+      "stub_output": { "chunks": 3, "tokens": 2000 }
+    },
+    {
+      "tool": "summarizer",
+      "stub_output": { "word_count": 240, "output_size": 0.8 }
+    },
     { "tool": "plan_reviewer", "stub_output": { "notes": ["scope", "risk"] } }
   ],
   "expected_event": {

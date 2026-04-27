@@ -3,8 +3,14 @@
   "command": "/skill rca",
   "mock_script": [
     { "tool": "web_search", "stub_output": { "results": 3, "tokens": 500 } },
-    { "tool": "code_executor", "stub_output": { "exit_code": 1, "output_size": 0.5 } },
-    { "tool": "diff_generator", "stub_output": { "files_changed": 1, "output_size": 0.3 } }
+    {
+      "tool": "code_executor",
+      "stub_output": { "exit_code": 1, "output_size": 0.5 }
+    },
+    {
+      "tool": "diff_generator",
+      "stub_output": { "files_changed": 1, "output_size": 0.3 }
+    }
   ],
   "expected_event": {
     "task": {

@@ -3,8 +3,14 @@
   "command": "/skill ci-triage",
   "mock_script": [
     { "tool": "web_search", "stub_output": { "results": 2, "tokens": 500 } },
-    { "tool": "code_executor", "stub_output": { "exit_code": 0, "output_size": 0.5 } },
-    { "tool": "diff_generator", "stub_output": { "files_changed": 1, "output_size": 0.3 } },
+    {
+      "tool": "code_executor",
+      "stub_output": { "exit_code": 0, "output_size": 0.5 }
+    },
+    {
+      "tool": "diff_generator",
+      "stub_output": { "files_changed": 1, "output_size": 0.3 }
+    },
     { "tool": "risk_checker", "stub_output": { "risk_score": 0.35 } }
   ],
   "expected_event": {

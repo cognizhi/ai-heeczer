@@ -2,9 +2,18 @@
   "skill": "code_gen",
   "command": "/skill code-gen",
   "mock_script": [
-    { "tool": "code_executor", "stub_output": { "exit_code": 0, "output_size": 0.5 } },
-    { "tool": "diff_generator", "stub_output": { "files_changed": 2, "output_size": 0.3 } },
-    { "tool": "summarizer", "stub_output": { "word_count": 180, "output_size": 0.8 } }
+    {
+      "tool": "code_executor",
+      "stub_output": { "exit_code": 0, "output_size": 0.5 }
+    },
+    {
+      "tool": "diff_generator",
+      "stub_output": { "files_changed": 2, "output_size": 0.3 }
+    },
+    {
+      "tool": "summarizer",
+      "stub_output": { "word_count": 180, "output_size": 0.8 }
+    }
   ],
   "expected_event": {
     "task": {

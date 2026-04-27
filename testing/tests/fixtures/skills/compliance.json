@@ -2,10 +2,19 @@
   "skill": "compliance",
   "command": "/skill compliance",
   "mock_script": [
-    { "tool": "document_reader", "stub_output": { "chunks": 4, "tokens": 2400 } },
+    {
+      "tool": "document_reader",
+      "stub_output": { "chunks": 4, "tokens": 2400 }
+    },
     { "tool": "risk_checker", "stub_output": { "risk_score": 0.85 } },
-    { "tool": "plan_reviewer", "stub_output": { "notes": ["regulated", "needs approval"] } },
-    { "tool": "summarizer", "stub_output": { "word_count": 320, "output_size": 0.8 } }
+    {
+      "tool": "plan_reviewer",
+      "stub_output": { "notes": ["regulated", "needs approval"] }
+    },
+    {
+      "tool": "summarizer",
+      "stub_output": { "word_count": 320, "output_size": 0.8 }
+    }
   ],
   "expected_event": {
     "task": {
