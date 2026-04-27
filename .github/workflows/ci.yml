@@ -111,7 +111,12 @@ jobs:
             -o /tmp/valgrind_driver
       - name: Run valgrind leak check
         run: |
-          valgrind --leak-check=full --error-exitcode=1 /tmp/valgrind_driver
+          valgrind \
+            --leak-check=full \
+            --show-leak-kinds=definite,indirect \
+            --errors-for-leak-kinds=definite,indirect \
+            --error-exitcode=1 \
+            /tmp/valgrind_driver
 
   security-audit:
     name: cargo-audit

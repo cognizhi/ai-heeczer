@@ -38,9 +38,9 @@ final class NativeFfmBridge implements NativeBridge {
     private final MethodHandle versionsJson;
     private final MethodHandle freeString;
     private final Method ofConfinedArena;
-    private final Method allocateUtf8String;
+    private final Method allocateString;
     private final Method reinterpret;
-    private final Method getUtf8String;
+    private final Method readString;
     private final Object nullSegment;
 
     private NativeFfmBridge() throws ReflectiveOperationException {
@@ -103,9 +103,9 @@ final class NativeFfmBridge implements NativeBridge {
                 freeDescriptor,
                 Array.newInstance(linkerOptionClass, 0));
         this.ofConfinedArena = arenaClass.getMethod("ofConfined");
-        this.allocateUtf8String = segmentAllocatorClass.getMethod("allocateUtf8String", String.class);
+        this.allocateString = findAllocatorStringMethod(segmentAllocatorClass, "allocateFrom", "allocateUtf8String");
         this.reinterpret = memorySegmentClass.getMethod("reinterpret", long.class);
-        this.getUtf8String = memorySegmentClass.getMethod("getUtf8String", long.class);
+        this.readString = findSegmentStringReader(memorySegmentClass, "getString", "getUtf8String");
         this.nullSegment = memorySegmentClass.getField("NULL").get(null);
     }
 
@@ -202,10 +202,10 @@ final class NativeFfmBridge implements NativeBridge {
     private String invokeScore(String eventJson, String profileJson, String tiersJson, String tierOverride) {
         Object arena = newArena();
         try {
-            Object event = allocateUtf8String.invoke(arena, eventJson);
-            Object profile = profileJson == null ? nullSegment : allocateUtf8String.invoke(arena, profileJson);
-            Object tiers = tiersJson == null ? nullSegment : allocateUtf8String.invoke(arena, tiersJson);
-            Object override = tierOverride == null ? nullSegment : allocateUtf8String.invoke(arena, tierOverride);
+            Object event = allocateString.invoke(arena, eventJson);
+            Object profile = profileJson == null ? nullSegment : allocateString.invoke(arena, profileJson);
+            Object tiers = tiersJson == null ? nullSegment : allocateString.invoke(arena, tiersJson);
+            Object override = tierOverride == null ? nullSegment : allocateString.invoke(arena, tierOverride);
             Object raw = scoreJson.invokeWithArguments(event, profile, tiers, override);
             return readOwnedString(raw);
         } catch (Throwable err) {
@@ -248,7 +248,7 @@ final class NativeFfmBridge implements NativeBridge {
         }
         try {
             Object view = reinterpret.invoke(raw, Long.MAX_VALUE);
-            return (String) getUtf8String.invoke(view, 0L);
+            return (String) readString.invoke(view, 0L);
         } catch (ReflectiveOperationException err) {
             throw new IllegalStateException("native mode could not decode a UTF-8 result", err);
         } finally {
@@ -335,6 +335,29 @@ final class NativeFfmBridge implements NativeBridge {
             return configured;
         }
         return null;
+    }
+
+    private static Method findAllocatorStringMethod(Class<?> owner, String... names) throws NoSuchMethodException {
+        for (String name : names) {
+            try {
+                return owner.getMethod(name, String.class);
+            } catch (NoSuchMethodException ignored) {
+                // Try the next JDK-era method name.
+            }
+        }
+        throw new NoSuchMethodException(owner.getName() + " has no compatible String method");
+    }
+
+    private static Method findSegmentStringReader(Class<?> owner, String... names)
+            throws NoSuchMethodException {
+        for (String name : names) {
+            try {
+                return owner.getMethod(name, long.class);
+            } catch (NoSuchMethodException ignored) {
+                // Try the next JDK-era method name.
+            }
+        }
+        throw new NoSuchMethodException(owner.getName() + " has no compatible string reader method");
     }
 
     private static Object arrayOf(Class<?> elementClass, Object... values) {
