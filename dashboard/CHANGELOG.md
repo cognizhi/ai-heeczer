@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/cognizhi/ai-heeczer/compare/dashboard-v0.5.0...dashboard-v0.6.0) (2026-04-27)
+
+
+### Features
+
+* add local SDK test stacks ([af53ae9](https://github.com/cognizhi/ai-heeczer/commit/af53ae9b85a18445b7f8d00f5f46f90fef436987))
+
 ## [0.5.0](https://github.com/cognizhi/ai-heeczer/compare/dashboard-v0.4.0...dashboard-v0.5.0) (2026-04-27)
 
 

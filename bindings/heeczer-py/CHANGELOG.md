@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/cognizhi/ai-heeczer/compare/heeczer-py-v0.5.1...heeczer-py-v0.5.1) (2026-04-27)
+
+
+### Features
+
+* add local SDK test stacks ([af53ae9](https://github.com/cognizhi/ai-heeczer/commit/af53ae9b85a18445b7f8d00f5f46f90fef436987))
+* **ci:** add byte-equal SDK parity and release workflow hardening ([f5427f6](https://github.com/cognizhi/ai-heeczer/commit/f5427f6ae7c1befaa704fcdcab6c20eebe4b2a55))
+* land remaining sdk dashboard and ingest updates ([790c210](https://github.com/cognizhi/ai-heeczer/commit/790c210a710f53b1d0aee7162cc4c73d986c5482))
+* **sdk-py:** add PydanticAI adapter ([5a5e431](https://github.com/cognizhi/ai-heeczer/commit/5a5e4310793ac45a8974f81eff8a14c32c7f3dd1))
+
 ## [Unreleased]
 
 ### Features
